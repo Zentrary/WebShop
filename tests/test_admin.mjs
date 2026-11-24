@@ -623,4 +623,34 @@ const ADMIN_SESSION = { user: { id: 'admin-1', email: 'admin@zenmarket.test' } }
   );
 }
 
+{
+  // ออเดอร์เก่าที่ไม่มี subtotal/shipping ต้องไม่ขึ้น ฿NaN
+  const supabase = await makeSupabaseMock({
+    session: ADMIN_SESSION,
+    user: ADMIN_SESSION.user,
+    tableData: {
+      ...ADMIN_TABLE,
+      orders: [
+        {
+          id: 'abcd1234-0000-0000-0000-000000000000',
+          status: 'pending',
+          created_at: '2026-03-10T10:00:00Z',
+          items: [{ name: 'กาแฟ', price: 320, quantity: 2, image_url: '' }],
+        },
+      ],
+    },
+  });
+  const { document } = await loadPage({
+    htmlPath: new URL('../web/admin/order.html', import.meta.url).pathname,
+    scripts: ['src/pages/admin/index.js'],
+    supabase,
+    url: 'https://zenmarket.test/admin/order?id=abcd1234-0000-0000-0000-000000000000',
+  });
+  await wait(400);
+
+  A.ok('order detail: ไม่มี ฿NaN ในหน้า', !document.body.textContent.includes('NaN'));
+  A.eq('order detail: subtotal ที่หายไปกลายเป็น 0', document.getElementById('admin-order-subtotal')?.textContent, '฿0.00');
+  A.eq('order detail: shipping ที่หายไปกลายเป็น 0', document.getElementById('admin-order-shipping')?.textContent, '฿0.00');
+}
+
 process.exit(A.report('admin') ? 1 : 0);

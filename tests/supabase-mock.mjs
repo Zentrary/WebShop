@@ -58,6 +58,11 @@ export function makeSupabaseMock(opts = {}) {
         return self;
       },
       neq: () => self,
+      in: () => self,
+      is: () => self,
+      or: () => self,
+      ilike: () => self,
+      match: () => self,
       gt: () => self,
       gte: () => self,
       lt: () => self,

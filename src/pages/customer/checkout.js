@@ -120,19 +120,19 @@ function renderCart() {
     const el = document.createElement('div');
     el.className = 'cart-row';
     el.innerHTML = `
-      <img src="/images/placeholder.svg" alt="${escapeHTML(item.name)}">
-      <div>
+      <img class="ci-thumb" src="/images/placeholder.svg" alt="${escapeHTML(item.name)}">
+      <div class="ci-main">
         <div class="nm">${escapeHTML(item.name)}</div>
         <div class="pr">${formatTHB(item.price)} ${t('cart.per_item')}</div>
       </div>
-      <div class="qty-ctl">
+      <div class="qty-ctl ci-qty">
         <button data-change-qty="${item.product_id}" data-dir="-1" aria-label="${t('common.decrease')}">−</button>
         <input type="text" value="${item.quantity}" readonly aria-label="${t('common.quantity')}">
         <button data-change-qty="${item.product_id}" data-dir="1" aria-label="${t('common.increase')}">+</button>
       </div>
-      <div style="text-align:right">
+      <div class="ci-total">
         <div class="font-semibold">${formatTHB(item.price * item.quantity)}</div>
-        <button class="text-error text-sm mt-sm" data-remove-item="${item.product_id}">${t('cart.remove')}</button>
+        <button class="text-error text-sm ci-remove" data-remove-item="${item.product_id}">${t('cart.remove')}</button>
       </div>
     `;
     cartItemsEl.appendChild(el);
@@ -423,7 +423,7 @@ async function initCustomerOrdersPage() {
         `<td data-label="${t('common.date')}">${order.created_at ? new Date(order.created_at).toLocaleDateString('th-TH') : '-'}</td>` +
         `<td data-label="${t('common.status')}"><span class="badge badge-${badge.variant}">${badge.label}</span></td>` +
         `<td data-label="${t('common.total')}" class="num">${formatTHB(order.total)}</td>` +
-        `<td class="cell-actions"><a href="/account/order?id=${order.id}" class="btn btn-outline btn-sm">${t('common.view')}</a></td>`;
+        `<td class="cell-actions"><a href="/account/order?id=${order.id}" class="btn btn-outline btn-sm" aria-label="${t('common.view')} #${order.id.slice(0, 8)}" title="${t('common.view')} #${order.id.slice(0, 8)}">${t('common.view')}</a></td>`;
       tbody.appendChild(tr);
     });
   } catch (err) {
@@ -540,13 +540,13 @@ async function initCustomerOrderDetailPage() {
       .map(
         (item) => `
       <div class="cart-row">
-        <img src="${item.image_url || '/images/placeholder.svg'}" alt="${escapeHTML(item.name || '')}">
-        <div>
+        <img class="ci-thumb" src="${item.image_url || '/images/placeholder.svg'}" alt="${escapeHTML(item.name || '')}">
+        <div class="ci-main">
           <div class="nm">${escapeHTML(item.name || '')}</div>
           <div class="pr">${formatTHB(item.price)} × ${item.quantity}</div>
         </div>
-        <div></div>
-        <div class="font-semibold">${formatTHB(item.price * item.quantity)}</div>
+        <div class="ci-qty"></div>
+        <div class="ci-total font-semibold">${formatTHB(item.price * item.quantity)}</div>
       </div>
     `,
       )

@@ -272,7 +272,8 @@ const CART = [{ product_id: 'p1', name: 'กาแฟ', price: 120, quantity: 2 
   const logoText = document.querySelector('.header-logo-text');
   A.ok('header: .header-logo-text มีแค่ชื่อร้าน', !!logoText && !logoText.textContent.includes('|'));
   const heroCta = document.querySelector('.hero-cta a[href="/shop"]');
-  A.ok('hero: guest ซ่อนปุ่มเลือกซื้อสินค้า', !!heroCta && heroCta.classList.contains('hidden'));
+  // ผู้เยี่ยมชมเลือกดูสินค้าได้แล้ว ปุ่มพาไปหน้าร้านจึงต้องแสดงให้เห็น
+  A.ok('hero: guest เห็นปุ่มเลือกซื้อสินค้า', !!heroCta && !heroCta.classList.contains('hidden'));
   const heroRegister = document.querySelector('.hero-cta a[href="/auth/register"]');
   A.ok('hero: ไม่มีปุ่มสมัครสมาชิกใน hero', !heroRegister);
   const heroLogin = document.querySelector('.hero-cta a[href="/auth/login"]');
@@ -480,6 +481,53 @@ const CART = [{ product_id: 'p1', name: 'กาแฟ', price: 120, quantity: 2 
 
   A.ok('checkout: โค้ดผิดไม่แสดงแถวส่วนลด', el(document, 'checkout-discount-row').classList.contains('hidden'));
   A.ok('checkout: โค้ดผิดแจ้งข้อผิดพลาด', el(document, 'coupon-status').classList.contains('is-error'));
+}
+
+{
+  // ตะกร้า: markup ต้องมีคลาสสำหรับจัดกริดบนมือถือ (ci-thumb/ci-main/ci-qty/ci-total)
+  const supabase = await makeSupabaseMock({ session: MEMBER_SESSION, user: MEMBER });
+  const { document } = await loadPage({
+    htmlPath: '/home/user/WebShop/web/shop/cart.html',
+    scripts: ['src/pages/customer/checkout.js'],
+    supabase,
+    storage: { zenmarket_cart: JSON.stringify(CART) },
+  });
+  await wait(200);
+
+  const row = document.querySelector('#cart-items .cart-row');
+  A.ok('cart: มีแถวสินค้า', !!row);
+  A.ok('cart: รูปมีคลาส ci-thumb', !!row?.querySelector('img.ci-thumb'));
+  A.ok('cart: กล่องชื่อมีคลาส ci-main', !!row?.querySelector('.ci-main'));
+  A.ok('cart: กล่องจำนวนมีคลาส ci-qty', !!row?.querySelector('.qty-ctl.ci-qty'));
+  A.ok('cart: กล่องยอดรวมมีคลาส ci-total', !!row?.querySelector('.ci-total'));
+  A.ok('cart: ปุ่มลบอยู่ในกล่องยอดรวม', !!row?.querySelector('.ci-total .ci-remove'));
+}
+
+{
+  // หน้ารายการโปรด: ต้องไม่ไปเรียกหน้าฟอร์มโปรไฟล์และต้องไม่โยน error
+  const supabase = await makeSupabaseMock({
+    session: MEMBER_SESSION,
+    user: MEMBER,
+    tableData: { profiles: { id: 'member-1', username: 'tester' }, favorites: [{ product_id: 'p1' }] },
+  });
+  const { document, logs } = await loadPage({
+    htmlPath: '/home/user/WebShop/web/account/favorites.html',
+    scripts: ['src/pages/customer/account.js'],
+    supabase,
+  });
+  await wait(300);
+
+  // "navigation to another Document" เป็นเสียงรบกวนจาก setTimeout ของเทสต์ก่อนหน้า
+  // (jsdom ยังไม่รองรับการเปลี่ยนหน้า) ไม่ใช่ error ของหน้ารายการโปรด
+  const favErrors = logs.filter(
+    (l) => l[0] === 'jsdomError' && !String(l[1]).includes('navigation to another Document'),
+  );
+  A.eq('favorites: ไม่มี error ตอนโหลดหน้า', favErrors.length, 0);
+  A.ok(
+    'favorites: เรียกข้อมูลรายการโปรด',
+    supabase.calls.select.some((c) => c.table === 'favorites'),
+  );
+  A.ok('favorites: แสดงหัวข้อรายการโปรด', document.body.textContent.includes('รายการโปรด'));
 }
 
 process.exit(A.report('customer') ? 1 : 0);

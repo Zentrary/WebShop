@@ -31,10 +31,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     initForgotPasswordPage();
   } else if (path.includes('/auth/reset-password')) {
     initResetPasswordPage();
+  } else if (path.includes('/account/favorites')) {
+    // ต้องเช็คก่อน '/account' ไม่งั้นหน้าธีมโปรดจะไปเรียก initAccountPage
+    // ที่หาฟอร์มโปรไฟล์ไม่เจอแล้วโยน error จนหน้านี้ว่างเปล่า
+    initFavoritesPage();
   } else if (path.includes('/account')) {
     initAccountPage();
-  } else if (path.includes('/account/favorites')) {
-    initFavoritesPage();
   }
 });
 
@@ -302,6 +304,9 @@ async function initAccountPage() {
   const user = state.user;
   renderAccountIdentity(user);
 
+  const profileForm = document.getElementById('profile-form');
+  if (!profileForm) return; // หน้านี้ไม่ใช่หน้าฟอร์มโปรไฟล์
+
   document.getElementById('profile-username').value = user.username || '';
   document.getElementById('profile-firstname').value = user.first_name || '';
   document.getElementById('profile-lastname').value = user.last_name || '';
@@ -309,7 +314,7 @@ async function initAccountPage() {
   const ageInput = document.getElementById('profile-age');
   if (ageInput) ageInput.value = user.age ?? '';
 
-  document.getElementById('profile-form').addEventListener('submit', async (e) => {
+  profileForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     try {
       const ageValue = ageInput ? ageInput.value.trim() : '';

@@ -233,12 +233,16 @@ function renderSalesChart(days) {
     ${axis}
     <div class="sales-chart-plot${axisMax ? '' : ' is-flat'}">
       ${rows
-        .map((r) => {
+        .map((r, i) => {
           const height = axisMax ? Math.max(2, Math.round((r.total / axisMax) * 100)) : 2;
           const key = String(r.day).slice(0, 10);
           const classes = ['sales-day'];
           if (key === todayKey) classes.push('is-today');
           if (!r.total) classes.push('is-empty');
+          // จอเล็กซ่อนป้ายวันที่ส่วนใหญ่ไว้ โชว์ทุกวันที่ 5 และวันนี้ แต่ถ้าป้ายวันนี้
+          // ไปติดกับป้ายอื่น (ห่างกัน 1 วัน) ให้ซ่อนป้ายวันนี้ก่อน ป้ายจะได้ไม่ทับกัน
+          const neighborLabeled = rows.some((rr, j) => j % 5 === 0 && Math.abs(j - i) === 1);
+          if (i % 5 === 0 || (key === todayKey && !neighborLabeled)) classes.push('is-labeled');
           return `
         <div class="${classes.join(' ')}" style="--h:${height}%" title="${label(key)} — ${formatTHB(r.total)}">
           <span class="sales-value">${r.total ? formatTHB(r.total) : ''}</span>
@@ -1262,13 +1266,15 @@ async function initAdminOrderDetail() {
 
     document.getElementById('admin-order-detail').classList.remove('hidden');
     document.getElementById('admin-order-number').textContent = '#' + order.id.slice(0, 8);
-    document.getElementById('admin-order-customer').textContent = order.recipient || '-';
+    document.getElementById('admin-order-customer').textContent =
+      order.recipient || order.customer_name || order.email || '-';
     document.getElementById('admin-order-date').textContent = order.created_at
       ? new Date(order.created_at).toLocaleDateString('th-TH')
       : '-';
     document.getElementById('admin-order-status').value = order.status || 'pending';
     document.getElementById('admin-order-payment').textContent = t('checkout.promptpay');
-    document.getElementById('admin-order-address').textContent = order.address || '-';
+    document.getElementById('admin-order-address').textContent =
+      order.address || order.shipping_address || order.delivery_address || '-';
     document.getElementById('admin-order-subtotal').textContent = formatTHB(order.subtotal);
     document.getElementById('admin-order-shipping').textContent = formatTHB(order.shipping);
     document.getElementById('admin-order-total').textContent = formatTHB(order.total);
@@ -1279,10 +1285,10 @@ async function initAdminOrderDetail() {
       .map(
         (item) => `
       <div class="cart-row">
-        <img src="${item.image_url || '/images/placeholder.svg'}" alt="">
-        <div><div class="nm">${escapeHTML(item.name || '')}</div><div class="pr">${formatTHB(item.price)} × ${item.quantity}</div></div>
-        <div></div>
-        <div class="font-semibold">${formatTHB(item.price * item.quantity)}</div>
+        <img class="ci-thumb" src="${item.image_url || '/images/placeholder.svg'}" alt="">
+        <div class="ci-main"><div class="nm">${escapeHTML(item.name || '')}</div><div class="pr">${formatTHB(item.price)} × ${item.quantity || 1}</div></div>
+        <div class="ci-qty"></div>
+        <div class="ci-total font-semibold">${formatTHB(Number(item.price || 0) * Number(item.quantity || 1))}</div>
       </div>
     `,
       )
@@ -1475,7 +1481,7 @@ async function initAdminOrders() {
         `<td data-label="${t('common.date')}">${order.created_at ? new Date(order.created_at).toLocaleDateString('th-TH') : '-'}</td>` +
         `<td data-label="${t('common.total')}" class="num">${formatTHB(order.total)}</td>` +
         `<td data-label="${t('common.status')}"><span class="badge badge-${badge.variant}">${badge.label}</span></td>` +
-        `<td class="cell-actions"><a href="/admin/order?id=${order.id}" class="btn btn-outline btn-sm">${t('common.view')}</a></td>`;
+        `<td class="cell-actions"><a href="/admin/order?id=${order.id}" class="btn btn-outline btn-sm" aria-label="${t('common.view')} #${order.id.slice(0, 8)}" title="${t('common.view')} #${order.id.slice(0, 8)}">${t('common.view')}</a></td>`;
       tbody.appendChild(tr);
     });
   }
