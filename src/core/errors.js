@@ -1,4 +1,4 @@
-import { state } from '/src/app.js';
+import { state } from '/src/core/state.js';
 
 const AREA_ALLOWLIST = ['checkout', 'account', 'catalogue', 'admin', 'auth', 'other'];
 const CODE_ALLOWLIST = ['NETWORK', 'AUTH', 'PERMISSION', 'DATABASE', 'STORAGE', 'UI', 'UNKNOWN'];

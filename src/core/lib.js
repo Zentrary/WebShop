@@ -1,8 +1,11 @@
+import { getLanguage, t } from './i18n.js';
+
 export const CURRENCY = 'THB';
 export const CURRENCY_SYMBOL = '฿';
 
-export function formatTHB(amount) {
-  return new Intl.NumberFormat('th-TH', {
+export function formatTHB(amount, lang = getLanguage()) {
+  const locale = lang === 'en' ? 'en-US' : 'th-TH';
+  return new Intl.NumberFormat(locale, {
     style: 'currency',
     currency: 'THB',
     minimumFractionDigits: 2,
@@ -167,22 +170,22 @@ export async function reconcileCart(supabase, cartItems) {
   for (const item of cartItems) {
     const product = productMap.get(item.product_id);
     if (!product) {
-      errors.push(`สินค้า "${item.name}" ไม่พบในระบบ`);
+      errors.push(t('cart.error_missing', { name: item.name }));
       continue;
     }
 
     if (!product.active) {
-      errors.push(`สินค้า "${product.name}" ไม่สามารถซื้อได้ในขณะนี้`);
+      errors.push(t('cart.error_unavailable', { name: product.name }));
       continue;
     }
 
     if (product.stock < item.quantity) {
-      errors.push(`สินค้า "${product.name}" เหลือเพียง ${product.stock} ชิ้น`);
+      errors.push(t('cart.error_stock', { name: product.name, stock: product.stock }));
       continue;
     }
 
     if (Math.abs(product.price - item.price) > 0.001) {
-      errors.push(`ราคาสินค้า "${product.name}" เปลี่ยนแปลงแล้ว`);
+      errors.push(t('cart.error_price_changed', { name: product.name }));
       continue;
     }
 

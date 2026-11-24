@@ -192,6 +192,23 @@ export async function loadPage({ htmlPath, scripts = [], supabase, globals = {},
   return { dom, window, document: window.document, logs, supabase };
 }
 
+/**
+ * Import a module that belongs to the *currently loaded page* so that it is
+ * the very same instance the page script uses.  Without this, `import('/src/…')`
+ * from a test file resolves to a different generation and module-level state
+ * (language listeners, for instance) would not be shared with the page.
+ */
+export async function importPage(spec) {
+  const gen = globalThis.__MOD_GEN__ || 0;
+  let p = path.join(ROOT, spec.replace(/^\/+/, ''));
+  if (!fs.existsSync(p) && fs.existsSync(p + '.js')) p += '.js';
+  const url = pathToFileURL(p).href + '?g=' + gen;
+  if (!globalThis.__MOD_CACHE__[url]) {
+    globalThis.__MOD_CACHE__[url] = await import(url);
+  }
+  return globalThis.__MOD_CACHE__[url];
+}
+
 export function el(doc, id) {
   const e = doc.getElementById(id);
   if (!e) throw new Error(`element #${id} not found`);

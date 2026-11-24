@@ -663,7 +663,7 @@ async function initAdminOrderDetail() {
     if (order.slip_path) {
       const slipUrl = await getPrivateImageUrl(supabase, 'payment-slips', order.slip_path);
       document.getElementById('admin-order-receipt').innerHTML = slipUrl
-        ? `<img src="${slipUrl}" alt="สลิป" style="max-width:100%;border-radius:8px">`
+        ? `<img src="${slipUrl}" alt="${escapeHTML(t('admin.order_receipt'))}" style="max-width:100%;border-radius:8px">`
         : `<p class="text-muted text-sm">${t('order.slip_unavailable')}</p>`;
     }
 

@@ -1,7 +1,10 @@
 export const DEFAULT_STORE_SETTINGS = {
   singleton: true,
   shop_name: 'ZenMarket',
-  tagline: 'ร้านค้าออนไลน์ ด้วยความตั้งใจและความใส่ใจในทุกรายละเอียด',
+  // Left empty on purpose: the UI falls back to the language-aware
+  // `footer.tagline` dictionary entry, so the default tagline follows the
+  // active language instead of always rendering in Thai.
+  tagline: '',
   logo_url: '/images/placeholder.svg',
   contact_email: '',
   contact_phone: '',

@@ -196,8 +196,8 @@ async function loadProducts(grid, countEl, search = '', category = null) {
   const { data: products, error, count } = await query;
 
   if (error) {
-    notify('เกิดข้อผิดพลาดในการโหลดสินค้า', 'error');
-    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1">โหลดสินค้าไม่สำเร็จ กรุณาลองใหม่อีกครั้ง</div>';
+    notify(t('shop.load_error'), 'error');
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">${escapeHTML(t('shop.load_failed'))}</div>`;
     return;
   }
 
@@ -280,7 +280,7 @@ async function initCategoriesPage() {
     featured?.forEach((product) => featuredGrid.appendChild(createProductCard(product)));
     observeRevealsLocal(featuredGrid);
   } catch (err) {
-    notify('ไม่สามารถโหลดหมวดหมู่ได้', 'error');
+    notify(t('shop.categories_error'), 'error');
   }
 }
 
@@ -297,7 +297,7 @@ async function initProductPage() {
     const { data: product, error } = await state.supabase.from('products').select('*').eq('id', productId).single();
 
     if (error || !product) {
-      notify('ไม่พบสินค้าที่ระบุ', 'error');
+      notify(t('product.not_found'), 'error');
       return;
     }
 
@@ -415,6 +415,6 @@ async function initProductPage() {
     observeRevealsLocal(relatedGrid);
   } catch (err) {
     console.error(err);
-    notify('เกิดข้อผิดพลาดในการโหลดสินค้า', 'error');
+    notify(t('shop.load_error'), 'error');
   }
 }

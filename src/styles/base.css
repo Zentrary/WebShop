@@ -108,6 +108,9 @@ img {
   max-width: 100%;
   display: block;
 }
+[hidden] {
+  display: none !important;
+}
 ul,
 ol {
   list-style: none;
@@ -255,6 +258,24 @@ p {
   font-weight: 700;
   font-size: 1rem;
   border-radius: var(--radius-sm);
+}
+.header-logo-mark svg {
+  width: 18px;
+  height: 18px;
+}
+.auth-head .mark {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto var(--space-md);
+  display: grid;
+  place-items: center;
+  background: var(--color-text);
+  color: var(--color-text-inverse);
+  border-radius: var(--radius-md);
+}
+.auth-head .mark svg {
+  width: 24px;
+  height: 24px;
 }
 .header-logo-img {
   width: 32px;
@@ -799,6 +820,39 @@ textarea.form-input {
   max-width: 480px;
   padding: var(--space-xl) var(--space-lg);
 }
+.auth-card-wide {
+  max-width: 780px;
+}
+.auth-head-inline {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  text-align: left;
+}
+.auth-head-inline .auth-logo,
+.auth-head-inline .mark {
+  margin: 0;
+}
+.auth-head-inline h1 {
+  margin: 0;
+}
+.auth-head-text {
+  min-width: 0;
+}
+.auth-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-sm) var(--space-md);
+}
+.auth-grid .form-group {
+  margin-bottom: 0;
+}
+.auth-grid-full {
+  grid-column: 1 / -1;
+}
+.auth-grid .auth-hint {
+  margin: 0;
+}
 .auth-card-compact .auth-head {
   margin-bottom: var(--space-lg);
 }
@@ -833,18 +887,6 @@ textarea.form-input {
 .auth-head {
   text-align: center;
   margin-bottom: var(--space-xl);
-}
-.auth-head .mark {
-  width: 44px;
-  height: 44px;
-  margin: 0 auto var(--space-md);
-  display: grid;
-  place-items: center;
-  background: var(--color-text);
-  color: var(--color-text-inverse);
-  font-weight: 700;
-  font-size: 1.25rem;
-  border-radius: var(--radius-md);
 }
 .auth-head .auth-logo {
   width: 48px;

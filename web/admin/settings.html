@@ -73,8 +73,14 @@
             </div>
           </div>
           <div class="form-group">
-            <label class="form-label" for="setting-store-description">คำโปรยร้าน</label>
-            <input type="text" id="setting-store-description" class="form-input" placeholder="ร้านค้าออนไลน์ด้วยความตั้งใจ" />
+            <label class="form-label" for="setting-store-description" data-i18n="admin.settings_tagline">คำโปรยร้าน</label>
+            <input
+              type="text"
+              id="setting-store-description"
+              class="form-input"
+              placeholder="ร้านค้าออนไลน์ด้วยความตั้งใจ"
+              data-i18n-placeholder="admin.settings_tagline_ph"
+            />
           </div>
 
           <h2 class="mt-lg" data-i18n="admin.settings_contact">ช่องทางติดต่อ</h2>
@@ -136,13 +142,25 @@
           </div>
           <div class="form-group">
             <label class="form-label" for="setting-shipping-note" data-i18n="admin.settings_shipping_note">หมายเหตุการจัดส่ง</label>
-            <textarea id="setting-shipping-note" class="form-input" rows="3" placeholder="จัดส่งช่วงเวลา หรือหมายเหตุอื่น ๆ"></textarea>
+            <textarea
+              id="setting-shipping-note"
+              class="form-input"
+              rows="3"
+              placeholder="จัดส่งช่วงเวลา หรือหมายเหตุอื่น ๆ"
+              data-i18n-placeholder="admin.settings_shipping_note_ph"
+            ></textarea>
           </div>
 
           <h2 class="mt-lg" data-i18n="admin.settings_about">เกี่ยวกับร้าน</h2>
           <div class="form-group">
             <label class="form-label" for="setting-about" data-i18n="admin.settings_about_text">ข้อความแนะนำร้าน</label>
-            <textarea id="setting-about" class="form-input" rows="5" placeholder="เขียนเกี่ยวกับร้านของคุณ..."></textarea>
+            <textarea
+              id="setting-about"
+              class="form-input"
+              rows="5"
+              placeholder="เขียนเกี่ยวกับร้านของคุณ..."
+              data-i18n-placeholder="admin.settings_about_ph"
+            ></textarea>
           </div>
 
           <button type="submit" class="btn btn-primary" data-i18n="common.save">บันทึกการตั้งค่า</button>

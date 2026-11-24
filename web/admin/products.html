@@ -49,7 +49,14 @@
           <div class="flex gap-md" style="flex-wrap: wrap">
             <div class="form-group" style="flex: 1; min-width: 220px">
               <label class="form-label" for="product-name" data-i18n="admin.product_name">ชื่อสินค้า</label>
-              <input type="text" id="product-name" class="form-input" required placeholder="ชื่อสินค้า" />
+              <input
+                type="text"
+                id="product-name"
+                class="form-input"
+                required
+                placeholder="ชื่อสินค้า"
+                data-i18n-placeholder="admin.product_name_ph"
+              />
             </div>
             <div class="form-group" style="flex: 0 1 160px">
               <label class="form-label" for="product-sku">SKU</label>
@@ -57,7 +64,13 @@
             </div>
             <div class="form-group" style="flex: 0 1 200px">
               <label class="form-label" for="product-category" data-i18n="admin.product_category">หมวดหมู่</label>
-              <input type="text" id="product-category" class="form-input" placeholder="ชื่อหมวดหมู่" />
+              <input
+                type="text"
+                id="product-category"
+                class="form-input"
+                placeholder="ชื่อหมวดหมู่"
+                data-i18n-placeholder="admin.category_name_input_ph"
+              />
             </div>
           </div>
           <div class="flex gap-md" style="flex-wrap: wrap">
@@ -83,7 +96,13 @@
           </div>
           <div class="form-group">
             <label class="form-label" for="product-description" data-i18n="admin.product_desc">รายละเอียดสินค้า</label>
-            <textarea id="product-description" class="form-input" rows="3" placeholder="รายละเอียดสินค้า"></textarea>
+            <textarea
+              id="product-description"
+              class="form-input"
+              rows="3"
+              placeholder="รายละเอียดสินค้า"
+              data-i18n-placeholder="admin.product_description_ph"
+            ></textarea>
           </div>
           <label class="form-checkbox mb-lg">
             <input type="checkbox" id="product-active" checked />

@@ -25,6 +25,10 @@ export default defineConfig({
   root: 'web',
   envDir: '..',
   publicDir: '../public',
+  server: {
+    host: '0.0.0.0',
+    allowedHosts: true,
+  },
   preview: {
     host: '0.0.0.0',
     allowedHosts: true,
