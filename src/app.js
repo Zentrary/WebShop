@@ -3,9 +3,10 @@
  * จุดเริ่มต้นแอป, Global State, Header, Event Delegation, Polling
  */
 
-import { getAudience, isOwner, isMember, logout } from '/src/core/audience.js';
-import { initI18n, t, setLanguage } from '/src/core/i18n.js';
-import { setFlash, notify } from '/src/core/ui.js';
+import { createClient } from '@supabase/supabase-js';
+import { getAudience, getCurrentUser, isOwner, isMember, logout, AUDIENCE_GUEST } from '/src/core/audience.js';
+import { initI18n, t, setLanguage, getLanguage } from '/src/core/i18n.js';
+import { setFlash, notify, flash } from '/src/core/ui.js';
 import { initCaptcha } from '/src/core/captcha.js';
 
 // Global state
@@ -20,11 +21,12 @@ export const state = {
 
 // Initialize Supabase client
 export function initSupabase() {
-  const { createClient } = require('@supabase/supabase-js');
   const url = import.meta.env.VITE_SUPABASE_URL;
   const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
   if (url && key) {
     state.supabase = createClient(url, key);
+  } else {
+    console.warn('[ZenMarket] Supabase env vars missing: set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY');
   }
   return state.supabase;
 }
@@ -121,7 +123,7 @@ export function initHeader() {
   const langToggle = header.querySelector('#lang-toggle');
   if (langToggle) {
     langToggle.addEventListener('click', () => {
-      const current = getLanguage ? getLanguage() : 'th';
+      const current = getLanguage();
       setLanguage(current === 'th' ? 'en' : 'th');
     });
   }
@@ -154,6 +156,9 @@ export async function initApp() {
   // Initialize captcha
   initCaptcha();
 
+  // Initialize Supabase client (must run before any page queries state.supabase)
+  initSupabase();
+
   // Load cart
   loadCart();
   updateCartBadge();
@@ -182,7 +187,7 @@ export async function initApp() {
   });
 
   // Flash messages
-  setFlash && flash();
+  flash();
 }
 
 // Export for use in page modules
