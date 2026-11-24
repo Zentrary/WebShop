@@ -74,4 +74,4 @@
 
 - `supabase/migrations/011_secure_login_lookup.sql` — แก้ `login_email` + `login_allow`
 - `supabase/migrations/012_security_hardening.sql` — ล็อกสิทธิ์ตาราง/ฟังก์ชัน
-- `tests/test_regression.mjs` — ชุดเทสต์ "ความปลอดภัย" (17 ข้อ)
+- `src/core/reveal.js`, `src/core/payment.js` — ส่วนแสดงผลที่เกี่ยวข้อง (รีวิว UI)

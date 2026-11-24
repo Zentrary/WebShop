@@ -26,6 +26,7 @@ export function notify(message, type = 'info', duration = 4000) {
   toast.innerHTML = `${ICONS[type] || ICONS.info}<span></span>`;
   toast.querySelector('span').textContent = message;
   stack.appendChild(toast);
+  while (stack.children.length > 2) stack.firstElementChild.remove();
 
   const dismiss = () => {
     toast.classList.add('out');

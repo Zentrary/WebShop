@@ -254,9 +254,9 @@ async function loadAudit() {
           ? attempts
               .map(
                 (a) => `
-            <div class="flex justify-between items-center" style="padding:0.5rem 0;border-bottom:1px solid var(--color-border-soft)">
-              <span class="text-sm">${escapeHTML(a.key || '-')}</span>
-              <span class="text-muted text-xs">${a.hits || 0} · ${a.expires ? new Date(a.expires).toLocaleString('th-TH') : '-'}</span>
+            <div class="attempt-row">
+              <span class="attempt-key">${escapeHTML(a.key || '-')}</span>
+              <span class="attempt-meta">${a.hits || 0} · ${a.expires ? new Date(a.expires).toLocaleString('th-TH') : '-'}</span>
             </div>
           `,
               )

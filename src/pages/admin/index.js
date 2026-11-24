@@ -12,6 +12,7 @@ import {
 import { validateSocialUrl, getOrderStatusBadge } from '/src/core/experience.js';
 import { normalizePath } from '/src/core/routes.js';
 import { initReveal } from '/src/core/reveal.js';
+import { promptPayCardHTML } from '/src/core/payment.js';
 import { initAdminLayout } from '/src/pages/admin/layout.js';
 import { initI18n, t, translatePage, onLanguageChange, getLanguage } from '/src/core/i18n.js';
 import {
@@ -1225,9 +1226,13 @@ async function initPayments() {
 
       try {
         const payload = createPromptPayPayload(checked.value, amount, reference);
-        const qrDataURL = await createPromptPayQRDataURL(payload, 320);
-        document.getElementById('test-qr-image').innerHTML =
-          `<img src="${qrDataURL}" alt="QR PromptPay" style="width:240px;height:240px">`;
+        const qrDataURL = await createPromptPayQRDataURL(payload, 640);
+        document.getElementById('test-qr-image').innerHTML = promptPayCardHTML({
+          qrDataURL,
+          amount,
+          recipient: typedName || savedRecipient,
+          target: checked.value,
+        });
 
         const download = document.getElementById('test-qr-download');
         if (download) download.setAttribute('href', qrDataURL);

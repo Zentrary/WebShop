@@ -69,6 +69,7 @@ function renderGuestNotice() {
   const anchor = host.querySelector('.page-head') || host.querySelector('nav') || host.querySelector('h1');
   if (anchor) anchor.after(note);
   else host.prepend(note);
+  observeRevealsLocal(note);
 }
 
 /**
@@ -109,7 +110,7 @@ function createProductCard(product) {
   const price = effectivePrice(product);
   card.innerHTML = `
     <div class="thumb">
-      <img src="${firstImage}" alt="${escapeHTML(product.name)}" loading="lazy">
+      <img src="${firstImage}" alt="${escapeHTML(product.name)}" loading="lazy" decoding="async">
       ${onSale ? `<span class="sale-badge">${escapeHTML(t('product.sale'))}</span>` : ''}
       <button class="favorite-btn ${favActive ? 'active' : ''}" data-favorite="${product.id}"
         title="${t(favActive ? 'product.favorite_remove' : 'product.favorite_add')}"
@@ -127,6 +128,17 @@ function createProductCard(product) {
       </div>
     </div>
   `;
+
+  const thumbImg = card.querySelector('.thumb img');
+  if (thumbImg) {
+    const markLoaded = () => {
+      thumbImg.classList.add('is-loaded');
+      thumbImg.closest('.thumb')?.classList.add('is-loaded');
+    };
+    if (thumbImg.complete && thumbImg.naturalWidth > 0) markLoaded();
+    else thumbImg.addEventListener('load', markLoaded, { once: true });
+    thumbImg.addEventListener('error', markLoaded, { once: true });
+  }
 
   card.addEventListener('click', (e) => {
     if (e.target.closest('[data-add-to-cart]')) return;
