@@ -36,7 +36,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       let email = username;
       if (!username.includes('@')) {
-        // ตรวจชื่อผู้ใช้ + รหัสผ่านในฝั่ง DB ก่อนคืนอีเมล (กันการไล่เก็บอีเมล)
         const { data: resolved } = await supabase.rpc('login_email', {
           login_name: username.toLowerCase(),
           login_password: password,

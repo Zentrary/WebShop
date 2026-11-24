@@ -94,8 +94,6 @@ function initLoginPage() {
 
       let email = identifier;
       if (!identifier.includes('@')) {
-        // ชื่อผู้ใช้ → อีเมล: ฝั่งฐานข้อมูลตรวจรหัสผ่านก่อน จึงคืนอีเมลเฉพาะเมื่อถูกต้อง
-        // (กันการไล่เก็บอีเมลลูกค้าผ่าน REST API)
         const { data: resolved, error: rpcErr } = await state.supabase.rpc('login_email', {
           login_name: identifier.toLowerCase(),
           login_password: password,
@@ -604,7 +602,7 @@ async function initFavoritesPage() {
         const favActive = isFavorite(product.id);
         card.innerHTML = `
           <div class="thumb">
-            <img src="${image}" alt="${escapeHTML(product.name)}" loading="lazy">
+            <img src="${image}" alt="${escapeHTML(product.name)}" loading="lazy" decoding="async">
             <button class="favorite-btn ${favActive ? 'active' : ''}" data-favorite="${product.id}" title="${t(favActive ? 'product.favorite_remove' : 'product.favorite_add')}">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1L12 21.2l7.7-7.8 1.1-1a5.5 5.5 0 0 0 0-7.8Z"/></svg>
             </button>
@@ -619,6 +617,19 @@ async function initFavoritesPage() {
             </div>
           </div>
         `;
+        const thumbImg = card.querySelector('.thumb img');
+        if (thumbImg) {
+          const markLoaded = () => {
+            thumbImg.classList.add('is-loaded');
+            thumbImg.closest('.thumb')?.classList.add('is-loaded');
+          };
+          if (thumbImg.complete && thumbImg.naturalWidth > 0) markLoaded();
+          else {
+            thumbImg.addEventListener('load', markLoaded, { once: true });
+            thumbImg.addEventListener('error', markLoaded, { once: true });
+          }
+        }
+
         card.addEventListener('click', async (e) => {
           if (e.target.closest('[data-add-to-cart]')) return;
           const favBtn = e.target.closest('[data-favorite]');

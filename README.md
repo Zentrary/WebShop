@@ -91,7 +91,6 @@ src/
   styles/             base.css · spaces.css · responsive.css
 web/                  ไฟล์ HTML ของแต่ละหน้า
 supabase/migrations/  SQL สำหรับ schema และนโยบาย RLS
-tests/                ชุดทดสอบ DOM ด้วย jsdom
 scripts/              สแกนโค้ด (no-undef) และเครื่องมือลบคอมเมนต์
 ```
 
@@ -100,7 +99,6 @@ scripts/              สแกนโค้ด (no-undef) และเครื�
 ```bash
 npm run dev            # เซิร์ฟเวอร์สำหรับพัฒนา
 npm run build          # บิลด์สำหรับ production
-npm test               # รันชุดทดสอบทั้งหมด
 npm run lint:undef     # ตรวจการเรียกฟังก์ชันที่ยังไม่ได้ import
 npm run format         # จัดรูปแบบโค้ดทั้งโปรเจกต์ (Prettier)
 npm run format:check   # ตรวจรูปแบบโค้ดโดยไม่แก้ไข
@@ -115,14 +113,7 @@ npm run strip:comments # ลบคอมเมนต์ออกจากไฟ�
 - **ส่งออกข้อความอย่างปลอดภัย** — HTML escape ทุกจุดที่แทรกข้อมูลผู้ใช้ และกรอง URL ปลอมภัย (`safeLink`, `safeImage`)
 - **ส่วนหัวความปลอดภัย** — CSP, HSTS, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`
 - **รหัสผ่าน** — อย่างน้อย 8 ตัว ต้องมีตัวอักษรและตัวเลข พร้อมตัวบอกสถานะแบบทันที
-
-## การทดสอบ
-
-```bash
-npm test
-```
-
-ชุดทดสอบโหลด HTML จริงและโมดูลจริงเข้า jsdom แล้วตรวจพฤติกรรมของแอดมิน ลูกค้า ร้านค้า และการสำรอง/กู้คืนข้อมูล ดูรายละเอียดที่ [`tests/README.md`](tests/README.md)
+- **การเข้าสู่ระบบด้วยชื่อผู้ใช้** — ตรวจรหัสผ่านฝั่งฐานข้อมูลก่อนคืนอีเมล (กันการไล่เก็บอีเมลลูกค้า)
 
 ## การ deploy
 

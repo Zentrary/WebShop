@@ -11,6 +11,7 @@ import {
   buildSlipObjectPath,
   bindOnce,
 } from '/src/core/lib.js';
+import { promptPayCardHTML } from '/src/core/payment.js';
 import { validateDelivery } from '/src/core/validation.js';
 import { getOrderStatusBadge, getTimelineProgress } from '/src/core/experience.js';
 import { calculateShipping, amountToFreeShipping } from '/src/core/settings.js';
@@ -382,9 +383,14 @@ async function showQR(amount) {
     const promptpayId = s.promptpay_id;
     if (!promptpayId) return;
     const payload = createPromptPayPayload(promptpayId, amount);
-    const qrDataURL = await createPromptPayQRDataURL(payload);
-    document.getElementById('qr-container').innerHTML = `<img src="${qrDataURL}" alt="QR PromptPay">`;
-    document.getElementById('qr-amount').textContent = formatTHB(amount);
+    const qrDataURL = await createPromptPayQRDataURL(payload, 640);
+    document.getElementById('qr-container').innerHTML = promptPayCardHTML({
+      qrDataURL,
+      amount,
+      recipient: s.recipient_name,
+      target: promptpayId,
+    });
+    document.getElementById('promptpay-qr').classList.add('is-card');
     document.getElementById('promptpay-qr').classList.remove('hidden');
   } catch (err) {
     console.error(err);

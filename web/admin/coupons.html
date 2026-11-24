@@ -54,7 +54,15 @@
             </div>
             <div class="form-group" style="flex: 0 1 170px">
               <label class="form-label" for="coupon-max-uses" data-i18n="admin.coupon_max_uses">ใช้ได้สูงสุด (ครั้ง)</label>
-              <input type="number" id="coupon-max-uses" class="form-input" min="1" step="1" placeholder="-" />
+              <input
+                type="number"
+                id="coupon-max-uses"
+                class="form-input"
+                min="1"
+                step="1"
+                placeholder="ไม่จำกัด"
+                data-i18n-placeholder="admin.coupon_unlimited_ph"
+              />
             </div>
             <div class="form-group" style="flex: 0 1 190px">
               <label class="form-label" for="coupon-ends" data-i18n="admin.coupon_ends">วันหมดอายุ</label>
