@@ -1,8 +1,3 @@
-/**
- * ZenMarket Admin Login
- * หน้าเข้าสู่ระบบสำหรับเจ้าของร้าน (ใช้ Supabase Auth + ตรวจ is_admin)
- */
-
 import { setAudience } from '/src/core/audience.js';
 import { notify } from '/src/core/ui.js';
 import { initI18n, t, translatePage } from '/src/core/i18n.js';
@@ -25,12 +20,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     try {
       const { createClient } = await import('@supabase/supabase-js');
-      const supabase = createClient(
-        import.meta.env.VITE_SUPABASE_URL,
-        import.meta.env.VITE_SUPABASE_ANON_KEY
-      );
+      const supabase = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY);
 
-      // จำกัดความพยายามเข้าสู่ระบบ
       try {
         const { data: allowed } = await supabase.rpc('login_allow', { bucket_key: `admin:${username.toLowerCase()}` });
         if (allowed === false) {
@@ -41,7 +32,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       } catch {}
 
-      // username → email ผ่าน RPC
       let email = username;
       if (!username.includes('@')) {
         const { data: resolved } = await supabase.rpc('login_email', { login_name: username.toLowerCase() });
@@ -52,7 +42,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
 
-      // ตรวจสิทธิ์แอดมิน
       const { data: adminCheck } = await supabase.rpc('is_admin');
       if (!adminCheck) {
         await supabase.auth.signOut();
@@ -61,7 +50,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
       setAudience('owner', { id: data.user.id, email: data.user.email, username });
       notify(t('toast.login_success'), 'success');
-      setTimeout(() => { window.location.href = '/admin/dashboard.html'; }, 400);
+      setTimeout(() => {
+        window.location.href = '/admin/dashboard.html';
+      }, 400);
     } catch (err) {
       console.error(err);
       notify(err.message || t('auth.invalid_credentials'), 'error');

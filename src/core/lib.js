@@ -10,9 +10,6 @@ export function formatTHB(amount) {
   }).format(amount);
 }
 
-/**
- * ผูก event โดยไม่ให้ซ้ำ (ใช้เมื่อ re-render หน้าหลังเปลี่ยนภาษา)
- */
 export function bindOnce(el, event, handler) {
   if (!el || typeof handler !== 'function') return;
   if (!el.__zenHandlers) el.__zenHandlers = {};
@@ -34,12 +31,35 @@ export function safeImage(url) {
   if (!url) return '';
   try {
     const u = new URL(url, window.location.origin);
-    return u.protocol === 'https:' || u.protocol === 'data:' || u.protocol === 'blob:' || u.origin === window.location.origin
+    return u.protocol === 'https:' ||
+      u.protocol === 'data:' ||
+      u.protocol === 'blob:' ||
+      u.origin === window.location.origin
       ? url
       : '';
   } catch {
     return url.startsWith('/') || url.startsWith('data:') || url.startsWith('blob:') ? url : '';
   }
+}
+
+const SAFE_LINK_PROTOCOLS = ['http:', 'https:', 'mailto:', 'tel:'];
+
+export function safeLink(url) {
+  if (!url) return '';
+  try {
+    const u = new URL(String(url).trim(), window.location.origin);
+    return SAFE_LINK_PROTOCOLS.includes(u.protocol) ? u.href : '';
+  } catch {
+    return '';
+  }
+}
+
+export function safeReturnPath(path, fallback = '/account/index.html') {
+  if (!path || typeof path !== 'string') return fallback;
+  const value = path.trim();
+  if (!value.startsWith('/') || value.startsWith('//') || value.startsWith('/\\')) return fallback;
+  if (/[\r\n]/.test(value)) return fallback;
+  return value;
 }
 
 export function isPromptPayMobile(phone) {
@@ -59,7 +79,7 @@ export function isThaiNationalID(id) {
 }
 
 function crc16CCITT(data) {
-  let crc = 0xFFFF;
+  let crc = 0xffff;
   for (let i = 0; i < data.length; i++) {
     crc ^= data.charCodeAt(i) << 8;
     for (let j = 0; j < 8; j++) {
@@ -68,7 +88,7 @@ function crc16CCITT(data) {
       } else {
         crc = crc << 1;
       }
-      crc &= 0xFFFF;
+      crc &= 0xffff;
     }
   }
   return crc;
@@ -82,9 +102,7 @@ export function createPromptPayPayload(mobileOrID, amount = 0, reference = '') {
     throw new Error('Invalid PromptPay identifier: must be 10-digit mobile or 13-digit Thai National ID');
   }
 
-  const merchantAccountData = isPhone
-    ? `010212${mobileOrID}`
-    : `010313${mobileOrID}`;
+  const merchantAccountData = isPhone ? `010212${mobileOrID}` : `010313${mobileOrID}`;
 
   let refField = '';
   if (reference) {
@@ -107,13 +125,7 @@ export function createPromptPayPayload(mobileOrID, amount = 0, reference = '') {
   const crcPlaceholder = '6304';
 
   const payloadWithoutCRC =
-    '000201' +
-    merchantInfo +
-    merchantCategory +
-    currencyCode +
-    amountField +
-    countryCode +
-    crcPlaceholder;
+    '000201' + merchantInfo + merchantCategory + currencyCode + amountField + countryCode + crcPlaceholder;
 
   const crc = crc16CCITT(payloadWithoutCRC);
   const crcHex = crc.toString(16).toUpperCase().padStart(4, '0');
@@ -139,7 +151,7 @@ export async function reconcileCart(supabase, cartItems) {
   const errors = [];
   const validItems = [];
 
-  const productIds = [...new Set(cartItems.map(item => item.product_id))];
+  const productIds = [...new Set(cartItems.map((item) => item.product_id))];
   const { data: products, error } = await supabase
     .from('products')
     .select('id, name, price, stock, active')
@@ -150,7 +162,7 @@ export async function reconcileCart(supabase, cartItems) {
   }
 
   const productMap = new Map();
-  products.forEach(p => productMap.set(p.id, p));
+  products.forEach((p) => productMap.set(p.id, p));
 
   for (const item of cartItems) {
     const product = productMap.get(item.product_id);
@@ -197,9 +209,6 @@ export function calculateCartItemCount(items) {
   return items.reduce((sum, item) => sum + item.quantity, 0);
 }
 
-/**
- * สร้าง Signed URL สำหรับสลิป/รูปใน bucket ส่วนตัว (payment-slips, shipping-updates)
- */
 export async function getPrivateImageUrl(supabase, bucket, objectPath, expiresIn = 3600) {
   if (!objectPath) return '';
   if (objectPath.startsWith('http')) return objectPath;
@@ -208,9 +217,6 @@ export async function getPrivateImageUrl(supabase, bucket, objectPath, expiresIn
   return data?.signedUrl || '';
 }
 
-/**
- * ชื่อไฟล์สลิปที่ถูกต้องตามนโยบายของ attach_slip: <user_id>/<order_id>/<file>
- */
 export function buildSlipObjectPath(userId, orderId, fileName) {
   const safeName = String(fileName).replace(/[^\w.\-]/g, '_');
   return `${userId}/${orderId}/${Date.now()}_${safeName}`;

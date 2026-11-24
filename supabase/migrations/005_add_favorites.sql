@@ -1,5 +1,5 @@
--- 005: ตารางรายการโปรด (favorites)
--- ผู้ใช้เก็บสินค้าที่ชอบไว้ ใช้ owner-scoped RLS เท่านั้น
+
+
 
 create table if not exists public.favorites (
   id uuid primary key default gen_random_uuid(),

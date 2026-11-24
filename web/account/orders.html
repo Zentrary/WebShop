@@ -1,38 +1,45 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="th">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ZenMarket | คำสั่งซื้อ</title>
-  <link rel="stylesheet" href="/src/styles/base.css">
-  <link rel="stylesheet" href="/src/styles/spaces.css">
-  <link rel="stylesheet" href="/src/styles/responsive.css">
-  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  <script type="module" src="/src/pages/customer/checkout.js"></script>
-  <noscript><style>.reveal{opacity:1!important;transform:none!important}</style></noscript>
-</head>
-<body>
-  <main class="container page">
-    <div class="page-head reveal">
-      <span class="eyebrow" data-i18n="nav.orders">คำสั่งซื้อ</span>
-      <h1 class="page-title" data-i18n="order.title">คำสั่งซื้อ</h1>
-      <p class="page-sub" data-i18n="order.sub">ติดตามสถานะคำสั่งซื้อทั้งหมดของคุณ</p>
-    </div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ZenMarket | คำสั่งซื้อ</title>
+    <link rel="stylesheet" href="/src/styles/base.css" />
+    <link rel="stylesheet" href="/src/styles/spaces.css" />
+    <link rel="stylesheet" href="/src/styles/responsive.css" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <script type="module" src="/src/pages/customer/checkout.js"></script>
+    <noscript
+      ><style>
+        .reveal {
+          opacity: 1 !important;
+          transform: none !important;
+        }
+      </style></noscript
+    >
+  </head>
+  <body>
+    <main class="container page">
+      <div class="page-head reveal">
+        <span class="eyebrow" data-i18n="nav.orders">คำสั่งซื้อ</span>
+        <h1 class="page-title" data-i18n="order.title">คำสั่งซื้อ</h1>
+        <p class="page-sub" data-i18n="order.sub">ติดตามสถานะคำสั่งซื้อทั้งหมดของคุณ</p>
+      </div>
 
-    <div class="table-wrap reveal">
-      <table class="data">
-        <thead>
-          <tr>
-            <th data-i18n="order.no">เลขที่</th>
-            <th data-i18n="common.date">วันที่</th>
-            <th data-i18n="common.status">สถานะ</th>
-            <th class="num" data-i18n="common.total">ยอดรวม</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody id="orders-list"></tbody>
-      </table>
-    </div>
-  </main>
-</body>
+      <div class="table-wrap reveal">
+        <table class="data">
+          <thead>
+            <tr>
+              <th data-i18n="order.no">เลขที่</th>
+              <th data-i18n="common.date">วันที่</th>
+              <th data-i18n="common.status">สถานะ</th>
+              <th class="num" data-i18n="common.total">ยอดรวม</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="orders-list"></tbody>
+        </table>
+      </div>
+    </main>
+  </body>
 </html>

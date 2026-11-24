@@ -11,7 +11,6 @@ const MEMBER_SESSION = { user: MEMBER };
 
 const CART = [{ product_id: 'p1', name: 'กาแฟ', price: 120, quantity: 2 }];
 
-/* ============ 1. guest เข้า checkout → ต้องเจอ gate ไม่ใช่ฟอร์ม ============ */
 {
   const supabase = await makeSupabaseMock({ session: null, user: null });
   const { document } = await loadPage({
@@ -26,10 +25,10 @@ const CART = [{ product_id: 'p1', name: 'กาแฟ', price: 120, quantity: 2 
   A.ok('checkout: guest gate มีปุ่มเข้าสู่ระบบ', gate.innerHTML.includes('/auth/login.html'));
 }
 
-/* ============ 2. member กรอกข้อมูลถูกต้อง → create_order ถูกเรียก ============ */
 {
   const supabase = await makeSupabaseMock({
-    session: MEMBER_SESSION, user: MEMBER,
+    session: MEMBER_SESSION,
+    user: MEMBER,
     rpcResults: { create_order: { id: 'order-1' } },
     tableData: { profiles: { id: 'member-1', username: 'tester', phone: '0812345678' } },
   });
@@ -44,7 +43,7 @@ const CART = [{ product_id: 'p1', name: 'กาแฟ', price: 120, quantity: 2 
     console.log('DEBUG auth calls:', JSON.stringify(supabase.calls.auth));
     console.log('DEBUG select calls:', JSON.stringify(supabase.calls.select));
     console.log('DEBUG gate class:', document.getElementById('checkout-gate').className);
-    console.log('DEBUG gate html:', document.getElementById('checkout-gate').innerHTML.slice(0,200));
+    console.log('DEBUG gate html:', document.getElementById('checkout-gate').innerHTML.slice(0, 200));
     console.log('DEBUG content class:', document.getElementById('checkout-content').className);
     console.log('DEBUG header?', !!document.querySelector('.site-header'));
   }
@@ -63,10 +62,10 @@ const CART = [{ product_id: 'p1', name: 'กาแฟ', price: 120, quantity: 2 
   A.ok('checkout: address ไม่มีช่องว่างหัวท้าย', rpc?.params?.delivery?.address === rpc?.params?.delivery?.address.trim());
 }
 
-/* ============ 3. member กรอกเบอร์ 9 หลัก → ต้อง normalize เป็น 10 หลัก ============ */
 {
   const supabase = await makeSupabaseMock({
-    session: MEMBER_SESSION, user: MEMBER,
+    session: MEMBER_SESSION,
+    user: MEMBER,
     rpcResults: { create_order: { id: 'order-1' } },
     tableData: { profiles: { id: 'member-1', username: 'tester', phone: '0812345678' } },
   });
@@ -85,10 +84,10 @@ const CART = [{ product_id: 'p1', name: 'กาแฟ', price: 120, quantity: 2 
   A.eq('checkout: เบอร์ 9 หลัก → 10 หลัก', rpc?.params?.delivery?.phone, '0812345678');
 }
 
-/* ============ 4. member กรอกเบอร์ผิด → ต้องไม่เรียก create_order ============ */
 {
   const supabase = await makeSupabaseMock({
-    session: MEMBER_SESSION, user: MEMBER,
+    session: MEMBER_SESSION,
+    user: MEMBER,
     rpcResults: { create_order: { id: 'order-1' } },
     tableData: { profiles: { id: 'member-1', username: 'tester', phone: '0812345678' } },
   });
@@ -106,10 +105,10 @@ const CART = [{ product_id: 'p1', name: 'กาแฟ', price: 120, quantity: 2 
   A.eq('checkout: เบอร์ผิด → ไม่สร้างออเดอร์', supabase.calls.rpc.filter((r) => r.name === 'create_order').length, 0);
 }
 
-/* ============ 5. ที่อยู่สั้นเกิน 20 ตัว → ต้องไม่สร้างออเดอร์ ============ */
 {
   const supabase = await makeSupabaseMock({
-    session: MEMBER_SESSION, user: MEMBER,
+    session: MEMBER_SESSION,
+    user: MEMBER,
     rpcResults: { create_order: { id: 'order-1' } },
     tableData: { profiles: { id: 'member-1', username: 'tester', phone: '0812345678' } },
   });
@@ -127,10 +126,10 @@ const CART = [{ product_id: 'p1', name: 'กาแฟ', price: 120, quantity: 2 
   A.eq('checkout: ที่อยู่สั้น → ไม่สร้างออเดอร์', supabase.calls.rpc.filter((r) => r.name === 'create_order').length, 0);
 }
 
-/* ============ 6. browser pattern ต้องบล็อกเบอร์ที่ DB ปฏิเสธ ============ */
 {
   const supabase = await makeSupabaseMock({
-    session: MEMBER_SESSION, user: MEMBER,
+    session: MEMBER_SESSION,
+    user: MEMBER,
     rpcResults: { create_order: { id: 'order-1' } },
     tableData: { profiles: { id: 'member-1', username: 'tester', phone: '0812345678' } },
   });
@@ -155,7 +154,6 @@ const CART = [{ product_id: 'p1', name: 'กาแฟ', price: 120, quantity: 2 
   A.ok('checkout: เบอร์มีขีดไม่ผ่าน browser validation', !phone.checkValidity());
 }
 
-/* ============ 7. register: pattern ต้องตรงกับ DB ============ */
 {
   const supabase = await makeSupabaseMock({ session: null, user: null });
   const { document } = await loadPage({
@@ -171,10 +169,10 @@ const CART = [{ product_id: 'p1', name: 'กาแฟ', price: 120, quantity: 2 
   A.ok('register: เบอร์นำหน้าไม่ใช่ 0 ไม่ผ่าน', !phone.checkValidity());
 }
 
-/* ============ 8. account: profile phone pattern ============ */
 {
   const supabase = await makeSupabaseMock({
-    session: MEMBER_SESSION, user: MEMBER,
+    session: MEMBER_SESSION,
+    user: MEMBER,
     tableData: { profiles: { id: 'member-1', username: 'tester', phone: '0812345678', first_name: 'สมชาย' } },
   });
   const { document } = await loadPage({
@@ -186,6 +184,112 @@ const CART = [{ product_id: 'p1', name: 'กาแฟ', price: 120, quantity: 2 
   A.eq('account: profile phone pattern', phone.getAttribute('pattern'), '0?[0-9]{9}');
   const addrPhone = el(document, 'address-phone');
   A.eq('account: address phone pattern', addrPhone.getAttribute('pattern'), '0?[0-9]{9}');
+}
+
+{
+  const supabase = await makeSupabaseMock({ session: null, user: null });
+  const { document } = await loadPage({
+    htmlPath: '/home/user/WebShop/web/auth/register.html',
+    scripts: ['src/pages/customer/account.js'],
+    supabase,
+  });
+  const firstName = el(document, 'register-first-name');
+  const lastName = el(document, 'register-last-name');
+  const age = el(document, 'register-age');
+  const password = el(document, 'register-password');
+  A.ok('register: มีช่องชื่อจริง', !!firstName);
+  A.ok('register: มีช่องนามสกุล', !!lastName);
+  A.ok('register: มีช่องอายุ', !!age);
+  A.eq('register: ชื่อจริงบังคับ required', firstName.hasAttribute('required'), true);
+  A.eq('register: นามสกุลบังคับ required', lastName.hasAttribute('required'), true);
+  A.eq('register: อายุบังคับ required', age.hasAttribute('required'), true);
+  A.eq('register: อายุต่ำสุด 13', age.getAttribute('min'), '13');
+  A.eq('register: อายุสูงสุด 120', age.getAttribute('max'), '120');
+  A.eq('register: รหัสผ่านอย่างน้อย 8 ตัว', password.getAttribute('minlength'), '8');
+  A.ok('register: มีการ์ดกระชับ', !!document.querySelector('.auth-card-compact'));
+}
+
+{
+  const supabase = await makeSupabaseMock({ session: null, user: null });
+  const { document } = await loadPage({
+    htmlPath: '/home/user/WebShop/web/auth/register.html',
+    scripts: ['src/pages/customer/account.js'],
+    supabase,
+  });
+  const password = el(document, 'register-password');
+  const hint = el(document, 'register-password-hint');
+  A.ok('register: มีข้อความแนะนำความแข็งรหัสผ่าน', !!hint);
+  password.value = 'abc';
+  password.dispatchEvent(new document.defaultView.Event('input', { bubbles: true }));
+  A.eq('register: รหัสผ่านสั้น → ข้อความเตือน', hint.classList.contains('auth-hint-bad'), true);
+  password.value = 'abcd1234';
+  password.dispatchEvent(new document.defaultView.Event('input', { bubbles: true }));
+  A.eq('register: รหัสผ่านดี → ข้อความยืนยัน', hint.classList.contains('auth-hint-ok'), true);
+  password.value = 'abcdefgh';
+  password.dispatchEvent(new document.defaultView.Event('input', { bubbles: true }));
+  A.eq('register: รหัสผ่านไม่มีตัวเลข → ข้อความเตือน', hint.classList.contains('auth-hint-bad'), true);
+}
+
+{
+  const supabase = await makeSupabaseMock({ session: null, user: null });
+  const { document } = await loadPage({
+    htmlPath: '/home/user/WebShop/web/auth/login.html',
+    scripts: ['src/pages/customer/account.js'],
+    supabase,
+  });
+  A.ok('login: มีช่องโลโก้จริง', !!document.getElementById('auth-logo'));
+  A.ok('login: มีตัวอักษรสำรอง', !!document.getElementById('auth-mark'));
+  A.ok('login: มีการ์ดกระชับ', !!document.querySelector('.auth-card-compact'));
+}
+
+{
+  const supabase = await makeSupabaseMock({ session: null, user: null });
+  const { document } = await loadPage({
+    htmlPath: '/home/user/WebShop/web/home.html',
+    scripts: ['src/pages/storefront/home.js'],
+    supabase,
+  });
+  await wait(250);
+  const header = document.querySelector('.site-header');
+  A.ok('header: guest มีแถบหัวเว็บ', !!header);
+  const nav = document.querySelector('#header-nav');
+  const navText = nav ? nav.textContent : '';
+  A.ok('header: guest ไม่เห็นลิงก์สินค้า', !nav.querySelector('a[href="/shop/index.html"]'));
+  A.ok('header: guest ไม่เห็นลิงก์หมวดหมู่', !nav.querySelector('a[href="/shop/categories.html"]'));
+  const actions = document.querySelector('#header-actions');
+  A.ok('header: guest ไม่เห็นปุ่มตะกร้า', !actions.querySelector('a[href="/shop/cart.html"]'));
+  A.ok('header: guest เห็นปุ่มเข้าสู่ระบบ', !!actions.querySelector('a[href="/auth/login.html"]'));
+  A.ok('header: guest เห็นปุ่มสมัครสมาชิก', !!actions.querySelector('a[href="/auth/register.html"]'));
+  A.ok('header: ชื่อร้านไม่มีชื่อหน้าแนบ', !navText.includes('|'));
+  const logoText = document.querySelector('.header-logo-text');
+  A.ok('header: .header-logo-text มีแค่ชื่อร้าน', !!logoText && !logoText.textContent.includes('|'));
+  const heroCta = document.querySelector('.hero-cta a[href="/shop/index.html"]');
+  A.ok('hero: guest ซ่อนปุ่มเลือกซื้อสินค้า', !!heroCta && heroCta.classList.contains('hidden'));
+  const heroRegister = document.querySelector('.hero-cta a[href="/auth/register.html"]');
+  A.ok('hero: guest เห็นปุ่มสมัครสมาชิก', !!heroRegister && !heroRegister.classList.contains('hidden'));
+}
+
+{
+  const supabase = await makeSupabaseMock({
+    session: MEMBER_SESSION,
+    user: MEMBER,
+    tableData: { profiles: { id: 'member-1', username: 'tester' }, store_admin: [] },
+  });
+  const { document } = await loadPage({
+    htmlPath: '/home/user/WebShop/web/home.html',
+    scripts: ['src/pages/storefront/home.js'],
+    supabase,
+  });
+  await wait(300);
+  const nav = document.querySelector('#header-nav');
+  A.ok('header: member เห็นลิงก์สินค้า', !!nav.querySelector('a[href="/shop/index.html"]'));
+  A.ok('header: member เห็นลิงก์หมวดหมู่', !!nav.querySelector('a[href="/shop/categories.html"]'));
+  const actions = document.querySelector('#header-actions');
+  A.ok('header: member เห็นปุ่มตะกร้า', !!actions.querySelector('a[href="/shop/cart.html"]'));
+  const heroCta = document.querySelector('.hero-cta a[href="/shop/index.html"]');
+  A.ok('hero: member เห็นปุ่มเลือกซื้อสินค้า', !!heroCta && !heroCta.classList.contains('hidden'));
+  const heroRegister = document.querySelector('.hero-cta a[href="/auth/register.html"]');
+  A.ok('hero: member ซ่อนปุ่มสมัครสมาชิก', !!heroRegister && heroRegister.classList.contains('hidden'));
 }
 
 process.exit(A.report('customer') ? 1 : 0);

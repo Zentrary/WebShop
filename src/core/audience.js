@@ -19,9 +19,6 @@ export function setAudience(audience, user = null) {
   } catch {}
 }
 
-/**
- * อ่านบทบาทที่บันทึกไว้ (ยังไม่ยืนยันกับ Supabase Auth)
- */
 export function getAudience() {
   if (currentAudience) return currentAudience;
   try {
@@ -58,9 +55,6 @@ export function isGuest() {
   return getAudience() === AUDIENCE_GUEST;
 }
 
-/**
- * ผู้ใช้ที่ล็อกอินแล้ว (สมาชิกหรือเจ้าของร้าน)
- */
 export function isSignedIn() {
   return isMember() || isOwner();
 }
@@ -94,9 +88,6 @@ export function logout() {
   } catch {}
 }
 
-/**
- * ล้างบทบาทที่ค้างอยู่เมื่อไม่มี session จริงจาก Supabase
- */
 export function clearStaleRole() {
   if (currentAudience === AUDIENCE_GUEST && !currentUser) return;
   logout();

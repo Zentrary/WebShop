@@ -1,7 +1,4 @@
-/**
- * ZenMarket Brand assets
- * ใช้โลโก้ที่แอดมินอัปโหลดไว้ กับ favicon และ metadata สำหรับแชร์โซเชียล
- */
+import { safeImage } from '/src/core/lib.js';
 
 function upsertMeta(selector, attr, key, content) {
   if (typeof document === 'undefined' || !content) return;
@@ -26,14 +23,12 @@ function upsertLink(rel, href, type) {
   if (type) el.setAttribute('type', type);
 }
 
-/**
- * อัปเดต favicon + og/twitter metadata จากข้อมูลร้าน
- */
 export function applyBrandAssets(settings = {}) {
   if (typeof document === 'undefined') return;
 
   const shopName = settings.shop_name || 'ZenMarket';
-  const logo = settings.logo_url && !settings.logo_url.includes('placeholder') ? settings.logo_url : '';
+  const rawLogo = settings.logo_url && !settings.logo_url.includes('placeholder') ? settings.logo_url : '';
+  const logo = safeImage(rawLogo);
   const description = settings.tagline || settings.about_text || '';
 
   if (logo) {

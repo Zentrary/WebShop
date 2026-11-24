@@ -1,15 +1,15 @@
--- 006: RPC กู้คืนข้อมูลจากไฟล์สำรอง (restore_admin_backup)
--- ใช้ร่วมกับ RPC get_admin_backup (รูปแบบ zenmarket-data-v1) ที่หน้าแอดมินดาวน์โหลดและเข้ารหัสไว้
--- เฉพาะเจ้าของร้าน (is_admin) เท่านั้นที่เรียกได้
---
--- หมายเหตุ (แก้บั๊กจริงที่พบตอนทดสอบ round-trip):
---   1. products.image_urls / order_shipping_updates.image_paths เป็น text[]
---      → ต้องแปลงจาก jsonb ด้วย array(select jsonb_array_elements_text(...)) ไม่ใช่ coalesce(...,'[]'::jsonb)
---   2. orders.request_id เป็น uuid → ต้อง cast ชัดเจน
---   3. orders.payment_due_at เป็น NOT NULL → ต้องมี fallback
---   4. products.sku / profiles.username เป็น UNIQUE → ต้องปลดล็อกค่าของแถวอื่นที่ชนกันก่อน
---   5. product_reviews(order_id, product_id) และ orders(user_id, request_id) เป็น UNIQUE
---      → ลบแถวที่ชนกันแต่ id ต่างกันก่อน insert
+
+
+
+
+
+
+
+
+
+
+
+
 
 create or replace function public.restore_admin_backup(p_backup jsonb)
 returns jsonb
@@ -39,7 +39,7 @@ begin
     raise exception 'รูปแบบไฟล์สำรองไม่ถูกต้อง';
   end if;
 
-  -- หมวดหมู่
+  
   for row in select * from jsonb_array_elements(coalesce(p_backup->'tables'->'categories','[]'::jsonb)) loop
     insert into public.categories(name, created_at)
     values (row->>'name', coalesce((row->>'created_at')::timestamptz, now()))
@@ -47,7 +47,7 @@ begin
   end loop;
   select count(*) into n_categories from jsonb_array_elements(coalesce(p_backup->'tables'->'categories','[]'::jsonb));
 
-  -- ปลดล็อก SKU ของสินค้าอื่นที่ชนกับ SKU ในไฟล์สำรอง (products.sku UNIQUE)
+  
   update public.products p
      set sku = null
    where exists (
@@ -59,7 +59,7 @@ begin
         and p.id::text <> b->>'id'
    );
 
-  -- ปลดล็อก username ของโปรไฟล์อื่นที่ชนกับไฟล์สำรอง (profiles.username UNIQUE)
+  
   update public.profiles p
      set username = null
    where exists (
@@ -71,7 +71,7 @@ begin
         and p.id::text <> b->>'id'
    );
 
-  -- ลบรีวิวที่ (order_id, product_id) ซ้ำกับไฟล์สำรองแต่ id ต่างกัน
+  
   delete from public.product_reviews r
    where exists (
      select 1
@@ -81,7 +81,7 @@ begin
         and (b->>'id')::uuid <> r.id
    );
 
-  -- ลบคำสั่งซื้อที่ (user_id, request_id) ซ้ำกับไฟล์สำรองแต่ id ต่างกัน
+  
   delete from public.orders o
    where exists (
      select 1
@@ -91,7 +91,7 @@ begin
         and (b->>'id')::uuid <> o.id
    );
 
-  -- สินค้า
+  
   for row in select * from jsonb_array_elements(coalesce(p_backup->'tables'->'products','[]'::jsonb)) loop
     insert into public.products(id, name, sku, category, description, price, image_url, stock, active, created_at, image_urls)
     values (
@@ -124,7 +124,7 @@ begin
   end loop;
   select count(*) into n_products from jsonb_array_elements(coalesce(p_backup->'tables'->'products','[]'::jsonb));
 
-  -- ข้อมูลร้าน (singleton)
+  
   for row in select * from jsonb_array_elements(coalesce(p_backup->'tables'->'store_settings','[]'::jsonb)) loop
     update public.store_settings set
       promptpay_id = row->>'promptpay_id',
@@ -146,7 +146,7 @@ begin
   end loop;
   select count(*) into n_settings from jsonb_array_elements(coalesce(p_backup->'tables'->'store_settings','[]'::jsonb));
 
-  -- โปรไฟล์
+  
   for row in select * from jsonb_array_elements(coalesce(p_backup->'tables'->'profiles','[]'::jsonb)) loop
     insert into public.profiles(id, first_name, last_name, nickname, phone, age, username, created_at)
     values (
@@ -169,7 +169,7 @@ begin
   end loop;
   select count(*) into n_profiles from jsonb_array_elements(coalesce(p_backup->'tables'->'profiles','[]'::jsonb));
 
-  -- ที่อยู่ลูกค้า
+  
   for row in select * from jsonb_array_elements(coalesce(p_backup->'tables'->'customer_addresses','[]'::jsonb)) loop
     insert into public.customer_addresses(id, user_id, label, recipient, phone, address, is_default, created_at)
     values (
@@ -191,7 +191,7 @@ begin
   end loop;
   select count(*) into n_addresses from jsonb_array_elements(coalesce(p_backup->'tables'->'customer_addresses','[]'::jsonb));
 
-  -- คำสั่งซื้อ
+  
   for row in select * from jsonb_array_elements(coalesce(p_backup->'tables'->'orders','[]'::jsonb)) loop
     insert into public.orders(
       id, user_id, items, subtotal, shipping, total, address, recipient, phone,
@@ -234,7 +234,7 @@ begin
   end loop;
   select count(*) into n_orders from jsonb_array_elements(coalesce(p_backup->'tables'->'orders','[]'::jsonb));
 
-  -- รีวิว
+  
   for row in select * from jsonb_array_elements(coalesce(p_backup->'tables'->'product_reviews','[]'::jsonb)) loop
     insert into public.product_reviews(id, order_id, product_id, reviewer_name, product_name, rating, comment, created_at, updated_at)
     values (
@@ -257,7 +257,7 @@ begin
   end loop;
   select count(*) into n_reviews from jsonb_array_elements(coalesce(p_backup->'tables'->'product_reviews','[]'::jsonb));
 
-  -- อัปเดตการจัดส่ง
+  
   for row in select * from jsonb_array_elements(coalesce(p_backup->'tables'->'order_shipping_updates','[]'::jsonb)) loop
     insert into public.order_shipping_updates(id, order_id, message, image_paths, created_at)
     values (

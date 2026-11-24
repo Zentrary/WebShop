@@ -1,18 +1,3 @@
-/**
- * ZenMarket Validation
- * ตรวจข้อมูลฝั่ง client ให้ตรงกับ CHECK constraint จริงของฐานข้อมูล
- * เพื่อไม่ให้ผู้ใช้เจอข้อความ error ดิบ ๆ จาก PostgreSQL
- *
- * ข้อมูลอ้างอิง (information_schema + pg_constraint):
- *   orders.phone              ~ '^0[0-9]{9}$'   (10 หลัก นำหน้าด้วย 0)
- *   orders.recipient          length 2..150
- *   orders.address            length 20..1200
- *   customer_addresses.phone  ~ '^0[0-9]{9}$'
- *   customer_addresses.label  length(btrim) 1..40
- *   customer_addresses.recipient length(btrim) 2..150
- *   customer_addresses.address length(btrim) 20..1200
- */
-
 export const PHONE_PATTERN = /^0[0-9]{9}$/;
 
 export const LIMITS = {
@@ -22,10 +7,6 @@ export const LIMITS = {
   phone: { min: 10, max: 10 },
 };
 
-/**
- * ปรับเบอร์โทรศัพท์ไทยให้เป็น 10 หลักนำหน้าด้วย 0
- * @returns {string|null} เบอร์ที่ถูกต้อง หรือ null ถ้าแปลงไม่ได้
- */
 export function normalizeThaiPhone(value) {
   const digits = String(value || '').replace(/\D/g, '');
   if (digits.length === 10 && digits.startsWith('0')) return digits;
@@ -37,16 +18,19 @@ export const USERNAME_PATTERN = /^[a-z0-9_]{3,30}$/;
 
 export const AGE_RANGE = { min: 13, max: 120 };
 
-/**
- * ตรวจข้อมูลสินค้า
- *   products.name        length 1..150
- *   products.sku         length 1..50 (ถ้าไม่กรอกจะเป็น NULL ได้) + UNIQUE
- *   products.price       > 0 และ <= 1,000,000
- *   products.stock       0..100,000
- *   products.description length <= 2,000
- *   products.image_url   length <= 1,000
- *   products.image_urls  cardinality <= 8
- */
+export const PASSWORD_RULES = { minLength: 8 };
+
+export function passwordStrength(password) {
+  const value = String(password || '');
+  if (value.length < PASSWORD_RULES.minLength) {
+    return { ok: false, errorKey: 'auth.password_too_short' };
+  }
+  if (!/[A-Za-z]/.test(value) || !/[0-9]/.test(value)) {
+    return { ok: false, errorKey: 'auth.password_weak' };
+  }
+  return { ok: true };
+}
+
 export function validateProduct(product = {}) {
   const name = String(product.name || '').trim();
   if (name.length < 1 || name.length > 150) {
@@ -97,10 +81,6 @@ export function validateProduct(product = {}) {
   };
 }
 
-/**
- * ตรวจหมวดหมู่
- *   categories.name length 1..80, ห้ามมีช่องว่างนำหน้า/ท้าย และห้ามเป็นคำว่า 'ทั้งหมด'
- */
 export function validateCategory(name) {
   const clean = String(name || '').trim();
   if (clean.length < 1 || clean.length > 80) {
@@ -112,10 +92,6 @@ export function validateCategory(name) {
   return { ok: true, value: clean };
 }
 
-/**
- * ตรวจค่าพร้อมเพย์
- * store_settings.promptpay_id ~ ^(0[0-9]{9}|[0-9]{13})$
- */
 export function validatePromptPay(value) {
   const id = String(value || '').trim();
   if (!/^(0[0-9]{9}|[0-9]{13})$/.test(id)) {
@@ -124,20 +100,7 @@ export function validatePromptPay(value) {
   return { ok: true, value: id };
 }
 
-/**
- * ตรวจข้อมูลร้าน (store_settings)
- *   shop_name             length(btrim) 1..80
- *   tagline              length <= 200
- *   about_text           length <= 3000
- *   shipping_note        length <= 500
- *   contact_email        length <= 254
- *   contact_phone        length <= 30
- *   contact_address      length <= 1000
- *   shipping_fee         0..10000
- *   free_shipping_threshold 1..1000000
- */
 export function validateStoreSettings(settings = {}) {
-  // helper ภายใน: ค่าว่าง / NaN => null (ไม่ผ่านการตรวจ)
   const toNumber = (value) => {
     if (value === null || value === undefined) return null;
     if (typeof value === 'string' && value.trim() === '') return null;
@@ -170,7 +133,6 @@ export function validateStoreSettings(settings = {}) {
     return { ok: false, errorKey: 'validation.logo_url_invalid' };
   }
 
-  // เตรียมค่าตัวเลข: ค่าว่างหรือค่าที่ไม่ใช่ตัวเลขต้องถือว่าไม่ถูกต้อง (ไม่ใช่ 0)
   const shippingFee = toNumber(settings.shipping_fee);
   if (shippingFee === null || shippingFee < 0 || shippingFee > 10000) {
     return { ok: false, errorKey: 'validation.shipping_fee_invalid' };
@@ -198,16 +160,11 @@ export function validateStoreSettings(settings = {}) {
   };
 }
 
-/**
- * ตรวจข้อมูลโปรไฟล์
- * profiles.first_name/last_name/nickname: length >= 1 (ถ้าไม่กรอกต้องเป็น NULL)
- * profiles.username: ^[a-z0-9_]{3,30}$
- * profiles.phone: ^0[0-9]{9}$
- * profiles.age: 13..120
- * @returns {{ok: true, value: object} | {ok: false, errorKey: string}}
- */
-export function validateProfile({ first_name, last_name, nickname, phone, age, username }) {
-  const cleanUsername = String(username || '').trim().toLowerCase();
+export function validateProfile({ first_name, last_name, nickname, phone, age, username }, options = {}) {
+  const requireNames = options.requireNames === true;
+  const cleanUsername = String(username || '')
+    .trim()
+    .toLowerCase();
   if (!USERNAME_PATTERN.test(cleanUsername)) {
     return { ok: false, errorKey: 'validation.username_invalid' };
   }
@@ -215,6 +172,10 @@ export function validateProfile({ first_name, last_name, nickname, phone, age, u
   const cleanFirst = String(first_name || '').trim();
   const cleanLast = String(last_name || '').trim();
   const cleanNick = String(nickname || '').trim();
+
+  if (requireNames && (!cleanFirst || !cleanLast)) {
+    return { ok: false, errorKey: 'validation.name_required' };
+  }
 
   if (cleanFirst && cleanFirst.length > 80) return { ok: false, errorKey: 'validation.name_too_long' };
   if (cleanLast && cleanLast.length > 80) return { ok: false, errorKey: 'validation.name_too_long' };
@@ -250,10 +211,6 @@ export function validateProfile({ first_name, last_name, nickname, phone, age, u
   };
 }
 
-/**
- * ตรวจข้อมูลการจัดส่ง (ชื่อผู้รับ / เบอร์ / ที่อยู่)
- * @returns {{ok: true, value: object} | {ok: false, errorKey: string}}
- */
 export function validateDelivery({ recipient, phone, address }) {
   const cleanRecipient = String(recipient || '').trim();
   const cleanAddress = String(address || '').trim();
@@ -274,10 +231,6 @@ export function validateDelivery({ recipient, phone, address }) {
   };
 }
 
-/**
- * ตรวจข้อมูลที่อยู่ในสมุดที่อยู่
- * @returns {{ok: true, value: object} | {ok: false, errorKey: string}}
- */
 export function validateAddress({ label, recipient, phone, address }) {
   const cleanLabel = String(label || '').trim();
   const cleanRecipient = String(recipient || '').trim();

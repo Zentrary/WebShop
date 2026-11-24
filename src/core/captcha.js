@@ -1,8 +1,3 @@
-/**
- * ZenMarket Captcha — Cloudflare Turnstile
- * รองรับการเรนเดอร์ก่อนสคริปต์โหลดเสร็จ (รอ event 'turnstile-ready')
- */
-
 let turnstileLoaded = false;
 let turnstileSiteKey = null;
 const pending = [];
@@ -48,9 +43,15 @@ export function renderTurnstile(containerId, onVerify, onExpire) {
       window.turnstile.render(el, {
         sitekey: turnstileSiteKey,
         theme: 'dark',
-        callback: (token) => { if (onVerify) onVerify(token); },
-        'expired-callback': () => { if (onExpire) onExpire(); },
-        'error-callback': () => { if (onExpire) onExpire(); },
+        callback: (token) => {
+          if (onVerify) onVerify(token);
+        },
+        'expired-callback': () => {
+          if (onExpire) onExpire();
+        },
+        'error-callback': () => {
+          if (onExpire) onExpire();
+        },
       });
     } catch (err) {
       console.warn('[ZenMarket] turnstile render failed', err);

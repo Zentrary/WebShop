@@ -1,33 +1,44 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="th">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ZenMarket | หมวดหมู่</title>
-  <link rel="stylesheet" href="/src/styles/base.css">
-  <link rel="stylesheet" href="/src/styles/spaces.css">
-  <link rel="stylesheet" href="/src/styles/responsive.css">
-  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  <script type="module" src="/src/pages/storefront/store.js"></script>
-  <noscript><style>.reveal{opacity:1!important;transform:none!important}</style></noscript>
-</head>
-<body>
-  <main class="container page">
-    <div class="page-head reveal">
-      <span class="eyebrow" data-i18n="shop.categories_eyebrow">หมวดหมู่</span>
-      <h1 class="page-title" data-i18n="shop.categories_title">หมวดหมู่สินค้า</h1>
-      <p class="page-sub" data-i18n="shop.categories_sub">เลือกหมวดหมู่ที่สนใจเพื่อดูสินค้า</p>
-    </div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ZenMarket | หมวดหมู่</title>
+    <link rel="stylesheet" href="/src/styles/base.css" />
+    <link rel="stylesheet" href="/src/styles/spaces.css" />
+    <link rel="stylesheet" href="/src/styles/responsive.css" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <script type="module" src="/src/pages/storefront/store.js"></script>
+    <noscript
+      ><style>
+        .reveal {
+          opacity: 1 !important;
+          transform: none !important;
+        }
+      </style></noscript
+    >
+  </head>
+  <body>
+    <main class="container page">
+      <div id="shop-gate" class="hidden"></div>
 
-    <div id="categories-grid" class="cat-grid"></div>
+      <div id="shop-content">
+        <div class="page-head reveal">
+          <span class="eyebrow" data-i18n="shop.categories_eyebrow">หมวดหมู่</span>
+          <h1 class="page-title" data-i18n="shop.categories_title">หมวดหมู่สินค้า</h1>
+          <p class="page-sub" data-i18n="shop.categories_sub">เลือกหมวดหมู่ที่สนใจเพื่อดูสินค้า</p>
+        </div>
 
-    <hr class="divider">
+        <div id="categories-grid" class="cat-grid"></div>
 
-    <div class="reveal">
-      <span class="eyebrow" data-i18n="shop.featured_eyebrow">แนะนำ</span>
-      <h2 style="margin-bottom:var(--space-xl)" data-i18n="shop.featured_title">สินค้าแนะนำ</h2>
-    </div>
-    <div id="featured-grid" class="product-grid"></div>
-  </main>
-</body>
+        <hr class="divider" />
+
+        <div class="reveal">
+          <span class="eyebrow" data-i18n="shop.featured_eyebrow">แนะนำ</span>
+          <h2 style="margin-bottom: var(--space-xl)" data-i18n="shop.featured_title">สินค้าแนะนำ</h2>
+        </div>
+        <div id="featured-grid" class="product-grid"></div>
+      </div>
+    </main>
+  </body>
 </html>

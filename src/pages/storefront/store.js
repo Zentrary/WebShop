@@ -1,9 +1,13 @@
-/**
- * ZenMarket Store — หน้าร้าน / หมวดหมู่ / รายละเอียดสินค้า
- * ใช้ schema จริง: products(stock, active, category, image_url/image_urls)
- */
-
-import { initApp, state, addToCart, updateCartBadge, requireSupabase } from '/src/app.js';
+import {
+  initApp,
+  state,
+  addToCart,
+  updateCartBadge,
+  requireSupabase,
+  renderGuestGate,
+  applyMemberGating,
+} from '/src/app.js';
+import { isSignedIn } from '/src/core/audience.js';
 import { translatePage } from '/src/core/i18n.js';
 import { notify } from '/src/core/ui.js';
 import { formatTHB, safeImage, escapeHTML, bindOnce } from '/src/core/lib.js';
@@ -25,9 +29,21 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if (!requireSupabase()) return;
 
-  await loadFavorites();
-
   const path = window.location.pathname;
+
+  if (!isSignedIn()) {
+    sessionStorage.setItem('zenmarket_return_path', path + window.location.search);
+    const gate = document.getElementById('shop-gate');
+    const content = document.getElementById('shop-content');
+    if (content) content.classList.add('hidden');
+    if (gate) {
+      renderGuestGate('shop-gate');
+      applyMemberGating(gate);
+    }
+    return;
+  }
+
+  await loadFavorites();
 
   if (path.includes('/shop/index.html') || path === '/shop') {
     currentRenderer = initStorePage;
@@ -39,7 +55,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if (currentRenderer) await currentRenderer();
 
-  // เปลี่ยนภาษาแล้ววาดหน้าใหม่ทั้งหมด
   onLanguageChange(() => {
     translatePage();
     if (currentRenderer) currentRenderer();
@@ -53,7 +68,8 @@ function productImages(product) {
   return [...new Set(urls)];
 }
 
-const HEART_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1L12 21.2l7.7-7.8 1.1-1a5.5 5.5 0 0 0 0-7.8Z"/></svg>';
+const HEART_SVG =
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1L12 21.2l7.7-7.8 1.1-1a5.5 5.5 0 0 0 0-7.8Z"/></svg>';
 
 function createProductCard(product) {
   const card = document.createElement('article');
@@ -98,14 +114,13 @@ function createProductCard(product) {
   return card;
 }
 
-/**
- * กดหัวใจ: ต้องเข้าสู่ระบบก่อน (guest จะถูกพาไปหน้า login)
- */
 async function handleFavoriteClick(button, productId) {
   if (!canUseFavorites()) {
     notify(t('toast.login_required'), 'warning');
     sessionStorage.setItem('zenmarket_return_path', window.location.pathname + window.location.search);
-    setTimeout(() => { window.location.href = '/auth/login.html'; }, 900);
+    setTimeout(() => {
+      window.location.href = '/auth/login.html';
+    }, 900);
     return;
   }
   const result = await toggleFavorite(productId);
@@ -120,12 +135,13 @@ function observeRevealsLocal(container) {
 }
 
 function showSkeletons(grid, n = 8) {
-  grid.innerHTML = Array.from({ length: n }, () =>
-    '<div class="card"><div class="skeleton" style="aspect-ratio:4/5"></div><div style="padding:1rem"><div class="skeleton" style="height:14px;width:60%;margin-bottom:8px"></div><div class="skeleton" style="height:18px;width:40%"></div></div></div>'
+  grid.innerHTML = Array.from(
+    { length: n },
+    () =>
+      '<div class="card"><div class="skeleton" style="aspect-ratio:4/5"></div><div style="padding:1rem"><div class="skeleton" style="height:14px;width:60%;margin-bottom:8px"></div><div class="skeleton" style="height:18px;width:40%"></div></div></div>',
   ).join('');
 }
 
-/* ================= หน้าร้าน ================= */
 async function initStorePage() {
   const grid = document.getElementById('product-grid');
   const countEl = document.getElementById('product-count');
@@ -135,14 +151,10 @@ async function initStorePage() {
 
   showSkeletons(grid);
 
-  // โหลดหมวดหมู่จากตาราง categories
   try {
-    const { data: categories } = await state.supabase
-      .from('categories')
-      .select('name')
-      .order('name');
+    const { data: categories } = await state.supabase.from('categories').select('name').order('name');
     categorySelect.innerHTML = `<option value="">${t('shop.filter_all')}</option>`;
-    categories?.forEach(cat => {
+    categories?.forEach((cat) => {
       const opt = document.createElement('option');
       opt.value = cat.name;
       opt.textContent = cat.name;
@@ -150,7 +162,6 @@ async function initStorePage() {
     });
   } catch {}
 
-  // รองรับ ?category= จากหน้าหมวดหมู่
   const params = new URLSearchParams(window.location.search);
   const presetCat = params.get('category');
   if (presetCat) categorySelect.value = presetCat;
@@ -173,10 +184,7 @@ async function initStorePage() {
 }
 
 async function loadProducts(grid, countEl, search = '', category = null) {
-  let query = state.supabase
-    .from('products')
-    .select('*', { count: 'exact' })
-    .eq('active', true);
+  let query = state.supabase.from('products').select('*', { count: 'exact' }).eq('active', true);
 
   if (category) query = query.eq('category', category);
   if (search) query = query.ilike('name', `%${search}%`);
@@ -206,7 +214,7 @@ async function loadProducts(grid, countEl, search = '', category = null) {
     return;
   }
 
-  products.forEach(product => grid.appendChild(createProductCard(product)));
+  products.forEach((product) => grid.appendChild(createProductCard(product)));
   observeRevealsLocal(grid);
   renderPagination(document.getElementById('pagination'), count || 0);
 }
@@ -224,24 +232,25 @@ function renderPagination(el, total) {
       currentPage = i;
       const grid = document.getElementById('product-grid');
       const countEl = document.getElementById('product-count');
-      loadProducts(grid, countEl, document.getElementById('product-search').value, document.getElementById('category-filter').value || null);
+      loadProducts(
+        grid,
+        countEl,
+        document.getElementById('product-search').value,
+        document.getElementById('category-filter').value || null,
+      );
       window.scrollTo({ top: 0, behavior: 'smooth' });
     });
     el.appendChild(btn);
   }
 }
 
-/* ================= หมวดหมู่ ================= */
 async function initCategoriesPage() {
   const grid = document.getElementById('categories-grid');
   const featuredGrid = document.getElementById('featured-grid');
   if (!grid) return;
 
   try {
-    const { data: categories } = await state.supabase
-      .from('categories')
-      .select('*')
-      .order('name');
+    const { data: categories } = await state.supabase.from('categories').select('*').order('name');
 
     grid.innerHTML = '';
     categories?.forEach((cat, idx) => {
@@ -268,14 +277,13 @@ async function initCategoriesPage() {
       .limit(8);
 
     featuredGrid.innerHTML = '';
-    featured?.forEach(product => featuredGrid.appendChild(createProductCard(product)));
+    featured?.forEach((product) => featuredGrid.appendChild(createProductCard(product)));
     observeRevealsLocal(featuredGrid);
   } catch (err) {
     notify('ไม่สามารถโหลดหมวดหมู่ได้', 'error');
   }
 }
 
-/* ================= รายละเอียดสินค้า ================= */
 async function initProductPage() {
   const urlParams = new URLSearchParams(window.location.search);
   const productId = urlParams.get('id');
@@ -286,11 +294,7 @@ async function initProductPage() {
   }
 
   try {
-    const { data: product, error } = await state.supabase
-      .from('products')
-      .select('*')
-      .eq('id', productId)
-      .single();
+    const { data: product, error } = await state.supabase.from('products').select('*').eq('id', productId).single();
 
     if (error || !product) {
       notify('ไม่พบสินค้าที่ระบุ', 'error');
@@ -321,7 +325,7 @@ async function initProductPage() {
         if (idx === 0) thumb.classList.add('active');
         thumb.addEventListener('click', () => {
           mainImg.src = safeImage(img);
-          thumbs.querySelectorAll('img').forEach(t => t.classList.remove('active'));
+          thumbs.querySelectorAll('img').forEach((t) => t.classList.remove('active'));
           thumb.classList.add('active');
         });
         thumbs.appendChild(thumb);
@@ -343,7 +347,6 @@ async function initProductPage() {
       notify(t('product.added_to_cart', { name: product.name }), 'success');
     });
 
-    // ปุ่มหัวใจ (รายการโปรด)
     const favBtn = document.getElementById('product-favorite-btn');
     const favLabel = document.getElementById('product-favorite-label');
     const paintFavorite = (active) => {
@@ -358,7 +361,9 @@ async function initProductPage() {
         if (!canUseFavorites()) {
           notify(t('toast.login_required'), 'warning');
           sessionStorage.setItem('zenmarket_return_path', window.location.pathname + window.location.search);
-          setTimeout(() => { window.location.href = '/auth/login.html'; }, 900);
+          setTimeout(() => {
+            window.location.href = '/auth/login.html';
+          }, 900);
           return;
         }
         const result = await toggleFavorite(product.id);
@@ -373,7 +378,6 @@ async function initProductPage() {
       window.location.href = '/shop/checkout.html';
     });
 
-    // รีวิวจาก product_reviews
     const { data: reviews } = await state.supabase
       .from('product_reviews')
       .select('*')
@@ -385,7 +389,7 @@ async function initProductPage() {
     if (!reviews || reviews.length === 0) {
       reviewsList.innerHTML = `<p class="text-muted text-sm">${t('product.no_reviews')}</p>`;
     } else {
-      reviews.forEach(review => {
+      reviews.forEach((review) => {
         const el = document.createElement('div');
         el.className = 'review-card';
         el.innerHTML = `
@@ -397,7 +401,6 @@ async function initProductPage() {
       });
     }
 
-    // สินค้าที่เกี่ยวข้อง (หมวดเดียวกัน)
     const { data: related } = await state.supabase
       .from('products')
       .select('*')
@@ -408,7 +411,7 @@ async function initProductPage() {
 
     const relatedGrid = document.getElementById('related-grid');
     relatedGrid.innerHTML = '';
-    related?.forEach(p => relatedGrid.appendChild(createProductCard(p)));
+    related?.forEach((p) => relatedGrid.appendChild(createProductCard(p)));
     observeRevealsLocal(relatedGrid);
   } catch (err) {
     console.error(err);

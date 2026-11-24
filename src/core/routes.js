@@ -1,8 +1,3 @@
-/**
- * ZenMarket Routes
- * แผนที่ URL → ไฟล์ และชื่อหน้าสำหรับแสดงบนแท็บหัวเว็บ
- */
-
 export const ROUTE_MAP = {
   '/': '/home.html',
   '/home.html': '/home.html',
@@ -65,9 +60,6 @@ export const ROUTE_MAP = {
   '/admin/operations.html': '/admin/operations.html',
 };
 
-/**
- * ชื่อหน้า (i18n key) สำหรับแท็บหัวเว็บ "ZenMarket | <ชื่อหน้า>"
- */
 export const PAGE_TITLE_KEYS = [
   ['/admin/dashboard', 'admin.page_dashboard'],
   ['/admin/orders', 'admin.page_orders'],
@@ -108,9 +100,6 @@ export const MEMBERSHIP_ROUTES = [
   '/account/favorites.html',
 ];
 
-/**
- * ชื่อหน้าแบบตรงกันเป๊ะ (ไม่มี .html)
- */
 export const EXACT_TITLE_KEYS = {
   '/': 'nav.home',
   '/home': 'nav.home',
@@ -179,17 +168,12 @@ export function needsAdmin(path) {
   return ADMIN_ROUTES.includes(path);
 }
 
-/**
- * หา i18n key ของชื่อหน้าจาก path ปัจจุบัน
- */
 export function getPageTitleKey(pathname = window.location.pathname) {
   const raw = pathname || '/';
   const path = raw.replace(/\.html$/, '').replace(/\/$/, '') || '/';
 
-  // 1) ตรงกันทุกประการ (เช่น /shop, /account)
   if (EXACT_TITLE_KEYS[path]) return EXACT_TITLE_KEYS[path];
 
-  // 2) ตรงกันแบบขึ้นต้น (เช่น /shop/product.html)
   for (const [prefix, key] of PAGE_TITLE_KEYS) {
     if (path === prefix || path.startsWith(prefix + '/')) return key;
   }
@@ -197,9 +181,6 @@ export function getPageTitleKey(pathname = window.location.pathname) {
   return 'nav.home';
 }
 
-/**
- * หน้าที่ต้องเข้าสู่ระบบก่อน (member-only)
- */
 export function isMemberOnlyPage(pathname = window.location.pathname) {
   return needsMembership(pathname.replace(/\/$/, '') || '/');
 }

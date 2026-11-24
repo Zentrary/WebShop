@@ -1,12 +1,24 @@
-/**
- * ZenMarket Experience — สถานะคำสั่งซื้อตาม DB จริง
- * สถานะใน DB: pending → review → paid → shipped → delivered (+ cancelled)
- */
-
 const ALLOWED_ICONS = [
-  'Home', 'Category', 'Tag', 'Shop', 'Cart', 'CreditCard', 'User', 'Shield',
-  'CheckCircle', 'AlertCircle', 'Mail', 'Phone', 'Link', 'ExternalLink',
-  'Instagram', 'Facebook', 'Tiktok', 'Twitter', 'Youtube', 'Line',
+  'Home',
+  'Category',
+  'Tag',
+  'Shop',
+  'Cart',
+  'CreditCard',
+  'User',
+  'Shield',
+  'CheckCircle',
+  'AlertCircle',
+  'Mail',
+  'Phone',
+  'Link',
+  'ExternalLink',
+  'Instagram',
+  'Facebook',
+  'Tiktok',
+  'Twitter',
+  'Youtube',
+  'Line',
 ];
 
 export const CATEGORY_ICONS = ALLOWED_ICONS;
@@ -21,15 +33,6 @@ export function normalizeProductImages(images, max = 8) {
   return arr.filter(Boolean).slice(0, max);
 }
 
-/**
- * ตรวจ URL โซเชียลให้ตรงกับ CHECK constraint ของ store_settings
- *   facebook_url  ~ ^https://(www\.)?(facebook\.com|fb\.com)/...
- *   instagram_url ~ ^https://(www\.)?instagram\.com/...
- *   line_url     ~ ^https://(line\.me|lin\.ee)/...
- * @param {string} url
- * @param {'facebook'|'instagram'|'line'} [platform]
- * @returns {string} URL ที่ถูกต้อง หรือ '' ถ้าไม่ผ่าน
- */
 export function validateSocialUrl(url, platform) {
   if (!url) return '';
   let u;
@@ -46,7 +49,8 @@ export function validateSocialUrl(url, platform) {
   if (path === '') return '';
 
   const rules = {
-    facebook: (h, p) => (h === 'facebook.com' || h === 'www.facebook.com' || h === 'fb.com' || h === 'www.fb.com') && p.length > 1,
+    facebook: (h, p) =>
+      (h === 'facebook.com' || h === 'www.facebook.com' || h === 'fb.com' || h === 'www.fb.com') && p.length > 1,
     instagram: (h, p) => (h === 'instagram.com' || h === 'www.instagram.com') && p.length > 1,
     line: (h, p) => (h === 'line.me' || h === 'lin.ee') && p.length > 1,
   };
@@ -81,7 +85,7 @@ export const ORDER_TIMELINE_STEPS = [
 ];
 
 export function getTimelineProgress(currentStatus) {
-  const stepKeys = ORDER_TIMELINE_STEPS.map(s => s.key);
+  const stepKeys = ORDER_TIMELINE_STEPS.map((s) => s.key);
   const currentIndex = stepKeys.indexOf(currentStatus);
   return ORDER_TIMELINE_STEPS.map((step, index) => ({
     ...step,
