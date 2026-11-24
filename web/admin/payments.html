@@ -26,7 +26,7 @@
           <h2 data-i18n="admin.payments_account">บัญชีรับเงิน</h2>
           <div class="form-group">
             <label class="form-label" for="payment-promptpay-id" data-i18n="admin.payments_promptpay_id">PromptPay ID</label>
-            <input type="tel" id="payment-promptpay-id" class="form-input" pattern="[0-9]{10}" placeholder="0812345678">
+            <input type="tel" id="payment-promptpay-id" class="form-input" pattern="(0[0-9]{9}|[0-9]{13})" maxlength="13" inputmode="numeric" title="เบอร์มือถือ 10 หลัก หรือเลขพร้อมเพย์ 13 หลัก" placeholder="0812345678">
             <div class="form-hint" data-i18n="admin.payments_hint">เบอร์มือถือ 10 หลัก หรือเลขบัตรประชาชน 13 หลัก</div>
           </div>
           <div class="form-group">

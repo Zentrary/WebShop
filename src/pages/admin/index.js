@@ -13,7 +13,7 @@ import { initI18n, t, translatePage, onLanguageChange } from '/src/core/i18n.js'
 import { uploadStoreLogo, removeStoreLogo, uploadShippingImage, uploadProductImage, publicAssetUrl, BUCKETS, LOGO_ACCEPT } from '/src/core/storage.js';
 import { reportClientError } from '/src/core/errors.js';
 import { mergeStoreSettings } from '/src/core/settings.js';
-import { validateStoreSettings, validateProduct, validateCategory } from '/src/core/validation.js';
+import { validateStoreSettings, validateProduct, validateCategory, validatePromptPay } from '/src/core/validation.js';
 
 let supabase;
 
@@ -495,8 +495,9 @@ async function initSettings() {
         line_url: validateSocialUrl(get('setting-contact-line'), 'line'),
         facebook_url: validateSocialUrl(get('setting-contact-facebook'), 'facebook'),
         instagram_url: validateSocialUrl(get('setting-contact-instagram'), 'instagram'),
-        shipping_fee: parseFloat(get('setting-shipping-fee')) || 50,
-        free_shipping_threshold: parseFloat(get('setting-free-shipping-threshold')) || 300,
+        // ส่งค่าดิบให้ validator ตรวจ (ค่า 0 ที่ถูกต้องต้องไม่ถูกแทนด้วยค่าเริ่มต้น)
+        shipping_fee: get('setting-shipping-fee').trim(),
+        free_shipping_threshold: get('setting-free-shipping-threshold').trim(),
         about_text: get('setting-about'),
         shipping_note: get('setting-shipping-note'),
       };

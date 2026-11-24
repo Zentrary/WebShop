@@ -137,6 +137,14 @@ export function validatePromptPay(value) {
  *   free_shipping_threshold 1..1000000
  */
 export function validateStoreSettings(settings = {}) {
+  // helper ภายใน: ค่าว่าง / NaN => null (ไม่ผ่านการตรวจ)
+  const toNumber = (value) => {
+    if (value === null || value === undefined) return null;
+    if (typeof value === 'string' && value.trim() === '') return null;
+    const n = Number(value);
+    return Number.isFinite(n) ? n : null;
+  };
+
   const shopName = String(settings.shop_name || '').trim();
   if (shopName.length < 1 || shopName.length > 80) {
     return { ok: false, errorKey: 'validation.shop_name_length' };
@@ -162,13 +170,14 @@ export function validateStoreSettings(settings = {}) {
     return { ok: false, errorKey: 'validation.logo_url_invalid' };
   }
 
-  const shippingFee = Number(settings.shipping_fee ?? 0);
-  if (!Number.isFinite(shippingFee) || shippingFee < 0 || shippingFee > 10000) {
+  // เตรียมค่าตัวเลข: ค่าว่างหรือค่าที่ไม่ใช่ตัวเลขต้องถือว่าไม่ถูกต้อง (ไม่ใช่ 0)
+  const shippingFee = toNumber(settings.shipping_fee);
+  if (shippingFee === null || shippingFee < 0 || shippingFee > 10000) {
     return { ok: false, errorKey: 'validation.shipping_fee_invalid' };
   }
 
-  const threshold = Number(settings.free_shipping_threshold ?? 0);
-  if (!Number.isFinite(threshold) || threshold < 1 || threshold > 1000000) {
+  const threshold = toNumber(settings.free_shipping_threshold);
+  if (threshold === null || threshold < 1 || threshold > 1000000) {
     return { ok: false, errorKey: 'validation.free_shipping_invalid' };
   }
 

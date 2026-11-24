@@ -65,7 +65,7 @@
             </div>
             <div class="form-group">
               <label class="form-label" for="profile-phone" data-i18n="common.phone">เบอร์โทรศัพท์</label>
-              <input type="tel" id="profile-phone" class="form-input" placeholder="0812345678">
+              <input type="tel" id="profile-phone" class="form-input" pattern="0?[0-9]{9}" maxlength="10" inputmode="numeric" title="0 ตามด้วยตัวเลข 9 หลัก" placeholder="0812345678">
             </div>
             <button type="submit" class="btn btn-primary" data-i18n="account.save_profile">บันทึกการเปลี่ยนแปลง</button>
           </form>
@@ -98,7 +98,7 @@
               </div>
               <div class="form-group" style="flex:1;min-width:180px">
                 <label class="form-label" for="address-phone" data-i18n="common.phone">เบอร์โทรศัพท์</label>
-                <input type="tel" id="address-phone" class="form-input" required>
+                <input type="tel" id="address-phone" class="form-input" required pattern="0?[0-9]{9}" maxlength="10" inputmode="numeric" title="0 ตามด้วยตัวเลข 9 หลัก">
               </div>
             </div>
             <div class="form-group">
