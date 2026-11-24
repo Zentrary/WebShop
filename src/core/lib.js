@@ -22,12 +22,14 @@ export function hasSalePrice(product) {
 
 export function formatTHB(amount, lang = getLanguage()) {
   const locale = lang === 'en' ? 'en-US' : 'th-TH';
+  // ออเดอร์เก่าบางใบไม่มีค่า subtotal/shipping → เดิมโชว์ "฿NaN" ให้ถือเป็น 0
+  const value = Number(amount);
   return new Intl.NumberFormat(locale, {
     style: 'currency',
     currency: 'THB',
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  }).format(amount);
+  }).format(Number.isFinite(value) ? value : 0);
 }
 
 export function bindOnce(el, event, handler) {

@@ -334,6 +334,9 @@ p {
   display: flex;
   align-items: center;
   gap: var(--space-sm);
+  min-width: 40px;
+  min-height: 36px;
+  justify-content: center;
 }
 .cart-badge {
   background: var(--color-accent);
@@ -401,6 +404,8 @@ p {
 .lang-toggle {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  min-height: 36px;
   gap: 0.3rem;
   padding: 0.3rem 0.6rem;
   border: 1px solid var(--color-border);
@@ -610,6 +615,34 @@ p {
   flex-shrink: 0;
 }
 
+/* ช่องเลือกไฟล์ของเบราว์เซอร์: ให้เข้ากับธีมมืดแทนกล่องขาวเริ่มต้น */
+input[type='file'] {
+  width: 100%;
+  color: var(--color-text-secondary);
+  font-family: inherit;
+  font-size: var(--font-size-sm);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 0.5rem;
+}
+input[type='file']::file-selector-button {
+  margin-right: 0.75rem;
+  padding: 0.5rem 0.9rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+input[type='file']::file-selector-button:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
 .card {
   background: var(--color-surface);
   border: 1px solid var(--color-border-soft);
@@ -661,13 +694,14 @@ p {
   top: var(--space-sm);
   right: var(--space-sm);
   z-index: 2;
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
   display: grid;
   place-items: center;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.92);
-  color: var(--color-text);
+  /* วงกลมขาวบนธีมมืด ต้องใช้ไอคอนสีเข้ม ไม่งั้นหัวใจจะกลืนกับพื้น */
+  background: rgba(255, 255, 255, 0.94);
+  color: #1c1c1c;
   border: 1px solid var(--color-border);
   cursor: pointer;
   transition: all var(--transition-base) var(--ease-out);
@@ -856,15 +890,17 @@ input[type='number']::-webkit-inner-spin-button {
   display: flex;
   align-items: center;
   gap: var(--space-sm);
+  min-height: 40px;
   cursor: pointer;
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
 }
 .form-checkbox input {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   accent-color: var(--color-accent);
   cursor: pointer;
+  flex: 0 0 auto;
 }
 .form-hint {
   font-size: var(--font-size-xs);
@@ -1492,6 +1528,9 @@ table.data .num {
 }
 .category-chip {
   font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
   font-size: var(--font-size-sm);
   line-height: 1.2;
   padding: 0.45rem 0.95rem;
@@ -1621,6 +1660,7 @@ table.data .num {
 }
 .pd-gallery .main {
   aspect-ratio: 1 / 1;
+  max-height: 620px;
   border-radius: var(--radius-lg);
   overflow: hidden;
   background: var(--color-surface-2);
@@ -1703,11 +1743,22 @@ table.data .num {
 }
 .cart-row {
   display: grid;
-  grid-template-columns: 88px 1fr auto auto;
+  grid-template-columns: 88px minmax(0, 1fr) auto auto;
   gap: var(--space-md);
   align-items: center;
   padding: var(--space-md) 0;
   border-bottom: 1px solid var(--color-border-soft);
+}
+.cart-row .ci-main {
+  min-width: 0;
+}
+.cart-row .ci-total {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  text-align: right;
+  white-space: nowrap;
 }
 .cart-row img {
   width: 88px;
@@ -2732,8 +2783,9 @@ td > .empty-state {
 }
 
 .saved-address {
-  flex: 0 0 auto;
-  max-width: 15rem;
+  flex: 1 1 15rem;
+  min-width: 0;
+  max-width: 24rem;
   text-align: left;
   padding: 0.65rem 0.85rem;
   border: 1px solid var(--color-border-soft);
@@ -2757,12 +2809,12 @@ td > .empty-state {
 }
 
 .saved-address .addr {
-  display: block;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   color: var(--color-text-muted);
   font-size: var(--font-size-xs);
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .saved-address .pill {
@@ -2906,4 +2958,26 @@ td > .empty-state {
 
 .cookie-notice .btn {
   flex-shrink: 0;
+}
+
+/* มือถือ: แถบคุกกี้เคยสูงถึง ~150px (1 ใน 5 ของจอ) เพราะข้อความตัด 3 บรรทัด
+   กับปุ่มเต็มความกว้าง — ย่อระยะห่างและตัวอักษรลง */
+@media (max-width: 600px) {
+  .cookie-notice {
+    bottom: max(0.6rem, env(safe-area-inset-bottom));
+    width: calc(100% - 1.5rem);
+    gap: 0.6rem;
+    padding: 0.7rem 0.85rem;
+    border-radius: 0.75rem;
+    font-size: 0.8rem;
+    line-height: 1.45;
+  }
+  .cookie-notice p {
+    flex: 1 1 100%;
+  }
+  .cookie-notice .btn {
+    width: 100%;
+    padding: 0.55rem 0.9rem;
+    min-height: 40px;
+  }
 }

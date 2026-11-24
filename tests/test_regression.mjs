@@ -466,4 +466,94 @@ const THAI = /[\u0E00-\u0E7F]/;
   A.ok('routes: มีเส้นทางรายงาน', routes.includes("'/admin/reports'"));
 }
 
+/* ------------------------------------------------------------------ *
+ * ปรับหน้าเว็บตามผลตรวจ (responsive/UX): ตรวจว่าแก้แล้วจริงและไม่ถอยหลัง
+ * ------------------------------------------------------------------ */
+{
+  const readFile = (rel) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
+  const base = readFile('src/styles/base.css');
+  const responsive = readFile('src/styles/responsive.css');
+  const app = readFile('src/app.js');
+  const lib = readFile('src/core/lib.js');
+
+  // 1. ตะกร้า: กริด 4 คอลัมน์ + พื้นที่ยอดรวมของแต่ละแถว
+  A.ok('cart: กริด 4 คอลัมน์บนเดสก์ท็อป', /\.cart-row\s*\{[^}]*grid-template-columns:\s*88px/.test(base));
+  A.ok(
+    'cart: มีคลาส ci-main/ci-total',
+    /\.cart-row \.ci-main\s*\{/.test(base) && /\.cart-row \.ci-total\s*\{/.test(base),
+  );
+  A.ok('cart: มือถือจัดกริดด้วย grid-template-areas', /\.cart-row\s*\{[^}]*grid-template-areas/.test(responsive));
+  A.ok(
+    'cart: จอ 360–400 แยกแถวจำนวน/ยอดรวม',
+    /max-width:\s*400px\)\s*\{[^@]*\.cart-row\s*\{[^}]*grid-template-areas/.test(responsive),
+  );
+
+  // 2. หัวเว็บกะทัดรัดถึง 960px และยังโชว์ชื่อร้านที่ 360px
+  A.ok(
+    'header: ซ่อนเมนูเต็มรูปแบบถึง 960px',
+    /@media \(max-width:\s*960px\)\s*\{[^}]*\.header-nav\s*\{[^}]*display:\s*none/.test(responsive),
+  );
+  A.ok(
+    'header: ไม่ซ่อนชื่อร้านที่ 360px',
+    !/@media \(max-width:\s*360px\)\s*\{[^@]*\.header-logo-name\s*\{[^}]*display:\s*none/.test(responsive),
+  );
+  A.ok(
+    'header: ยุบปุ่มสมัครสมาชิกบนจอแคบมาก',
+    /max-width:\s*400px\)\s*\{[^@]*\.header-register\s*\{[^}]*display:\s*none/.test(responsive),
+  );
+
+  // 3. รายการโปรด: route ต้องมาก่อน /account
+  const account = readFile('src/pages/customer/account.js');
+  A.ok(
+    'favorites: ตรวจเส้นทาง /account/favorites ก่อน /account',
+    account.indexOf("includes('/account/favorites')") < account.indexOf("includes('/account')"),
+  );
+
+  // 4. การ์ดสินค้า: หัวใจอ่านออก + ปุ่มหยิบใส่ตะกร้าไม่ทับรูป
+  A.ok('card: ปุ่มหัวใจมีพื้นสว่าง/ไอคอนเข้ม', /\.favorite-btn\s*\{[^}]*color:\s*#1c1c1c/.test(base));
+  A.ok('card: ปุ่มหยิบใส่ตะกร้าเป็นแคปซูลบนจอสัมผัส', /@media \(hover:\s*none\)[^@]*\.quick-add/.test(responsive));
+
+  // 5. หน้าแรก: ปุ่มเลือกซื้อสินค้าไม่ผูกกับสมาชิก
+  const home = readFile('web/home.html');
+  A.ok('home: ปุ่ม CTA ไม่ติด data-member-only', !/data-i18n="home\.cta_shop"[^>]*data-member-only/.test(home));
+
+  // 6/18. แถบคุกกี้: วัดความสูงจริงมากันพื้นที่ และย่อบนมือถือ
+  A.ok(
+    'cookie: กันพื้นที่ตามความสูงจริงของแถบ',
+    /syncCookiePadding/.test(app) && /getBoundingClientRect\(\)\.height/.test(app),
+  );
+  A.ok('cookie: มีสไตล์กะทัดรัดบนมือถือ', /@media \(max-width:\s*600px\)\s*\{[^@]*\.cookie-notice\s*\{/.test(base));
+
+  // 7. หน้าสินค้าบนแท็บเล็ต: จำกัดขนาดรูป
+  A.ok('product: จำกัดความกว้างแกลเลอรี', /\.pd-gallery\s*\{[^}]*max-width/.test(responsive));
+
+  // 9. ชาร์ต: ป้ายวันที่ไม่ทับกัน
+  A.ok('chart: ป้ายวันที่เลือกแสดงเฉพาะจุด', /\.sales-day\.is-labeled \.sales-day-label/.test(responsive));
+
+  // 10. ช่องอัปโหลดไฟล์เข้าธีมมืด
+  A.ok('file: สไตล์ input[type=file] ในธีมมืด', /input\[type=['"]?file['"]?\]/.test(base));
+
+  // 11. พื้นที่แตะขั้นต่ำบนจอสัมผัส
+  A.ok(
+    'tap: ชิปหมวดหมู่อย่างน้อย 44px บนจอสัมผัส',
+    /@media \(hover:\s*none\)[^@]*\.category-chip\s*\{[^}]*min-height:\s*44px/.test(responsive),
+  );
+  A.ok('tap: ช่องทำเครื่องหมายใหญ่ขึ้น', /\.form-checkbox input\s*\{[^}]*width:\s*18px/.test(base));
+
+  // 12/17. ตัวเลขเงินต้องไม่เป็น ฿NaN
+  A.ok('money: formatTHB กันค่าที่ไม่ใช่ตัวเลข', /Number\.isFinite/.test(lib));
+
+  // 13. ที่อยู่ที่บันทึกไว้ไม่ตัด ellipsis ตั้งแต่ 768px
+  A.ok('address: ที่อยู่แสดงได้ 2 บรรทัด', /\.saved-address \.addr\s*\{[^}]*-webkit-line-clamp:\s*2/.test(base));
+
+  // 14. แถบผู้เยี่ยมชมอยู่ใต้หัวข้อหน้า
+  A.ok('guest note: แทรกใต้หัวข้อ/ breadcrumb', /\.page-head'\)\s*\|\|/.test(readFile('src/pages/storefront/store.js')));
+
+  // 15. Checkout 2 คอลัมน์ได้ถึง ~901px
+  A.ok(
+    'checkout: ยุบเป็นคอลัมน์เดียวที่ 900px',
+    /@media \(max-width:\s*900px\)\s*\{[^}]*\.cart-grid\s*\{[^}]*grid-template-columns:\s*1fr/.test(responsive),
+  );
+}
+
 process.exit(A.report('regression') ? 1 : 0);

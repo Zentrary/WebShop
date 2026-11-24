@@ -65,7 +65,10 @@ function renderGuestNotice() {
   note.className = 'guest-note reveal';
   note.innerHTML = `<span>${escapeHTML(t('shop.guest_banner'))}</span>
     <a class="btn btn-outline btn-sm" href="/auth/login">${escapeHTML(t('shop.guest_banner_cta'))}</a>`;
-  host.prepend(note);
+  // วางใต้หัวข้อหน้า/ breadcrumb ไม่ใช่บนสุดของหน้า อ่านลำดับได้เป็นธรรมชาติกว่า
+  const anchor = host.querySelector('.page-head') || host.querySelector('nav') || host.querySelector('h1');
+  if (anchor) anchor.after(note);
+  else host.prepend(note);
 }
 
 /**

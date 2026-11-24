@@ -545,14 +545,23 @@ export function renderCookieNotice() {
     <button type="button" class="btn btn-primary btn-sm" id="cookie-accept">${escapeHTML(t('cookie.accept'))}</button>
   `;
   document.body.appendChild(bar);
-  // กันไม่ให้แถบทับเนื้อหาด้านล่างของหน้า
-  document.body.style.paddingBottom = '5.5rem';
+  // กันไม่ให้แถบทับเนื้อหาด้านล่าง: วัดความสูงจริงของแถบ (บนมือถือสูงกว่า
+  // เดสก์ท็อปมาก) แล้วเผื่อช่องว่างอีกนิด
+  const syncCookiePadding = () => {
+    if (!bar.isConnected) return;
+    document.body.style.paddingBottom = `${bar.getBoundingClientRect().height + 16}px`;
+  };
+  syncCookiePadding();
+  window.addEventListener('resize', syncCookiePadding);
+  window.addEventListener('orientationchange', syncCookiePadding);
 
   bar.querySelector('#cookie-accept')?.addEventListener('click', () => {
     try {
       localStorage.setItem(COOKIE_KEY, '1');
     } catch {}
     document.body.style.paddingBottom = '';
+    window.removeEventListener('resize', syncCookiePadding);
+    window.removeEventListener('orientationchange', syncCookiePadding);
     bar.remove();
   });
 }

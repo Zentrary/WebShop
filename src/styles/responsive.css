@@ -17,16 +17,6 @@
   .kpi-grid {
     grid-template-columns: repeat(2, 1fr);
   }
-  .cart-grid {
-    grid-template-columns: 1fr;
-  }
-  .summary {
-    position: static;
-  }
-  .pd-grid {
-    grid-template-columns: 1fr;
-    gap: var(--space-2xl);
-  }
   .footer-inner {
     grid-template-columns: 1fr 1fr;
   }
@@ -87,16 +77,36 @@
   }
 }
 
-@media (max-width: 768px) {
-  :root {
-    --header-height: 64px;
+/* แท็บเล็ตแนวนอน (901–1024px) ยังมีที่พอสำหรับ 2 คอลัมน์: ฟอร์ม + สรุปคำสั่งซื้อ
+   สรุปจึงไม่ต้องตกไปอยู่ล่างสุดของหน้า */
+@media (max-width: 900px) {
+  .cart-grid {
+    grid-template-columns: 1fr;
   }
-  /* Only the sides: a shorthand `padding: 0 …` here used to wipe the top
-     padding of every `.container.section` block below the hero. */
-  .container {
-    padding-left: max(var(--space-md), env(safe-area-inset-left));
-    padding-right: max(var(--space-md), env(safe-area-inset-right));
+  .summary {
+    position: static;
   }
+  /* หน้าสินค้า: ยุบเป็นคอลัมน์เดียวที่ ≤900px (iPad แนวนอนยังได้ 2 คอลัมน์)
+     แล้วจำกัดขนาดรูปไม่ให้กินพื้นที่ทั้งหน้าจอจนต้องเลื่อนหาชื่อ/ราคา/ปุ่มซื้อ */
+  .pd-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-2xl);
+  }
+  .pd-gallery {
+    max-width: 560px;
+    margin-inline: auto;
+    width: 100%;
+  }
+  .pd-gallery .main {
+    max-height: 46vh;
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * หัวเว็บแบบกะทัดรัด: ใช้ถึง 960px เพราะช่วง 769–960px (มือถือแนวนอน/
+ * แท็บเล็ตแนวตั้ง) เมนูกับปุ่มด้านขวาเดิมเบียดกันจนชื่อร้านถูกตัดคำ
+ * ------------------------------------------------------------------ */
+@media (max-width: 960px) {
   .header-nav {
     display: none;
   }
@@ -112,14 +122,28 @@
   }
   .header-logo {
     font-size: var(--font-size-lg);
+    min-width: 0;
+    flex-shrink: 1;
   }
   .header-logo-name {
-    max-width: 34vw;
+    max-width: 40vw;
   }
   .mobile-nav {
     padding: var(--space-md);
     max-height: calc(100dvh - var(--header-height));
     overflow-y: auto;
+  }
+}
+
+@media (max-width: 768px) {
+  :root {
+    --header-height: 64px;
+  }
+  /* Only the sides: a shorthand `padding: 0 …` here used to wipe the top
+     padding of every `.container.section` block below the hero. */
+  .container {
+    padding-left: max(var(--space-md), env(safe-area-inset-left));
+    padding-right: max(var(--space-md), env(safe-area-inset-right));
   }
   .product-grid {
     grid-template-columns: repeat(2, 1fr);
@@ -134,15 +158,28 @@
   h2 {
     font-size: var(--font-size-2xl);
   }
+  /* แถวสินค้าในตะกร้า: รูป | ชื่อ+ราคา | จำนวน และมียอดรวมอยู่ใต้จำนวน */
   .cart-row {
-    grid-template-columns: 64px 1fr auto;
+    grid-template-columns: 72px minmax(0, 1fr) auto;
+    grid-template-areas:
+      'thumb main qty'
+      'thumb . total';
+    row-gap: var(--space-sm);
   }
-  .cart-row img {
-    width: 64px;
-    height: 64px;
+  .cart-row .ci-thumb {
+    grid-area: thumb;
+    width: 72px;
+    height: 72px;
   }
-  .cart-row .rm {
-    grid-column: 1 / -1;
+  .cart-row .ci-main {
+    grid-area: main;
+  }
+  .cart-row .ci-qty {
+    grid-area: qty;
+  }
+  .cart-row .ci-total {
+    grid-area: total;
+    align-items: flex-end;
     text-align: right;
   }
   .footer-inner {
@@ -268,6 +305,44 @@
   .btn-full {
     width: 100%;
   }
+  /* จอมือถือ: ชื่อสินค้าเต็มความกว้าง แล้วจำนวน+ยอดรวมอยู่บรรทัดล่าง */
+  .cart-row {
+    grid-template-columns: 56px minmax(0, 1fr) auto;
+    grid-template-areas:
+      'thumb main main'
+      'thumb qty total';
+    align-items: center;
+  }
+  .cart-row .ci-thumb {
+    width: 56px;
+    height: 56px;
+  }
+  .cart-row .ci-total {
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 0;
+    text-align: right;
+  }
+  .cart-row .qty-ctl {
+    justify-self: start;
+  }
+}
+
+@media (max-width: 400px) {
+  /* จอ 360–400: จำนวนกับยอดรวมเคยชนกัน แยกเป็นคนละบรรทัดไปเลย */
+  .cart-row {
+    grid-template-areas:
+      'thumb main main'
+      'thumb qty qty'
+      'thumb total total';
+  }
+  .cart-row .ci-total {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    text-align: left;
+  }
 }
 
 @media (max-width: 480px) {
@@ -316,11 +391,19 @@
   }
 }
 
-@media (max-width: 360px) {
-  /* จอเล็กมาก ๆ ค่อยซ่อนชื่อร้าน เก็บไว้แค่ตราสัญลักษณ์ */
-  .header-logo-name {
+@media (max-width: 400px) {
+  /* จอเล็กมาก: ซ่อนปุ่ม "สมัครสมาชิก" (มีลิงก์อยู่ในหน้าเข้าสู่ระบบอยู่แล้ว)
+     เพื่อเก็บชื่อร้านไว้ ไม่ให้หัวเว็บเหลือแต่ไอคอน */
+  .header-register {
     display: none;
   }
+  .header-logo-name {
+    max-width: 42vw;
+    font-size: 0.95rem;
+  }
+}
+
+@media (max-width: 360px) {
   .header-logo-img {
     width: 28px;
     height: 28px;
@@ -470,6 +553,13 @@
     font-size: 0.625rem;
     letter-spacing: 0;
   }
+  /* 30 ป้ายในจอ 390px ทับกันจนอ่านไม่ออก: โชว์ทุกวันที่ 5 พอ */
+  .sales-day .sales-day-label {
+    visibility: hidden;
+  }
+  .sales-day.is-labeled .sales-day-label {
+    visibility: visible;
+  }
   /* KPI: ตัวเลขยาว ๆ ต้องไม่ล้นกรอบ */
   .kpi .k-value {
     font-size: clamp(1.35rem, 6.4vw, 2rem);
@@ -491,7 +581,7 @@
 /* ------------------------------------------------------------------ *
  * โทรศัพท์: หัวเว็บเหลือของที่จำเป็นจริง ๆ ที่เหลือย้ายเข้าเมนู
  * ------------------------------------------------------------------ */
-@media (max-width: 768px) {
+@media (max-width: 960px) {
   .header-container {
     gap: var(--space-sm);
   }
@@ -539,9 +629,27 @@
 }
 
 @media (hover: none), (pointer: coarse) {
+  /* ปุ่มขาวเต็มความกว้างเคยทับรูปสินค้าเกือบ 1/4 ของการ์ด — เปลี่ยนเป็น
+     ปุ่มแคปซูลมุมขวาล่าง อ่านง่ายและยังกดง่ายด้วยนิ้วโป้ง */
   .product-card .quick-add {
+    left: auto;
+    right: var(--space-sm);
+    bottom: var(--space-sm);
     transform: translateY(0);
     opacity: 1;
+    padding: 0.5rem 0.9rem;
+    min-height: 38px;
+    font-size: 0.78rem;
+    border-radius: 999px;
+    background: rgb(12 12 12 / 0.78);
+    border: 1px solid rgb(255 255 255 / 0.28);
+    color: #fff;
+    backdrop-filter: blur(6px);
+  }
+  .product-card .quick-add:hover,
+  .product-card .quick-add:active {
+    background: rgb(12 12 12 / 0.9);
+    border-color: rgb(255 255 255 / 0.5);
   }
   .product-card .favorite-btn {
     opacity: 1;
@@ -572,5 +680,39 @@
   body {
     background: white;
     color: black;
+  }
+}
+
+/* ------------------------------------------------------------------
+   อุปกรณ์สัมผัส: ขยายพื้นที่แตะให้ถึง ~44px ตามที่ควรเป็น
+   (ชิปหมวดหมู่, ปุ่มสลับภาษา, checkbox, ปุ่มไอคอนในหัวเว็บ, ปุ่มในตารางหลังบ้าน)
+   ------------------------------------------------------------------ */
+@media (hover: none), (pointer: coarse) {
+  .category-chip {
+    min-height: 44px;
+    padding-inline: 1.05rem;
+  }
+  .lang-toggle {
+    min-height: 40px;
+    padding-inline: 0.85rem;
+  }
+  .form-checkbox {
+    min-height: 44px;
+  }
+  .form-checkbox input {
+    width: 20px;
+    height: 20px;
+  }
+  .header-cart,
+  .header-account,
+  .header-logout,
+  .header-admin,
+  .menu-toggle {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  table.data td.cell-actions .btn {
+    min-height: 40px;
+    padding-inline: 1rem;
   }
 }
