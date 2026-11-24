@@ -27,6 +27,16 @@
 | สไตล์         | CSS ล้วน + ตัวอักษร Prompt                  |
 | เทสต์         | jsdom + Node test runner                 |
 
+## โครงสร้าง URL
+
+เว็บใช้ clean URL ไม่มี `.html` ต่อท้าย — `/home`, `/shop`, `/shop/product?id=…`,
+`/account/orders`, `/admin/dashboard` ฯลฯ
+
+- บน Vercel เปิดด้วย `"cleanUrls": true` ใน `vercel.json` (ลิงก์เก่าที่ลงท้าย `.html`
+  จะถูกเปลี่ยนทางให้อัตโนมัติ)
+- ตอน `npm run dev` / `npm run preview` มีปลั๊กอินเล็ก ๆ ใน `vite.config.js`
+  แปลง `/home` → `home.html` และ `/shop` → `shop/index.html` ให้เหมือนของจริง
+
 ## เริ่มใช้งาน
 
 ```bash
@@ -46,14 +56,14 @@ VITE_SUPABASE_ANON_KEY=<anon-key>
 
 ### บัญชีทดสอบ (โปรเจกต์ MarketWeb)
 
-| บทบาท   | อีเมล                      | รหัสผ่าน          | ชื่อผู้ใช้      | หน้าเข้าสู่ระบบ         |
-| ------- | ------------------------- | --------------- | ---------- | ------------------- |
-| ลูกค้า    | `user@zenmarket.example`  | `ZenUser#2026`  | `zenuser`  | `/auth/login.html`  |
-| ผู้ดูแลร้าน | `admin@zenmarket.example` | `ZenAdmin#2026` | `zenadmin` | `/admin/login.html` |
+| บทบาท   | อีเมล                      | รหัสผ่าน          | ชื่อผู้ใช้      | หน้าเข้าสู่ระบบ    |
+| ------- | ------------------------- | --------------- | ---------- | -------------- |
+| ลูกค้า    | `user@zenmarket.example`  | `ZenUser#2026`  | `zenuser`  | `/auth/login`  |
+| ผู้ดูแลร้าน | `admin@zenmarket.example` | `ZenAdmin#2026` | `zenadmin` | `/admin/login` |
 
 ผู้ดูแลร้านสามารถเข้าสู่ระบบด้วยทั้งอีเมลหรือชื่อผู้ใช้ (`zenadmin`) — หน้า admin login จะแปลงชื่อผู้ใช้เป็นอีเมลให้อัตโนมัติ
 
-ลูกค้าที่เข้าสู่ระบบจะถูกพากลับไปที่ `/home.html` (หรือกลับไปหน้าที่ตั้งใจจะไปก่อนถูกขอให้ล็อกอิน)
+ลูกค้าที่เข้าสู่ระบบจะถูกพากลับไปที่ `/home` (หรือกลับไปหน้าที่ตั้งใจจะไปก่อนถูกขอให้ล็อกอิน)
 
 ## โครงสร้างโปรเจกต์
 

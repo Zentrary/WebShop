@@ -57,7 +57,7 @@ export function safeLink(url) {
   }
 }
 
-export function safeReturnPath(path, fallback = '/home.html') {
+export function safeReturnPath(path, fallback = '/home') {
   if (!path || typeof path !== 'string') return fallback;
   const value = path.trim();
   if (!value.startsWith('/') || value.startsWith('//') || value.startsWith('/\\')) return fallback;

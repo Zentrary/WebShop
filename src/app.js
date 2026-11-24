@@ -130,8 +130,8 @@ export function renderGuestGate(targetId) {
       <h2 class="guest-gate-title" data-i18n="checkout.login_required">${t('checkout.login_required')}</h2>
       <p class="guest-gate-desc" data-i18n="checkout.login_required_desc">${t('checkout.login_required_desc')}</p>
       <div class="guest-gate-actions">
-        <a href="/auth/login.html" class="btn btn-outline" data-i18n="nav.login">${t('nav.login')}</a>
-        <a href="/auth/register.html" class="btn btn-primary" data-i18n="nav.register">${t('nav.register')}</a>
+        <a href="/auth/login" class="btn btn-outline" data-i18n="nav.login">${t('nav.login')}</a>
+        <a href="/auth/register" class="btn btn-primary" data-i18n="nav.register">${t('nav.register')}</a>
       </div>
     </div>
   `;
@@ -143,7 +143,7 @@ export function requireMember(nextPath = window.location.pathname + window.locat
   sessionStorage.setItem('zenmarket_return_path', nextPath);
   notify(t('toast.login_required'), 'warning');
   setTimeout(() => {
-    window.location.href = '/auth/login.html';
+    window.location.href = '/auth/login';
   }, 900);
   return false;
 }
@@ -191,7 +191,7 @@ export function initHeader() {
   header.className = 'site-header';
   header.innerHTML = `
     <div class="header-container">
-      <a href="/home.html" class="header-logo" id="brand-link"></a>
+      <a href="/home" class="header-logo" id="brand-link"></a>
       <nav class="header-nav" id="header-nav"></nav>
       <div class="header-actions" id="header-actions"></div>
     </div>
@@ -223,22 +223,23 @@ function renderHeader(header) {
 
   const member = isMember() || isOwner();
   const path = window.location.pathname;
+  // เทียบกับ path แบบ clean URL: /home, /shop, /shop/product, /account/orders …
   const isActive = {
-    home: path === '/' || path.includes('/home.html'),
-    shop: path === '/shop' || path.includes('/shop/index'),
-    account: path.includes('/account'),
+    home: path === '/' || path === '/home',
+    shop: path === '/shop' || path.startsWith('/shop/'),
+    account: path === '/account' || path.startsWith('/account/'),
   };
 
   // The account only appears once — as the icon button on the right. Repeating
   // it next to "รายการสินค้า" made the header look like it had two of them.
   const navItems = [
-    { key: 'home', href: '/home.html', label: t('nav.home'), show: true },
-    { key: 'shop', href: '/shop/index.html', label: t('nav.shop'), show: member },
+    { key: 'home', href: '/home', label: t('nav.home'), show: true },
+    { key: 'shop', href: '/shop', label: t('nav.shop'), show: member },
   ];
 
   const mobileNavItems = [
     ...navItems,
-    { key: 'account', href: '/account/index.html', label: t('nav.account'), show: member || path.includes('/account') },
+    { key: 'account', href: '/account', label: t('nav.account'), show: member || path.includes('/account') },
   ];
 
   const nav = header.querySelector('#header-nav');
@@ -252,6 +253,17 @@ function renderHeader(header) {
       .join('');
   }
 
+  const signOutNow = async () => {
+    try {
+      if (state.supabase) await state.supabase.auth.signOut();
+    } catch {}
+    logout();
+    notify(t('toast.logout_success'), 'success');
+    setTimeout(() => {
+      window.location.href = '/home';
+    }, 500);
+  };
+
   const mobileNav = header.querySelector('#mobile-nav');
   if (mobileNav) {
     mobileNav.innerHTML = `
@@ -262,17 +274,20 @@ function renderHeader(header) {
             `<a href="${i.href}" data-i18n="nav.${i.key}" class="${isActive[i.key] ? 'active' : ''}">${i.label}</a>`,
         )
         .join('')}
-      ${member ? `<a href="/shop/cart.html" data-i18n="nav.cart">${t('nav.cart')}</a>` : ''}
+      ${member ? `<a href="/shop/cart" data-i18n="nav.cart">${t('nav.cart')}</a>` : ''}
       ${
         member
-          ? `<a href="/account/favorites.html" data-i18n="nav.favorites">${t('nav.favorites')}</a>
-           <a href="/account/orders.html" data-i18n="nav.orders">${t('nav.orders')}</a>`
-          : `<a href="/auth/login.html" data-i18n="nav.login">${t('nav.login')}</a>
-           <a href="/auth/register.html" data-i18n="nav.register">${t('nav.register')}</a>`
+          ? `<a href="/account/favorites" data-i18n="nav.favorites">${t('nav.favorites')}</a>
+           <a href="/account/orders" data-i18n="nav.orders">${t('nav.orders')}</a>`
+          : `<a href="/auth/login" data-i18n="nav.login">${t('nav.login')}</a>
+           <a href="/auth/register" data-i18n="nav.register">${t('nav.register')}</a>`
       }
-      ${isOwner() ? `<a href="/admin/dashboard.html" data-i18n="nav.admin">${t('nav.admin')}</a>` : ''}
+      ${isOwner() ? `<a href="/admin/dashboard" data-i18n="nav.admin">${t('nav.admin')}</a>` : ''}
       <button type="button" class="mobile-nav-lang" id="mobile-lang-toggle">${getLanguage() === 'th' ? 'TH / EN' : 'EN / TH'}</button>
+      ${member ? `<button type="button" class="mobile-nav-logout" id="mobile-logout">${t('nav.logout')}</button>` : ''}
     `;
+    const drawerLogout = mobileNav.querySelector('#mobile-logout');
+    if (drawerLogout) drawerLogout.addEventListener('click', signOutNow);
   }
 
   const actions = header.querySelector('#header-actions');
@@ -280,18 +295,18 @@ function renderHeader(header) {
     actions.innerHTML = `
       ${
         member
-          ? `<a href="/shop/cart.html" class="btn btn-ghost btn-sm header-cart" aria-label="${t('nav.cart')}" data-i18n-aria-label="nav.cart">
+          ? `<a href="/shop/cart" class="btn btn-ghost btn-sm header-cart" aria-label="${t('nav.cart')}" data-i18n-aria-label="nav.cart">
             ${ICONS.bag}<span id="cart-badge" class="cart-badge" style="display:none">0</span>
           </a>`
           : ''
       }
       ${
         member
-          ? `<a href="/account/index.html" class="btn btn-ghost btn-sm header-account">${ICONS.user}<span class="account-label">${t('nav.account')}</span></a>
-           ${isOwner() ? `<a href="/admin/dashboard.html" class="btn btn-outline btn-sm header-admin" data-i18n="nav.admin">${t('nav.admin')}</a>` : ''}
+          ? `<a href="/account" class="btn btn-ghost btn-sm header-account">${ICONS.user}<span class="account-label">${t('nav.account')}</span></a>
+           ${isOwner() ? `<a href="/admin/dashboard" class="btn btn-outline btn-sm header-admin" data-i18n="nav.admin">${t('nav.admin')}</a>` : ''}
            <button id="user-menu-btn" class="btn btn-danger btn-sm header-logout">${t('nav.logout')}</button>`
-          : `<a href="/auth/login.html" class="btn btn-outline btn-sm header-login" data-i18n="nav.login">${t('nav.login')}</a>
-           <a href="/auth/register.html" class="btn btn-primary btn-sm header-register" data-i18n="nav.register">${t('nav.register')}</a>`
+          : `<a href="/auth/login" class="btn btn-outline btn-sm header-login" data-i18n="nav.login">${t('nav.login')}</a>
+           <a href="/auth/register" class="btn btn-primary btn-sm header-register" data-i18n="nav.register">${t('nav.register')}</a>`
       }
       <button id="lang-toggle" class="lang-toggle" aria-label="${escapeHTML(t('common.change_lang'))}" data-i18n-aria-label="common.change_lang"><span class="lang-now">${getLanguage() === 'th' ? 'TH' : 'EN'}</span><span class="lang-sep">/</span><span>${getLanguage() === 'th' ? 'EN' : 'TH'}</span></button>
       <button id="menu-toggle" class="menu-toggle" aria-label="${t('nav.menu')}" data-i18n-aria-label="nav.menu">${ICONS.menu}</button>
@@ -303,18 +318,7 @@ function renderHeader(header) {
     }
 
     const logoutBtn = actions.querySelector('#user-menu-btn');
-    if (logoutBtn) {
-      logoutBtn.addEventListener('click', async () => {
-        try {
-          if (state.supabase) await state.supabase.auth.signOut();
-        } catch {}
-        logout();
-        notify(t('toast.logout_success'), 'success');
-        setTimeout(() => {
-          window.location.href = '/home.html';
-        }, 500);
-      });
-    }
+    if (logoutBtn) logoutBtn.addEventListener('click', signOutNow);
 
     const menuToggle = actions.querySelector('#menu-toggle');
     const mobileNav = header.querySelector('#mobile-nav');
@@ -357,25 +361,25 @@ function renderFooter(footer) {
   footer.innerHTML = `
     <div class="footer-inner">
       <div class="footer-brand">
-        <a href="/home.html" class="header-logo">${mark}<span class="header-logo-name">${name}</span></a>
+        <a href="/home" class="header-logo">${mark}<span class="header-logo-name">${name}</span></a>
         <p>${escapeHTML(s.tagline || t('footer.tagline'))}</p>
       </div>
       <div class="footer-col">
         <h4>${t('footer.shop')}</h4>
         ${
           member
-            ? `<a href="/shop/index.html" data-i18n="footer.all_products">${t('footer.all_products')}</a>
-             <a href="/shop/cart.html" data-i18n="footer.cart">${t('footer.cart')}</a>`
-            : `<a href="/auth/register.html" data-i18n="nav.register">${t('nav.register')}</a>
-             <a href="/auth/login.html" data-i18n="nav.login">${t('nav.login')}</a>`
+            ? `<a href="/shop" data-i18n="footer.all_products">${t('footer.all_products')}</a>
+             <a href="/shop/cart" data-i18n="footer.cart">${t('footer.cart')}</a>`
+            : `<a href="/auth/register" data-i18n="nav.register">${t('nav.register')}</a>
+             <a href="/auth/login" data-i18n="nav.login">${t('nav.login')}</a>`
         }
       </div>
       <div class="footer-col">
         <h4>${t('footer.help')}</h4>
-        <a href="/pages/help.html" data-i18n="footer.help_shipping">${t('footer.help_shipping')}</a>
-        <a href="/pages/about.html" data-i18n="footer.about">${t('footer.about')}</a>
-        <a href="/pages/contact.html" data-i18n="footer.contact_us">${t('footer.contact_us')}</a>
-        <a href="/pages/privacy.html" data-i18n="footer.privacy">${t('footer.privacy')}</a>
+        <a href="/pages/help" data-i18n="footer.help_shipping">${t('footer.help_shipping')}</a>
+        <a href="/pages/about" data-i18n="footer.about">${t('footer.about')}</a>
+        <a href="/pages/contact" data-i18n="footer.contact_us">${t('footer.contact_us')}</a>
+        <a href="/pages/privacy" data-i18n="footer.privacy">${t('footer.privacy')}</a>
       </div>
       <div class="footer-col">
         <h4>${t('footer.contact')}</h4>

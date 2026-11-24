@@ -23,17 +23,17 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const path = window.location.pathname;
 
-  if (path.includes('/auth/login.html')) {
+  if (path.includes('/auth/login')) {
     initLoginPage();
-  } else if (path.includes('/auth/register.html')) {
+  } else if (path.includes('/auth/register')) {
     initRegisterPage();
-  } else if (path.includes('/auth/forgot-password.html')) {
+  } else if (path.includes('/auth/forgot-password')) {
     initForgotPasswordPage();
-  } else if (path.includes('/auth/reset-password.html')) {
+  } else if (path.includes('/auth/reset-password')) {
     initResetPasswordPage();
-  } else if (path.includes('/account/index.html')) {
+  } else if (path.includes('/account')) {
     initAccountPage();
-  } else if (path.includes('/account/favorites.html')) {
+  } else if (path.includes('/account/favorites')) {
     initFavoritesPage();
   }
 });
@@ -120,7 +120,7 @@ function initLoginPage() {
 
       notify(t('toast.login_success'), 'success');
       // Signing in lands on the storefront, not on the account page.
-      const returnPath = safeReturnPath(sessionStorage.getItem('zenmarket_return_path'), '/home.html');
+      const returnPath = safeReturnPath(sessionStorage.getItem('zenmarket_return_path'), '/home');
       sessionStorage.removeItem('zenmarket_return_path');
       window.location.href = returnPath;
     } catch (err) {
@@ -217,7 +217,7 @@ function initRegisterPage() {
 
       notify(t('toast.register_success'), 'success');
       setTimeout(() => {
-        window.location.href = '/auth/login.html';
+        window.location.href = '/auth/login';
       }, 700);
     } catch (err) {
       console.error('[ZenMarket] registration failed');
@@ -244,7 +244,7 @@ function initForgotPasswordPage() {
 
     try {
       const { error } = await state.supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/reset-password.html`,
+        redirectTo: `${window.location.origin}/auth/reset-password`,
       });
       if (error) throw error;
       notify(t('auth.forgot_sent'), 'success');
@@ -284,7 +284,7 @@ function initResetPasswordPage() {
       if (error) throw error;
       notify(t('auth.reset_success'), 'success');
       setTimeout(() => {
-        window.location.href = '/auth/login.html';
+        window.location.href = '/auth/login';
       }, 700);
     } catch (err) {
       notify(err.message || t('toast.error_generic'), 'error');
@@ -295,7 +295,7 @@ function initResetPasswordPage() {
 async function initAccountPage() {
   if (!isSignedIn() || !state.user) {
     sessionStorage.setItem('zenmarket_return_path', window.location.pathname + window.location.search);
-    window.location.href = '/auth/login.html';
+    window.location.href = '/auth/login';
     return;
   }
 
@@ -410,7 +410,7 @@ async function loadRecentOrders(user) {
       list.innerHTML = orders
         .map(
           (o) => `
-        <a href="/account/order.html?id=${o.id}" class="flex justify-between items-center" style="padding:0.75rem 0;border-bottom:1px solid var(--color-border-soft)">
+        <a href="/account/order?id=${o.id}" class="flex justify-between items-center" style="padding:0.75rem 0;border-bottom:1px solid var(--color-border-soft)">
           <span class="font-semibold">#${o.id.slice(0, 8)} <span class="text-muted" style="font-weight:400">${o.created_at ? new Date(o.created_at).toLocaleDateString('th-TH') : ''}</span></span>
           <span class="text-accent font-semibold">${formatTHB(o.total)}</span>
         </a>
@@ -564,7 +564,7 @@ function initAddressForm(user) {
 async function initFavoritesPage() {
   if (!isSignedIn() || !state.user) {
     sessionStorage.setItem('zenmarket_return_path', window.location.pathname + window.location.search);
-    window.location.href = '/auth/login.html';
+    window.location.href = '/auth/login';
     return;
   }
 
@@ -579,7 +579,7 @@ async function initFavoritesPage() {
         grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1L12 21.2l7.7-7.8 1.1-1a5.5 5.5 0 0 0 0-7.8Z"/></svg>
           <p>${t('account.favorites_empty')}</p>
-          <a href="/shop/index.html" class="btn btn-primary mt-md">${t('home.cta_shop')}</a>
+          <a href="/shop" class="btn btn-primary mt-md">${t('home.cta_shop')}</a>
         </div>`;
         return;
       }
@@ -623,7 +623,7 @@ async function initFavoritesPage() {
             }
             return;
           }
-          window.location.href = `/shop/product.html?id=${product.id}`;
+          window.location.href = `/shop/product?id=${product.id}`;
         });
         grid.appendChild(card);
       });

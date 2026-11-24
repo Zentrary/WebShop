@@ -325,4 +325,76 @@ const THAI = /[\u0E00-\u0E7F]/;
   A.eq('auth: หัวข้อภาษาอังกฤษถูกต้อง', title?.textContent.trim(), 'Create an account');
 }
 
+/* ------------------------------------------------------------------ *
+ * 10. โครงสร้าง URL แบบ clean URL (ไม่มี .html) และตารางบนมือถือ
+ * ------------------------------------------------------------------ */
+{
+  const fs = await import('node:fs');
+  const walk = (dir) =>
+    fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+      const full = path.join(dir, entry.name);
+      return entry.isDirectory() ? walk(full) : [full];
+    });
+
+  const sourceFiles = [
+    ...walk(path.join(ROOT, 'web')).filter((f) => f.endsWith('.html')),
+    ...walk(path.join(ROOT, 'src')).filter((f) => f.endsWith('.js')),
+  ].filter((f) => !f.endsWith(path.join('core', 'routes.js')));
+
+  const htmlLink = /(["'`])(\/(?!\/)[\w/-]*)\.html(?=["'`?#])/g;
+  const offenders = [];
+  for (const file of sourceFiles) {
+    const text = fs.readFileSync(file, 'utf8');
+    for (const match of text.matchAll(htmlLink)) {
+      offenders.push(`${path.relative(ROOT, file)} → ${match[2]}.html`);
+    }
+  }
+  A.eq('url: ไม่มีลิงก์ภายในที่ลงท้ายด้วย .html แล้ว', offenders.slice(0, 5), []);
+
+  const vercel = JSON.parse(fs.readFileSync(path.join(ROOT, 'vercel.json'), 'utf8'));
+  A.ok('url: vercel.json เปิด cleanUrls', vercel.cleanUrls === true);
+  A.ok(
+    'url: vercel.json ส่ง /home.html ไป /home',
+    (vercel.redirects || []).some((r) => r.source === '/index.html' && r.destination === '/home'),
+  );
+
+  const viteConfig = fs.readFileSync(path.join(ROOT, 'vite.config.js'), 'utf8');
+  A.ok('url: dev server แปลง clean URL ให้', /zenmarket-clean-urls/.test(viteConfig));
+
+  const requests = fs.readFileSync(path.join(ROOT, 'src/core/routes.js'), 'utf8');
+  A.ok('url: routes.js แปลงชื่อย่อเป็นที่อยู่จริง', /'\/home\.html': '\/home'/.test(requests));
+
+  const responsiveCss = fs.readFileSync(path.join(ROOT, 'src/styles/responsive.css'), 'utf8');
+  A.ok(
+    'responsive: ตารางบนมือถือกลายเป็นการ์ด',
+    /table\.data td::before\s*\{[^}]*content:\s*attr\(data-label\)/.test(responsiveCss),
+  );
+  A.ok(
+    'responsive: การ์ดตารางใช้ถึงแท็บเล็ตแนวตั้ง (≤900px)',
+    /@media \(max-width: 900px\) \{[\s\S]*table\.data thead\s*\{[^}]*display:\s*none/.test(responsiveCss),
+  );
+
+  const adminJs = fs.readFileSync(path.join(ROOT, 'src/pages/admin/index.js'), 'utf8');
+  A.ok('admin: แถวออเดอร์มี data-label ครบ', (adminJs.match(/<td data-label=/g) || []).length >= 8);
+  A.ok('admin: แถวสินค้ามี data-label ครบ', /data-label="\$\{t\('admin\.product_name'\)\}"/.test(adminJs));
+}
+
+/* ------------------------------------------------------------------ *
+ * 11. หัวเว็บบนมือถือ: ไม่มีปุ่มล้น และย้ายเมนูที่เกินเข้าไปในเมนูพับ
+ * ------------------------------------------------------------------ */
+{
+  const fs = await import('node:fs');
+  const responsiveCss = fs.readFileSync(path.join(ROOT, 'src/styles/responsive.css'), 'utf8');
+  const mobileBlock = responsiveCss.slice(responsiveCss.indexOf('@media (max-width: 768px)', 2000));
+  A.ok(
+    'header: ซ่อนปุ่มแอดมิน/ออกจากระบบ/สลับภาษาบนมือถือ',
+    /#lang-toggle,\s*\.header-admin,\s*\.header-logout\s*\{[^}]*display:\s*none/.test(mobileBlock),
+  );
+  A.ok('header: เมนูพับมีปุ่มออกจากระบบ', /\.mobile-nav-logout\s*\{/.test(mobileBlock));
+
+  const appJs = fs.readFileSync(path.join(ROOT, 'src/app.js'), 'utf8');
+  A.ok('header: เมนูพับมีปุ่มออกจากระบบจริง', /id="mobile-logout"/.test(appJs));
+  A.ok('header: ใช้ฟังก์ชันออกจากระบบเดียวกันทั้งสองที่', /signOutNow/.test(appJs));
+}
+
 process.exit(A.report('regression') ? 1 : 0);

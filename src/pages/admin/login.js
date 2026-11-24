@@ -53,7 +53,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       setAudience('owner', { id: data.user.id, email: data.user.email, username });
       notify(t('toast.login_success'), 'success');
       setTimeout(() => {
-        window.location.href = '/admin/dashboard.html';
+        window.location.href = '/admin/dashboard';
       }, 400);
     } catch (err) {
       console.error(err);

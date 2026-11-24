@@ -46,7 +46,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 /**
  * Reviews on the home page always come from the database — never from mock
  * copy, so what the customer reads here is exactly what the shop can moderate
- * on /admin/reviews.html. An empty table means an honest empty state.
+ * on /admin/reviews. An empty table means an honest empty state.
  */
 async function paintHomeReviews() {
   const grid = document.getElementById('home-reviews');

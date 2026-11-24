@@ -35,11 +35,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   if (!allowed) {
-    window.location.href = '/admin/login.html';
+    window.location.href = '/admin/login';
     return;
   }
 
-  initAdminLayout('/admin/operations.html');
+  initAdminLayout('/admin/operations');
   initReveal();
 
   initBackup();

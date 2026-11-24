@@ -25,13 +25,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const path = window.location.pathname;
 
-  if (path.includes('/shop/cart.html')) {
+  if (path.includes('/shop/cart')) {
     currentRenderer = initCartPage;
-  } else if (path.includes('/shop/checkout.html')) {
+  } else if (path.includes('/shop/checkout')) {
     currentRenderer = initCheckoutPage;
-  } else if (path.includes('/account/orders.html')) {
+  } else if (path.includes('/account/orders')) {
     currentRenderer = initCustomerOrdersPage;
-  } else if (path.includes('/account/order.html')) {
+  } else if (path.includes('/account/order')) {
     currentRenderer = initCustomerOrderDetailPage;
   }
 
@@ -134,12 +134,12 @@ async function initCheckoutPage() {
   const placeOrderBtn = document.getElementById('place-order-btn');
 
   if (!state.cart || state.cart.length === 0) {
-    window.location.href = '/shop/cart.html';
+    window.location.href = '/shop/cart';
     return;
   }
 
   if (!isSignedIn() || !state.user) {
-    sessionStorage.setItem('zenmarket_return_path', '/shop/checkout.html');
+    sessionStorage.setItem('zenmarket_return_path', '/shop/checkout');
     const gate = document.getElementById('checkout-gate');
     const content = document.getElementById('checkout-content');
     if (content) content.classList.add('hidden');
@@ -212,7 +212,7 @@ async function initCheckoutPage() {
 
       notify(t('toast.order_placed'), 'success');
       setTimeout(() => {
-        window.location.href = `/account/order.html?id=${order.id}`;
+        window.location.href = `/account/order?id=${order.id}`;
       }, 1200);
     } catch (err) {
       console.error(err);
@@ -241,7 +241,7 @@ async function showQR(amount) {
 async function initCustomerOrdersPage() {
   if (!isSignedIn() || !state.user?.id) {
     sessionStorage.setItem('zenmarket_return_path', window.location.pathname + window.location.search);
-    window.location.href = '/auth/login.html';
+    window.location.href = '/auth/login';
     return;
   }
 
@@ -266,11 +266,11 @@ async function initCustomerOrdersPage() {
       const badge = getOrderStatusBadge(order.status);
       const tr = document.createElement('tr');
       tr.innerHTML =
-        `<td class="font-semibold">#${order.id.slice(0, 8)}</td>` +
-        `<td>${order.created_at ? new Date(order.created_at).toLocaleDateString('th-TH') : '-'}</td>` +
-        `<td><span class="badge badge-${badge.variant}">${badge.label}</span></td>` +
-        `<td class="num">${formatTHB(order.total)}</td>` +
-        `<td><a href="/account/order.html?id=${order.id}" class="btn btn-outline btn-sm">${t('common.view')}</a></td>`;
+        `<td data-label="${t('order.no')}" class="font-semibold">#${order.id.slice(0, 8)}</td>` +
+        `<td data-label="${t('common.date')}">${order.created_at ? new Date(order.created_at).toLocaleDateString('th-TH') : '-'}</td>` +
+        `<td data-label="${t('common.status')}"><span class="badge badge-${badge.variant}">${badge.label}</span></td>` +
+        `<td data-label="${t('common.total')}" class="num">${formatTHB(order.total)}</td>` +
+        `<td class="cell-actions"><a href="/account/order?id=${order.id}" class="btn btn-outline btn-sm">${t('common.view')}</a></td>`;
       tbody.appendChild(tr);
     });
   } catch (err) {
@@ -333,13 +333,13 @@ async function loadCustomerShippingUpdates(orderId) {
 async function initCustomerOrderDetailPage() {
   if (!isSignedIn() || !state.user?.id) {
     sessionStorage.setItem('zenmarket_return_path', window.location.pathname + window.location.search);
-    window.location.href = '/auth/login.html';
+    window.location.href = '/auth/login';
     return;
   }
 
   const orderId = new URLSearchParams(window.location.search).get('id');
   if (!orderId) {
-    window.location.href = '/account/orders.html';
+    window.location.href = '/account/orders';
     return;
   }
 
