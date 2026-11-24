@@ -9,39 +9,113 @@
     <link rel="stylesheet" href="/src/styles/responsive.css" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <script type="module" src="/src/pages/admin/login.js"></script>
-    <noscript
-      ><style>
-        .reveal {
-          opacity: 1 !important;
-          transform: none !important;
-        }
-      </style></noscript
-    >
   </head>
-  <body>
-    <main class="auth-wrap">
-      <div class="auth-card reveal">
-        <div class="auth-head">
-          <div class="mark">Z</div>
-          <h1 style="font-size: var(--font-size-2xl)" data-i18n="admin.system">ระบบจัดการร้าน</h1>
-          <p class="text-sm mt-sm" data-i18n="admin.owner_only">สำหรับเจ้าของร้านเท่านั้น</p>
+  <body class="auth-body">
+    <main class="auth-shell">
+      <header class="auth-topbar">
+        <a href="/home.html" class="auth-brand">
+          <span class="auth-brand-name" id="auth-brand-name">ZenMarket</span>
+        </a>
+        <div class="auth-topbar-actions">
+          <a href="/home.html" class="auth-topbar-link" data-i18n="admin.back_store">กลับหน้าร้าน</a>
+          <button type="button" id="auth-lang-toggle" class="auth-lang" aria-label="เปลี่ยนภาษา" data-i18n-aria-label="common.change_lang">
+            TH / EN
+          </button>
         </div>
+      </header>
 
-        <form id="admin-login-form" novalidate>
-          <div class="form-group">
-            <label class="form-label" for="admin-username" data-i18n="auth.username">ชื่อผู้ใช้</label>
-            <input type="text" id="admin-username" class="form-input" required autocomplete="username" placeholder="admin" />
+      <div class="auth-layout">
+        <aside class="auth-aside">
+          <p class="auth-eyebrow" data-i18n="auth.aside_eyebrow">ร้านค้าออนไลน์</p>
+          <h2 class="auth-aside-title" data-i18n="admin.aside_title">ระบบจัดการร้าน</h2>
+          <p class="auth-aside-text" data-i18n="admin.aside_text">ดูแลสินค้า คำสั่งซื้อ การชำระเงิน และการตั้งค่าร้านได้จากที่เดียว</p>
+          <ul class="auth-points">
+            <li class="auth-point">
+              <span class="auth-point-icon" aria-hidden="true">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M4 7h16v12H4z" />
+                  <path d="M4 11h16" />
+                  <path d="M8 15h3" />
+                </svg>
+              </span>
+              <span data-i18n="admin.point_products">จัดการสินค้าและหมวดหมู่</span>
+            </li>
+            <li class="auth-point">
+              <span class="auth-point-icon" aria-hidden="true">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M6 3h12v18l-3-2-3 2-3-2-3 2z" />
+                  <path d="M9.5 9h5" />
+                  <path d="M9.5 12.5h5" />
+                </svg>
+              </span>
+              <span data-i18n="admin.point_orders">ตรวจสอบสลิปและอัปเดตสถานะคำสั่งซื้อ</span>
+            </li>
+            <li class="auth-point">
+              <span class="auth-point-icon" aria-hidden="true">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <circle cx="12" cy="12" r="3" />
+                  <path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1" />
+                </svg>
+              </span>
+              <span data-i18n="admin.point_settings">ตั้งค่าร้าน โลโก้ และการชำระเงิน</span>
+            </li>
+          </ul>
+        </aside>
+
+        <section class="auth-panel">
+          <div class="auth-panel-inner">
+            <div class="auth-panel-head">
+              <h1 class="auth-title" data-i18n="admin.login_title">เข้าสู่ระบบผู้ดูแล</h1>
+              <p class="auth-sub" data-i18n="admin.owner_only">สำหรับเจ้าของร้านเท่านั้น</p>
+            </div>
+
+            <form id="admin-login-form" class="auth-form" novalidate>
+              <div class="form-group">
+                <label class="form-label" for="admin-username" data-i18n="auth.username">ชื่อผู้ใช้</label>
+                <input type="text" id="admin-username" class="form-input" required autocomplete="username" placeholder="admin" />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="admin-password" data-i18n="auth.password">รหัสผ่าน</label>
+                <input
+                  type="password"
+                  id="admin-password"
+                  class="form-input"
+                  required
+                  autocomplete="current-password"
+                  placeholder="••••••••"
+                />
+              </div>
+
+              <button type="submit" class="btn btn-primary btn-full" data-i18n="admin.login_title">เข้าสู่ระบบผู้ดูแล</button>
+            </form>
+
+            <p class="auth-switch">
+              <a href="/home.html" data-i18n="admin.back_store">กลับหน้าร้าน</a>
+            </p>
           </div>
-
-          <div class="form-group">
-            <label class="form-label" for="admin-password" data-i18n="auth.password">รหัสผ่าน</label>
-            <input type="password" id="admin-password" class="form-input" required autocomplete="current-password" placeholder="••••••••" />
-          </div>
-
-          <button type="submit" class="btn btn-primary btn-full btn-lg" data-i18n="admin.login_title">เข้าสู่ระบบผู้ดูแล</button>
-        </form>
-
-        <p class="auth-switch"><a href="/home.html" data-i18n="admin.back_store">← กลับหน้าร้าน</a></p>
+        </section>
       </div>
     </main>
   </body>
