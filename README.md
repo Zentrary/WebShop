@@ -32,8 +32,9 @@
 เว็บใช้ clean URL ไม่มี `.html` ต่อท้าย — `/home`, `/shop`, `/shop/product?id=…`,
 `/account/orders`, `/admin/dashboard` ฯลฯ
 
-- บน Vercel เปิดด้วย `"cleanUrls": true` ใน `vercel.json` (ลิงก์เก่าที่ลงท้าย `.html`
-  จะถูกเปลี่ยนทางให้อัตโนมัติ)
+- บน Vercel เปิดด้วย `"cleanUrls": true` ใน `vercel.json` และมี 308 redirect
+  รองรับลิงก์เก่าทั้งแบบ `.html` (`/login.html`) และแบบที่ถูกตัด `.html` แล้ว
+  (`/login`) ให้ไปหน้าที่ถูกต้อง — เพราะ Vercel ตัด `.html` ให้ก่อนถึงขั้น redirects
 - ตอน `npm run dev` / `npm run preview` มีปลั๊กอินเล็ก ๆ ใน `vite.config.js`
   แปลง `/home` → `home.html` และ `/shop` → `shop/index.html` ให้เหมือนของจริง
 
