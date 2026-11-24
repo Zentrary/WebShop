@@ -1,56 +1,32 @@
 /**
- * ZenMarket i18n
- * ระบบแปลภาษา TH / EN ด้วย DOM TreeWalker (แปลเฉพาะข้อความ UI ที่กำหนด ไม่แตะข้อมูลลูกค้า/สินค้า)
+ * ZenMarket i18n — ระบบแปลภาษา TH / EN
+ *
+ * กติกา:
+ * - `data-i18n="key"`          → แทนที่ข้อความภายใน element (ไม่ลบ element ลูก)
+ * - `data-i18n-placeholder`    → แทนที่ placeholder ของ input/textarea
+ * - `data-i18n-title`          → แทนที่ title attribute
+ * - `data-i18n-aria-label`     → แทนที่ aria-label
+ * - `data-i18n-html`           → แทนที่ innerHTML (ใช้กับข้อความที่มี markup)
+ * - ข้อความที่สร้างด้วย JS → ใช้ `t('key')` แล้วเรียก `translatePage()` ซ้ำ
  */
 
-const TRANSLATIONS = {
+import { getPageTitleKey } from './routes.js';
+
+const DICT = {
   th: {
     'nav.home': 'หน้าแรก',
-    'nav.shop': 'ร้านค้า',
+    'nav.shop': 'รายการสินค้า',
+    'nav.categories': 'หมวดหมู่',
     'nav.account': 'บัญชีของฉัน',
     'nav.cart': 'ตะกร้า',
-    'nav.admin': 'จัดการร้าน',
-    'nav.logout': 'ออกจากระบบ',
+    'nav.admin': 'แดชบอร์ดผู้ดูแล',
     'nav.login': 'เข้าสู่ระบบ',
     'nav.register': 'สมัครสมาชิก',
-
-    'home.hero_title': 'ZenMarket',
-    'home.hero_subtitle': 'ร้านค้าออนไลน์ ด้วยความตั้งใจและความใส่ใจ',
-    'home.steps.title': 'วิธีการสั่งซื้อ',
-    'home.steps.1': 'เลือกสินค้า',
-    'home.steps.2': 'ชำระเงิน',
-    'home.steps.3': 'รับสินค้า',
-    'home.reviews.title': 'รีวิวจากลูกค้า',
-    'home.faq.title': 'คำถามที่พบบ่อย',
-
-    'cart.title': 'ตะกร้าสินค้า',
-    'cart.empty': 'ตะกร้าสินค้าของคุณว่างเปล่า',
-    'cart.subtotal': 'ยอดรวมสินค้า',
-    'cart.shipping': 'ค่าจัดส่ง',
-    'cart.total': 'รวมทั้งหมด',
-    'cart.checkout': 'ไปยังหน้าชำระเงิน',
-
-    'checkout.title': 'ชำระเงิน',
-    'checkout.shipping_info': 'ข้อมูลการจัดส่ง',
-    'checkout.payment_method': 'วิธีการชำระเงิน',
-    'checkout.promptpay': 'พร้อมเพย์ (PromptPay)',
-    'checkout.cod': 'เก็บเงินปลายทาง (COD)',
-    'checkout.place_order': 'ยืนยันคำสั่งซื้อ',
-
-    'account.title': 'บัญชีของฉัน',
-    'account.profile': 'โปรไฟล์',
-    'account.addresses': 'สมุดที่อยู่',
-    'account.orders': 'คำสั่งซื้อ',
-    'account.favorites': 'รายการโปรด',
-
-    'admin.dashboard': 'แดชบอร์ด',
-    'admin.orders': 'คำสั่งซื้อ',
-    'admin.products': 'สินค้า',
-    'admin.categories': 'หมวดหมู่',
-    'admin.reviews': 'รีวิว',
-    'admin.settings': 'การตั้งค่า',
-    'admin.payments': 'การชำระเงิน',
-    'admin.operations': 'การดำเนินงาน',
+    'nav.logout': 'ออกจากระบบ',
+    'nav.favorites': 'รายการโปรด',
+    'nav.orders': 'คำสั่งซื้อ',
+    'nav.menu': 'เมนู',
+    'nav.brand_sep': '|',
 
     'common.save': 'บันทึก',
     'common.cancel': 'ยกเลิก',
@@ -61,54 +37,468 @@ const TRANSLATIONS = {
     'common.loading': 'กำลังโหลด...',
     'common.error': 'เกิดข้อผิดพลาด',
     'common.success': 'สำเร็จ',
+    'common.back': 'ย้อนกลับ',
+    'common.all': 'ทั้งหมด',
+    'common.none': 'ไม่มี',
+    'common.view': 'ดู',
+    'common.copy': 'คัดลอก',
+    'common.copied': 'คัดลอกแล้ว',
+    'common.optional': 'ไม่บังคับ',
+    'common.more': 'ดูเพิ่มเติม',
+    'common.continue': 'ตกลง',
+    'common.yes': 'ใช่',
+    'common.no': 'ไม่',
+    'common.total': 'รวม',
+    'common.date': 'วันที่',
+    'common.status': 'สถานะ',
+    'common.actions': 'จัดการ',
+    'common.name': 'ชื่อ',
+    'common.phone': 'เบอร์โทรศัพท์',
+    'common.email': 'อีเมล',
+    'common.address': 'ที่อยู่',
+    'common.quantity': 'จำนวน',
+    'common.price': 'ราคา',
+    'common.new': 'ใหม่',
+    'common.decrease': 'ลดจำนวน',
+    'common.increase': 'เพิ่มจำนวน',
+    'common.items': 'ชิ้น',
+    'common.retry': 'ลองใหม่',
+    'common.optional_note': 'ไม่บังคับ',
+    'common.customer': 'ลูกค้า',
+    'common.pieces': 'ชิ้น',
+    'common.user': 'ผู้ใช้งาน',
+
+    'home.eyebrow': 'ร้านค้าออนไลน์',
+    'home.hero_1': 'ร้านค้าออนไลน์',
+    'home.hero_2': 'ด้วยความตั้งใจ',
+    'home.hero_lead': 'คัดสรรสินค้าด้วยความใส่ใจ บรรจุอย่างพิถีพิถัน และจัดส่งถึงมือคุณอย่างรวดเร็ว',
+    'home.cta_shop': 'เลือกซื้อสินค้า',
+    'home.cta_categories': 'ดูหมวดหมู่',
+    'home.stat_payment': 'ชำระเงินสะดวก ปลอดภัย',
+    'home.stat_ship': 'จัดส่งทั่วประเทศ',
+    'home.stat_care': 'ใส่ใจทุกออเดอร์',
+    'home.stat_care_desc': 'เจ้าของร้านดูแลเองทุกขั้นตอน',
+    'home.steps_eyebrow': 'วิธีการสั่งซื้อ',
+    'home.steps_title': 'วิธีการสั่งซื้อ',
+    'home.step_1_title': 'เลือกสินค้า',
+    'home.step_1_desc': 'เลือกสินค้าที่คุณชื่นชอบจากหมวดหมู่ต่างๆ ค้นหาและกรองตามใจได้เลย',
+    'home.step_2_title': 'ชำระเงิน',
+    'home.step_2_desc': 'สแกน QR พร้อมเพย์เพื่อชำระเงิน แล้วอัปโหลดสลิปยืนยันในหน้าคำสั่งซื้อ',
+    'home.step_3_title': 'รับสินค้า',
+    'home.step_3_desc': 'รอรับสินค้าถึงมือคุณอย่างรวดเร็ว ติดตามสถานะได้ตลอดในบัญชีของฉัน',
+    'home.reviews_eyebrow': 'รีวิวจากลูกค้า',
+    'home.reviews_title': 'รีวิวจากลูกค้า',
+    'home.faq_eyebrow': 'คำถามที่พบบ่อย',
+    'home.faq_title': 'คำถามที่พบบ่อย',
+    'home.contact_eyebrow': 'ติดต่อเรา',
+    'faq.q1': 'ปกติแล้วสินค้าจะถูกจัดส่งภายใน 2–5 วันทำการหลังจากยืนยันการชำระเงินแล้ว',
+    'faq.q2': 'สามารถคืนสินค้าได้ภายใน 7 วันหากสินค้าเสียหรือไม่ตรงตามที่สั่ง โดยสินค้าต้องอยู่ในสภาพเดิม',
+    'faq.q3': 'รองรับการชำระเงินผ่านพร้อมเพย์ (PromptPay) โดยสแกน QR Code ในหน้าชำระเงิน',
+    'home.contact_title': 'ติดต่อเรา',
+    'home.line_desc': 'แชทสอบถามได้ตลอดเวลา',
+    'home.facebook_desc': 'ติดตามข่าวสารและโปรโมชั่น',
+    'home.email_desc': 'ส่งอีเมลมาหาเราได้',
+
+    'shop.eyebrow': 'รายการสินค้า',
+    'shop.title': 'รายการสินค้า',
+    'shop.sub': 'สินค้าทั้งหมดของร้าน คัดสรรด้วยความใส่ใจ',
+    'shop.search': 'ค้นหาสินค้า...',
+    'shop.filter_all': 'ทุกหมวดหมู่',
+    'shop.sort': 'เรียงตาม',
+    'shop.sort_newest': 'ใหม่ล่าสุด',
+    'shop.sort_price_asc': 'ราคา: ต่ำ → สูง',
+    'shop.sort_price_desc': 'ราคา: สูง → ต่ำ',
+    'shop.sort_name': 'ชื่อ ก → ฮ',
+    'shop.count': 'พบสินค้า {n} รายการ',
+    'shop.empty': 'ไม่พบสินค้าที่ตรงกับเงื่อนไข',
+    'shop.empty_hint': 'ลองเปลี่ยนคำค้นหาหรือเลือกหมวดหมู่อื่น',
+    'shop.categories_eyebrow': 'หมวดหมู่',
+    'shop.categories_title': 'หมวดหมู่สินค้า',
+    'shop.categories_sub': 'เลือกหมวดหมู่ที่สนใจเพื่อดูสินค้า',
+    'shop.cat_view': 'ดูสินค้า',
+    'shop.featured_eyebrow': 'แนะนำ',
+    'shop.featured_title': 'สินค้าแนะนำ',
+
+    'product.add_to_cart': 'หยิบใส่ตะกร้า',
+    'product.added_to_cart': 'เพิ่ม "{name}" ลงในตะกร้าแล้ว',
+    'product.buy_now': 'สั่งซื้อเลย',
+    'product.reviews_title': 'รีวิวสินค้า',
+    'product.no_reviews': 'ยังไม่มีรีวิวสำหรับสินค้านี้',
+    'product.related_title': 'สินค้าที่เกี่ยวข้อง',
+    'product.detail_eyebrow': 'รายละเอียดสินค้า',
+    'product.no_description': 'ไม่มีรายละเอียดสินค้า',
+    'product.info_payment': 'ชำระเงินผ่านพร้อมเพย์ (PromptPay)',
+    'product.info_shipping': 'จัดส่งภายใน 2–5 วันทำการ',
+    'product.out_of_stock': 'สินค้านี้หมดชั่วคราว',
+    'product.favorite_add': 'เพิ่มในรายการโปรด',
+    'product.favorite_remove': 'นำออกจากรายการโปรด',
+    'product.reviews_eyebrow': 'รีวิว',
+    'product.in_stock': 'พร้อมส่ง',
+    'product.low_stock': 'เหลือน้อย',
+    'product.out_of_stock_tag': 'สินค้าหมด',
+    'product.not_found': 'ไม่พบสินค้าที่ระบุ',
+
+    'cart.title': 'ตะกร้าสินค้า',
+    'cart.empty': 'ตะกร้าสินค้าของคุณว่างเปล่า',
+    'cart.empty_hint': 'ลองเลือกสินค้าสักชิ้นสิดดู',
+    'cart.items_title': 'สินค้าในตะกร้า',
+    'cart.subtotal': 'ยอดรวมสินค้า',
+    'cart.shipping': 'ค่าจัดส่ง',
+    'cart.total': 'รวมทั้งหมด',
+    'cart.checkout': 'ไปยังหน้าชำระเงิน',
+    'cart.continue_shopping': 'เลือกสินค้าเพิ่ม',
+    'cart.remove': 'ลบออก',
+    'cart.free_hint': 'สั่งซื้อเพิ่มอีก {amount} จะได้ส่งฟรี',
+    'cart.free_done': 'คุณได้สิทธิ์ส่งฟรีแล้ว',
+    'cart.free': 'ฟรี',
+    'cart.per_item': '/ ชิ้น',
+    'cart.stock_changed': 'ราคาหรือสต็อกของบางสินค้าเปลี่ยนไป กรุณาตรวจสอบตะกร้าอีกครั้ง',
+
+    'checkout.title': 'ชำระเงิน',
+    'checkout.sub': 'กรอกข้อมูลการจัดส่ง แล้วสแกน QR พร้อมเพย์เพื่อชำระเงิน',
+    'checkout.shipping_info': 'ข้อมูลการจัดส่ง',
+    'checkout.recipient': 'ชื่อผู้รับ',
+    'checkout.recipient_ph': 'ชื่อ-นามสกุล ผู้รับ',
+    'checkout.phone': 'เบอร์โทรศัพท์',
+    'checkout.phone_ph': '0812345678',
+    'checkout.address': 'ที่อยู่จัดส่ง',
+    'checkout.address_ph': 'บ้านเลขที่ ซอย ถนน ตำบล อำเภอ จังหวัด รหัสไปรษณีย์',
+    'checkout.payment_method': 'วิธีการชำระเงิน',
+    'checkout.promptpay': 'พร้อมเพย์ (PromptPay)',
+    'checkout.promptpay_desc': 'สแกน QR ด้านล่างเพื่อชำระเงิน',
+    'checkout.summary': 'สรุปคำสั่งซื้อ',
+    'checkout.place_order': 'ยืนยันคำสั่งซื้อ',
+    'checkout.placing': 'กำลังดำเนินการ...',
+    'checkout.qr_title': 'สแกนเพื่อชำระเงิน',
+    'checkout.qr_amount': 'ยอดชำระ',
+    'checkout.qr_note': 'เมื่อชำระเงินแล้ว กรุณาอัปโหลดสลิปในหน้าคำสั่งซื้อเพื่อให้ร้านตรวจสอบ',
+    'checkout.agree': 'กดยืนยันถือว่ายินยอมตามเงื่อนไขการจัดส่ง',
+    'checkout.login_required': 'กรุณาเข้าสู่ระบบก่อนสั่งซื้อ',
+    'checkout.login_required_desc': 'เพื่อให้เราส่งสินค้าได้ถูกต้อง และให้คุณติดตามสถานะคำสั่งซื้อได้ตลอด',
+    'checkout.register_cta': 'สมัครสมาชิกและสั่งซื้อ',
+    'checkout.back_cart': 'กลับไปตะกร้า',
+    'checkout.login_cta': 'เข้าสู่ระบบเพื่อชำระเงิน',
+
+    'auth.login_title': 'เข้าสู่ระบบ',
+    'auth.login_sub': 'ยินดีต้อนรับกลับสู่ ZenMarket',
+    'auth.register_title': 'สมัครสมาชิก',
+    'auth.register_sub': 'สร้างบัญชีเพื่อสั่งซื้อและติดตามคำสั่งซื้อ',
+    'auth.reset_title': 'ตั้งรหัสผ่านใหม่',
+    'auth.reset_sub': 'กรอกรหัสผ่านใหม่เพื่อเข้าใช้งานบัญชี',
+    'auth.identifier': 'ชื่อผู้ใช้ หรือ email',
+    'auth.identifier_ph': 'username หรือ email',
+    'auth.username': 'ชื่อผู้ใช้',
+    'auth.username_ph': 'ตัวอักษรอังกฤษ ตัวเลข _',
+    'auth.email': 'อีเมล',
+    'auth.email_ph': 'you@example.com',
+    'auth.phone': 'เบอร์โทรศัพท์',
+    'auth.phone_ph': '0812345678',
+    'auth.password': 'รหัสผ่าน',
+    'auth.password_ph': 'อย่างน้อย 6 ตัวอักษร',
+    'auth.password2': 'ยืนยันรหัสผ่าน',
+    'auth.password2_ph': '••••••••',
+    'auth.remember': 'จดจำฉัน',
+    'auth.forgot': 'ลืมรหัสผ่าน?',
+    'auth.submit_login': 'เข้าสู่ระบบ',
+    'auth.submit_register': 'สมัครสมาชิก',
+    'auth.submit_reset': 'บันทึกรหัสผ่าน',
+    'auth.no_account': 'ยังไม่มีบัญชี?',
+    'auth.have_account': 'มีบัญชีอยู่แล้ว?',
+    'auth.back_login': 'กลับไปหน้าเข้าสู่ระบบ',
+    'auth.forgot_title': 'ลืมรหัสผ่าน',
+    'auth.forgot_sub': 'กรอกอีเมลที่ใช้สมัคร ระบบจะส่งลิงก์ตั้งรหัสผ่านใหม่ให้',
+    'auth.forgot_submit': 'ส่งลิงก์ตั้งรหัสผ่าน',
+    'auth.forgot_sent': 'ส่งอีเมลตั้งรหัสผ่านใหม่แล้ว กรุณาตรวจสอบกล่องจดหมาย',
+    'auth.invalid_credentials': 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง',
+    'auth.password_mismatch': 'รหัสผ่านไม่ตรงกัน',
+    'auth.password_too_short': 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร',
+    'auth.reset_success': 'ตั้งรหัสผ่านใหม่สำเร็จ',
+    'auth.username_taken': 'ชื่อผู้ใช้นี้ถูกใช้งานแล้ว',
+
+    'account.title': 'บัญชีของฉัน',
+    'account.profile': 'โปรไฟล์',
+    'account.addresses': 'ที่อยู่',
+    'account.orders': 'คำสั่งซื้อ',
+    'account.favorites': 'รายการโปรด',
+    'account.tab_profile': 'โปรไฟล์',
+    'account.tab_orders': 'คำสั่งซื้อ',
+    'account.tab_addresses': 'ที่อยู่',
+    'account.tab_favorites': 'รายการโปรด',
+    'account.nickname': 'ชื่อเล่น',
+    'account.age': 'อายุ',
+    'account.save_profile': 'บันทึกการเปลี่ยนแปลง',
+    'account.profile_saved': 'อัปเดตโปรไฟล์สำเร็จ',
+    'account.recent_orders': 'คำสั่งซื้อล่าสุด',
+    'account.view_all_orders': 'ดูคำสั่งซื้อทั้งหมด',
+    'account.no_orders': 'ยังไม่มีคำสั่งซื้อ',
+    'account.address_book': 'สมุดที่อยู่',
+    'account.no_address': 'ยังไม่มีที่อยู่ที่บันทึก',
+    'account.add_address': 'เพิ่มที่อยู่',
+    'account.address_label': 'ชื่อเรียกที่อยู่',
+    'account.address_label_ph': 'เช่น บ้าน / ที่ทำงาน',
+    'account.set_default': 'ตั้งเป็นค่าเริ่มต้น',
+    'account.default_badge': 'ค่าเริ่มต้น',
+    'account.delete_address': 'ลบที่อยู่นี้',
+    'account.address_saved': 'บันทึกที่อยู่สำเร็จ',
+    'account.address_deleted': 'ลบที่อยู่แล้ว',
+    'account.edit_address': 'แก้ไขที่อยู่',
+    'account.delete_address_confirm': 'ยืนยันการลบที่อยู่นี้?',
+    'account.address_recipient': 'ชื่อผู้รับ',
+    'account.address_address': 'ที่อยู่จัดส่ง',
+    'account.favorites_empty': 'ยังไม่มีรายการโปรด กดรูปหัวใจที่สินค้าเพื่อเพิ่ม',
+
+    'order.title': 'คำสั่งซื้อ',
+    'order.sub': 'ติดตามสถานะคำสั่งซื้อทั้งหมดของคุณ',
+    'order.no': 'เลขที่',
+    'order.items': 'สินค้าที่สั่งซื้อ',
+    'order.status_title': 'สถานะการจัดส่ง',
+    'order.payment': 'การชำระเงิน',
+    'order.upload_slip': 'อัปโหลดสลิปการชำระเงินเพื่อให้ร้านตรวจสอบ',
+    'order.upload_slip_btn': 'อัปโหลดสลิป',
+    'order.slip_sent': 'อัปโหลดสลิปสำเร็จ รอร้านตรวจสอบ',
+    'order.review_title': 'ให้คะแนนสินค้า',
+    'order.review_hint': 'เขียนรีวิวให้เจ้าของร้านกันหน่อย',
+    'order.review_send': 'ส่งรีวิว',
+    'order.review_sent': 'ส่งรีวิวสำเร็จ ขอบคุณครับ!',
+    'order.review_pending': 'ให้คะแนนได้หลังสินค้าส่งถึงมือแล้ว',
+    'order.tracking': 'เลขพัสดุ',
+    'order.shipping_updates': 'อัปเดตการจัดส่ง',
+    'order.no_updates': 'ยังไม่มีอัปเดตการจัดส่ง',
+    'order.cancel': 'ยกเลิกคำสั่งซื้อ',
+    'order.cancel_confirm': 'ยืนยันการยกเลิกคำสั่งซื้อ? สินค้าจะถูกคืนเข้าสต็อก',
+    'order.cancelled': 'ยกเลิกคำสั่งซื้อแล้ว',
+    'order.confirm_received': 'ยืนยันได้รับสินค้าแล้ว',
+    'order.received': 'ขอบคุณครับ ยืนยันการได้รับสินค้าแล้ว',
+    'order.not_found': 'ไม่พบคำสั่งซื้อ',
+    'order.back_orders': 'กลับไปรายการคำสั่งซื้อ',
+    'order.slip_unavailable': 'ไม่สามารถเปิดสลิปได้',
+
+    'status.pending': 'รอการยืนยัน',
+    'status.review': 'รอตรวจสอบสลิป',
+    'status.paid': 'ชำระเงินแล้ว',
+    'status.shipped': 'จัดส่งแล้ว',
+    'status.delivered': 'ส่งถึงมือแล้ว',
+    'status.cancelled': 'ยกเลิกแล้ว',
+
+    'timeline.ordered': 'สั่งซื้อสำเร็จ',
+    'timeline.verify': 'ตรวจสอบสลิป',
+    'timeline.paid': 'ชำระเงินแล้ว',
+    'timeline.shipped': 'จัดส่งพัสดุ',
+    'timeline.delivered': 'ส่งถึงมือลูกค้า',
+
+    'footer.shop': 'ร้านค้า',
+    'footer.help': 'ช่วยเหลือ',
+    'footer.contact': 'ติดต่อ',
+    'footer.all_products': 'สินค้าทั้งหมด',
+    'footer.categories': 'หมวดหมู่',
+    'footer.cart': 'ตะกร้า',
+    'footer.help_shipping': 'การจัดส่งและชำระเงิน',
+    'footer.about': 'เกี่ยวกับร้าน',
+    'footer.contact_us': 'ติดต่อเรา',
+    'footer.privacy': 'นโยบายความเป็นส่วนตัว',
+    'footer.rights': 'สงวนลิขสิทธิ์',
+    'footer.tagline': 'ร้านค้าออนไลน์ ด้วยความตั้งใจและความใส่ใจในทุกรายละเอียด',
+
+    'admin.dashboard': 'แดชบอร์ด',
+    'admin.page_dashboard': 'แดชบอร์ดผู้ดูแล',
+    'admin.page_orders': 'คำสั่งซื้อ',
+    'admin.page_products': 'สินค้า',
+    'admin.page_categories': 'หมวดหมู่',
+    'admin.page_reviews': 'รีวิว',
+    'admin.page_settings': 'การตั้งค่า',
+    'admin.page_payments': 'การชำระเงิน',
+    'admin.page_operations': 'การดำเนินงาน',
+    'admin.page_login': 'เข้าสู่ระบบผู้ดูแล',
+    'admin.orders': 'คำสั่งซื้อ',
+    'admin.products': 'สินค้า',
+    'admin.categories': 'หมวดหมู่',
+    'admin.reviews': 'รีวิว',
+    'admin.settings': 'การตั้งค่า',
+    'admin.payments': 'การชำระเงิน',
+    'admin.operations': 'การดำเนินงาน',
+    'admin.system': 'ระบบจัดการร้าน',
+    'admin.back_store': 'กลับหน้าร้าน',
+    'admin.logout': 'ออกจากระบบ',
+    'admin.menu': 'เมนูจัดการ',
+    'admin.kpi_sales': 'ยอดขายรวม',
+    'admin.kpi_pending': 'รอตรวจสอบสลิป',
+    'admin.kpi_products': 'สินค้าในระบบ',
+    'admin.kpi_rating': 'คะแนนรีวิวเฉลี่ย',
+    'admin.chart_title': 'ยอดขาย 7 วันล่าสุด',
+    'admin.low_stock': 'สินค้าใกล้หมด',
+    'admin.recent_reviews': 'รีวิวล่าสุด',
+    'admin.no_reviews': 'ยังไม่มีรีวิว',
+    'admin.add_product': 'เพิ่มสินค้า',
+    'admin.edit_product': 'แก้ไขสินค้า',
+    'admin.new_product': 'เพิ่มสินค้าใหม่',
+    'admin.product_name': 'ชื่อสินค้า',
+    'admin.product_sku': 'SKU',
+    'admin.product_category': 'หมวดหมู่',
+    'admin.product_price': 'ราคา (บาท)',
+    'admin.product_stock': 'จำนวนสต็อก',
+    'admin.product_image': 'รูปสินค้า',
+    'admin.product_upload': 'อัปโหลดรูปสินค้า',
+    'admin.product_desc': 'รายละเอียดสินค้า',
+    'admin.product_active': 'เปิดขายสินค้านี้',
+    'admin.save_product': 'บันทึกสินค้า',
+    'admin.hide': 'ซ่อน',
+    'admin.show': 'แสดง',
+    'admin.active': 'ใช้งาน',
+    'admin.hidden': 'ซ่อน',
+    'admin.delete_confirm': 'ยืนยันการลบ? การกระทำนี้ย้อนกลับไม่ได้',
+    'admin.filter_all': 'ทั้งหมด',
+    'admin.add_category': 'เพิ่มหมวดหมู่',
+    'admin.all_categories': 'หมวดหมู่ทั้งหมด',
+    'admin.reviewer': 'ผู้รีวิว',
+    'admin.product': 'สินค้า',
+    'admin.rating': 'คะแนน',
+    'admin.comment': 'ความคิดเห็น',
+    'admin.settings_store': 'ข้อมูลร้าน',
+    'admin.settings_shop_name': 'ชื่อร้าน',
+    'admin.settings_logo': 'โลโก้ร้าน',
+    'admin.settings_logo_upload': 'อัปโหลดโลโก้',
+    'admin.settings_tagline': 'คำโปรยร้าน',
+    'admin.settings_contact': 'ช่องทางติดต่อ',
+    'admin.settings_shipping': 'การจัดส่ง',
+    'admin.settings_shipping_fee': 'ค่าจัดส่ง (บาท)',
+    'admin.settings_free_threshold': 'ส่งฟรีเมื่อช้อปครบ (บาท)',
+    'admin.settings_shipping_note': 'หมายเหตุการจัดส่ง',
+    'admin.settings_about': 'เกี่ยวกับร้าน',
+    'admin.settings_about_text': 'ข้อความแนะนำร้าน',
+    'admin.settings_saved': 'บันทึกการตั้งค่าสำเร็จ',
+    'admin.payments_account': 'บัญชีรับเงิน',
+    'admin.payments_promptpay_id': 'PromptPay ID',
+    'admin.payments_recipient': 'ชื่อผู้รับเงิน',
+    'admin.payments_hint': 'เบอร์มือถือ 10 หลัก หรือเลขบัตรประชาชน 13 หลัก',
+    'admin.payments_saved': 'บันทึกการตั้งค่าการชำระเงินสำเร็จ',
+    'admin.payments_test': 'ทดสอบสร้าง QR พร้อมเพย์',
+    'admin.payments_amount': 'ยอดเงิน',
+    'admin.payments_reference': 'เลขอ้างอิง',
+    'admin.payments_generate': 'สร้าง QR',
+    'admin.order_number': 'คำสั่งซื้อ',
+    'admin.order_customer': 'ผู้รับ',
+    'admin.order_receipt': 'สลิปการชำระเงิน',
+    'admin.order_no_receipt': 'ไม่พบสลิป',
+    'admin.order_status': 'สถานะคำสั่งซื้อ',
+    'admin.order_tracking': 'เลขพัสดุ / รหัสพัสดุ',
+    'admin.order_message': 'ข้อความถึงลูกค้า',
+    'admin.order_message_ph': 'เช่น จัดส่งแล้ว คาดถึงวันศุกร์',
+    'admin.order_send_update': 'ส่งอัปเดตให้ลูกค้า',
+    'admin.order_updated': 'อัปเดตคำสั่งซื้อสำเร็จ',
+    'admin.order_update_sent': 'ส่งอัปเดตให้ลูกค้าแล้ว',
+    'admin.back_orders': 'กลับรายการ',
+    'admin.backup_title': 'สำรองและกู้คืนข้อมูล',
+    'admin.backup_desc': 'ดาวน์โหลดข้อมูลร้านทั้งหมด (สินค้า คำสั่งซื้อ รีวิว) เข้ารหัสด้วยรหัสผ่านของคุณ',
+    'admin.backup_password': 'รหัสผ่านสำหรับเข้ารหัส',
+    'admin.backup_download': 'ดาวน์โหลดข้อมูล',
+    'admin.backup_restore': 'กู้คืนจากไฟล์',
+    'admin.backup_ok': 'ตรวจสอบไฟล์สำรองสำเร็จ',
+    'admin.status_title': 'สถานะระบบ',
+    'admin.notifications': 'การแจ้งเตือน',
+    'admin.restock_status': 'สถานะการคืนสต็อก',
+    'admin.no_data': 'ยังไม่มีข้อมูล',
+    'admin.no_notifications': 'ไม่มีการแจ้งเตือนใหม่',
+    'admin.owner_only': 'สำหรับเจ้าของร้านเท่านั้น',
+    'admin.login_title': 'เข้าสู่ระบบผู้ดูแล',
+    'admin.logo_preview': 'ตัวอย่างโลโก้',
+    'admin.logo_remove': 'ลบโลโก้',
+    'admin.logo_updated': 'อัปเดตโลโก้แล้ว',
+    'admin.logo_hint': 'รองรับไฟล์ PNG, JPG, SVG หรือ WebP ขนาดไม่เกิน 1 MB',
+    'admin.logo_invalid_type': 'รองรับเฉพาะไฟล์ PNG, JPG, SVG หรือ WebP',
+    'admin.logo_too_large': 'ไฟล์โลโก้ต้องไม่เกิน 1 MB',
+    'admin.system_error': 'ระบบขัดข้อง กรุณาลองใหม่',
+    'admin.filter_pending': 'รอยืนยัน',
+    'admin.filter_review': 'รอตรวจสอบสลิป',
+    'admin.filter_paid': 'ชำระแล้ว',
+    'admin.filter_shipped': 'จัดส่งแล้ว',
+    'admin.filter_delivered': 'ส่งถึงแล้ว',
+    'admin.filter_cancelled': 'ยกเลิก',
+    'admin.shipping_updates': 'อัปเดตการจัดส่ง',
+    'admin.shipping_add': 'เพิ่มอัปเดตการจัดส่ง',
+    'admin.shipping_message': 'ข้อความถึงลูกค้า',
+    'admin.shipping_images': 'รูปการจัดส่ง (สูงสุด 4 รูป)',
+    'admin.shipping_sent': 'ส่งอัปเดตการจัดส่งแล้ว',
+    'admin.shipping_empty': 'กรุณาใส่ข้อความหรือเลือกรูปอย่างน้อย 1 รูป',
+    'admin.shipping_too_many': 'เลือกได้ไม่เกิน 4 รูป',
+    'admin.client_errors': 'ข้อผิดพลาดจากผู้ใช้',
+    'admin.no_client_errors': 'ไม่พบข้อผิดพลาด',
+    'admin.login_attempts': 'ความพยายามเข้าสู่ระบบ',
+    'admin.product_saved': 'แก้ไขสินค้าสำเร็จ',
+    'admin.product_added': 'เพิ่มสินค้าสำเร็จ',
+    'admin.product_name_required': 'กรุณากรอกชื่อสินค้า',
+    'admin.category_added': 'เพิ่มหมวดหมู่สำเร็จ',
+    'admin.payments_missing_id': 'กรุณาตั้งค่า PromptPay ID ก่อน',
+    'admin.no_orders_in_status': 'ไม่มีคำสั่งซื้อในสถานะนี้',
+    'admin.backup_password_required': 'กรุณาระบุรหัสผ่านสำหรับเข้ารหัส/ถอดรหัส',
+    'admin.backup_saved': 'สำรองข้อมูลสำเร็จ',
+    'admin.backup_ok': 'ตรวจสอบไฟล์สำรองสำเร็จ',
+    'admin.backup_restored': 'กู้คืนข้อมูลสำเร็จ',
+    'admin.backup_restore_confirm': 'ยืนยันการกู้คืนข้อมูลจากไฟล์นี้? ข้อมูลเดิมจะถูกอัปเดตตามไฟล์สำรอง',
+    'admin.no_login_attempts': 'ไม่พบความพยายามเข้าสู่ระบบ',
+    'admin.no_permission': 'บัญชีนี้ไม่มีสิทธิ์เข้าถึงหลังบ้าน',
+
+    'page.about_title': 'เกี่ยวกับร้าน',
+    'page.about_sub': 'ร้านค้าออนไลน์ที่ดูแลทุกออเดอร์ด้วยตัวเอง เพื่อให้สินค้าถึงมือคุณในสภาพที่ดีที่สุด',
+    'page.about_p1': 'ZenMarket เริ่มต้นจากความรักในการเลือกสินค้าชิ้นดีๆ ไม่ใช่แค่ขายสินค้า แต่อยากให้คุณได้สินค้าที่ถูกใจ บรรจุภัณฑ์ที่ปลอดภัย และได้รับการดูแลที่อบอุ่นเหมือนคนรู้จัก',
+    'page.about_p2': 'ทุกคำสั่งซื้อผ่านการตรวจสอบและบรรจุด้วยมือ เราจึงมั่นใจว่าสินค้าที่ส่งถึงมือคุณจะตรงตามภาพและคุณภาพที่แสดงไว้',
+    'page.about_step1': 'คัดสรร',
+    'page.about_step1_desc': 'เลือกสินค้าที่ผ่านการตรวจสอบคุณภาพทุกชิ้นก่อนนำเสนอ',
+    'page.about_step2': 'บรรจุ',
+    'page.about_step2_desc': 'ใส่ถุงน่ารักพร้อมการ์ดเขียนถึง เพื่อให้การเปิดกล่องเป็นเรื่องพิเศษ',
+    'page.about_step3': 'จัดส่ง',
+    'page.about_step3_desc': 'แพ็กและส่งด้วยความระมัดระวัง พร้อมแจ้งเลขพัสดุทันทีที่จัดส่ง',
+    'page.contact_title': 'ติดต่อเรา',
+    'page.contact_sub': 'มีคำถามเรื่องสินค้า การจัดส่ง หรือต้องการความช่วยเหลือ ติดต่อเราได้ทางช่องทางด้านล่าง',
+    'page.contact_hours': 'เวลาทำการ',
+    'page.contact_hours_note': 'นอกเวลาทำการ คุณสามารถฝากข้อความไว้ใน LINE แล้วเราจะติดต่อกลับโดยเร็วที่สุด',
+    'page.help_title': 'การจัดส่งและชำระเงิน',
+    'page.help_sub': 'ขั้นตอนการสั่งซื้อ การชำระเงิน และการติดตามพัสดุ',
+    'page.help_shipping': 'ค่าจัดส่ง',
+    'page.help_shipping_fee': 'ค่าจัดส่งมาตรฐาน',
+    'page.help_free': 'ส่งฟรีเมื่อช้อปครบ',
+    'page.help_note': 'ระยะเวลาจัดส่ง 2–5 วันทำการหลังยืนยันการชำระเงิน สินค้าที่มีสต็อกน้อยอาจใช้เวลานานกว่าปกติ',
+    'page.help_return': 'การคืนสินค้า',
+    'page.help_return_text': 'สามารถขอคืนสินค้าภายใน 7 วันหลังได้รับสินค้า หากสินค้าเสียหรือไม่ตรงตามที่สั่ง ทั้งนี้สินค้าต้องอยู่ในสภาพเดิมและยังไม่ถูกใช้',
+    'page.privacy_title': 'นโยบายความเป็นส่วนตัว',
+    'page.privacy_sub': 'เราเก็บข้อมูลของคุณเท่าที่จำเป็นเพื่อให้บริการได้อย่างถูกต้อง',
+    'page.privacy_collect': 'ข้อมูลที่เราเก็บ',
+    'page.privacy_collect_text': 'ชื่อผู้ใช้ อีเมล เบอร์โทรศัพท์ ที่อยู่จัดส่ง และประวัติคำสั่งซื้อ เพื่อใช้ในการติดต่อ จัดส่งสินค้า และดูแลหลังการขาย',
+    'page.privacy_use': 'การใช้ข้อมูล',
+    'page.privacy_use_text': 'ข้อมูลของคุณจะไม่ถูกขายหรือแบ่งปันให้บุคคลที่สาม ใช้เพียงเพื่อให้บริการตามที่คุณร้องขอเท่านั้น',
+    'page.privacy_security': 'การเก็บรักษาความปลอดภัย',
+    'page.privacy_security_text': 'รหัสผ่านถูกเข้ารหัสด้วยมาตรฐานสากล และการเชื่อมต่อกับฐานข้อมูลใช้การเข้ารหัสแบบ TLS',
+    'page.privacy_rights': 'สิทธิของคุณ',
+    'page.privacy_rights_text': 'คุณสามารถแก้ไขข้อมูลส่วนตัว หรือขอลบบัญชีได้ ติดต่อเราผ่านช่องทางในหน้าติดต่อ',
+
+    'toast.order_placed': 'สั่งซื้อสำเร็จ! กรุณาชำระเงินด้วย QR PromptPay',
+    'toast.login_success': 'เข้าสู่ระบบสำเร็จ',
+    'toast.register_success': 'สมัครสมาชิกสำเร็จ! กรุณาเข้าสู่ระบบ',
+    'toast.logout_success': 'ออกจากระบบแล้ว',
+    'toast.saved': 'บันทึกสำเร็จ',
+    'toast.deleted': 'ลบสำเร็จ',
+    'toast.login_required': 'กรุณาเข้าสู่ระบบเพื่อใช้งานส่วนนี้',
+    'toast.error_generic': 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง',
+    'toast.db_missing': 'ยังไม่ได้ตั้งค่าการเชื่อมต่อฐานข้อมูล (VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY)',
+    'toast.too_many_login': 'พยายามเข้าสู่ระบบบ่อยเกินไป กรุณารอสักครู่แล้วลองใหม่',
+    'toast.rate_limited': 'คุณสั่งซื้อบ่อยเกินไป กรุณารอสักครู่แล้วลองใหม่',
+    'toast.out_of_stock': 'สินค้าบางรายการหมดสต็อก กรุณาตรวจสอบตะกร้า',
+    'toast.network': 'เชื่อมต่อเซิร์ฟเวอร์ไม่สำเร็จ กรุณาตรวจสอบอินเทอร์เน็ต',
   },
+
   en: {
     'nav.home': 'Home',
-    'nav.shop': 'Shop',
+    'nav.shop': 'Products',
+    'nav.categories': 'Categories',
     'nav.account': 'My Account',
     'nav.cart': 'Cart',
-    'nav.admin': 'Admin',
-    'nav.logout': 'Logout',
-    'nav.login': 'Login',
-    'nav.register': 'Register',
-
-    'home.hero_title': 'ZenMarket',
-    'home.hero_subtitle': 'Online store with care and attention',
-    'home.steps.title': 'How to Order',
-    'home.steps.1': 'Select Product',
-    'home.steps.2': 'Pay',
-    'home.steps.3': 'Receive',
-    'home.reviews.title': 'Customer Reviews',
-    'home.faq.title': 'Frequently Asked Questions',
-
-    'cart.title': 'Shopping Cart',
-    'cart.empty': 'Your cart is empty',
-    'cart.subtotal': 'Subtotal',
-    'cart.shipping': 'Shipping',
-    'cart.total': 'Total',
-    'cart.checkout': 'Proceed to Checkout',
-
-    'checkout.title': 'Checkout',
-    'checkout.shipping_info': 'Shipping Information',
-    'checkout.payment_method': 'Payment Method',
-    'checkout.promptpay': 'PromptPay',
-    'checkout.cod': 'Cash on Delivery (COD)',
-    'checkout.place_order': 'Place Order',
-
-    'account.title': 'My Account',
-    'account.profile': 'Profile',
-    'account.addresses': 'Address Book',
-    'account.orders': 'Orders',
-    'account.favorites': 'Favorites',
-
-    'admin.dashboard': 'Dashboard',
-    'admin.orders': 'Orders',
-    'admin.products': 'Products',
-    'admin.categories': 'Categories',
-    'admin.reviews': 'Reviews',
-    'admin.settings': 'Settings',
-    'admin.payments': 'Payments',
-    'admin.operations': 'Operations',
+    'nav.admin': 'Admin Dashboard',
+    'nav.login': 'Log in',
+    'nav.register': 'Sign up',
+    'nav.logout': 'Log out',
+    'nav.favorites': 'Favorites',
+    'nav.orders': 'Orders',
+    'nav.menu': 'Menu',
+    'nav.brand_sep': '|',
 
     'common.save': 'Save',
     'common.cancel': 'Cancel',
@@ -117,92 +507,598 @@ const TRANSLATIONS = {
     'common.close': 'Close',
     'common.search': 'Search',
     'common.loading': 'Loading...',
-    'common.error': 'Error',
+    'common.error': 'Something went wrong',
     'common.success': 'Success',
+    'common.back': 'Back',
+    'common.all': 'All',
+    'common.none': 'None',
+    'common.view': 'View',
+    'common.copy': 'Copy',
+    'common.copied': 'Copied',
+    'common.optional': 'optional',
+    'common.more': 'See more',
+    'common.continue': 'Continue',
+    'common.yes': 'Yes',
+    'common.no': 'No',
+    'common.total': 'Total',
+    'common.date': 'Date',
+    'common.status': 'Status',
+    'common.actions': 'Actions',
+    'common.name': 'Name',
+    'common.phone': 'Phone',
+    'common.email': 'Email',
+    'common.address': 'Address',
+    'common.quantity': 'Quantity',
+    'common.price': 'Price',
+    'common.new': 'New',
+    'common.decrease': 'Decrease quantity',
+    'common.increase': 'Increase quantity',
+    'common.items': 'items',
+    'common.retry': 'Try again',
+    'common.optional_note': 'optional',
+    'common.customer': 'Customer',
+    'common.pieces': 'pcs',
+    'common.user': 'User',
+
+    'home.eyebrow': 'Online store',
+    'home.hero_1': 'An online store',
+    'home.hero_2': 'made with care',
+    'home.hero_lead': 'Carefully selected products, thoughtfully packed, and delivered to your door quickly.',
+    'home.cta_shop': 'Shop products',
+    'home.cta_categories': 'Browse categories',
+    'home.stat_payment': 'Fast, secure PromptPay checkout',
+    'home.stat_ship': 'Nationwide delivery',
+    'home.stat_care': 'Every order matters',
+    'home.stat_care_desc': 'The owner handles every order personally',
+    'home.steps_eyebrow': 'How it works',
+    'home.steps_title': 'How to order',
+    'home.step_1_title': 'Pick a product',
+    'home.step_1_desc': 'Browse categories, search and filter to find exactly what you like.',
+    'home.step_2_title': 'Pay',
+    'home.step_2_desc': 'Scan the PromptPay QR code, then upload your receipt on the order page.',
+    'home.step_3_title': 'Receive',
+    'home.step_3_desc': 'Wait for delivery while tracking every step in your account.',
+    'home.reviews_eyebrow': 'Customer reviews',
+    'home.reviews_title': 'What customers say',
+    'home.faq_eyebrow': 'FAQ',
+    'home.faq_title': 'Frequently asked questions',
+    'home.contact_eyebrow': 'Contact',
+    'faq.q1': 'Orders are usually delivered within 2–5 business days after payment is confirmed.',
+    'faq.q2': 'You can request a return within 7 days if the item is damaged or not as described, provided it is in its original condition.',
+    'faq.q3': 'We accept PromptPay payment — scan the QR code on the checkout page.',
+    'home.contact_title': 'Get in touch',
+    'home.line_desc': 'Chat with us any time',
+    'home.facebook_desc': 'News and promotions',
+    'home.email_desc': 'Send us an email',
+
+    'shop.eyebrow': 'Products',
+    'shop.title': 'Products',
+    'shop.sub': 'Everything in the store, carefully selected.',
+    'shop.search': 'Search products...',
+    'shop.filter_all': 'All categories',
+    'shop.sort': 'Sort by',
+    'shop.sort_newest': 'Newest first',
+    'shop.sort_price_asc': 'Price: low to high',
+    'shop.sort_price_desc': 'Price: high to low',
+    'shop.sort_name': 'Name A–Z',
+    'shop.count': '{n} product(s) found',
+    'shop.empty': 'No products match your filters',
+    'shop.empty_hint': 'Try a different search term or another category',
+    'shop.categories_eyebrow': 'Categories',
+    'shop.categories_title': 'Product categories',
+    'shop.categories_sub': 'Pick a category to see what is inside',
+    'shop.cat_view': 'View products',
+    'shop.featured_eyebrow': 'Featured',
+    'shop.featured_title': 'Recommended for you',
+
+    'product.add_to_cart': 'Add to cart',
+    'product.added_to_cart': '"{name}" added to your cart',
+    'product.buy_now': 'Buy now',
+    'product.reviews_title': 'Product reviews',
+    'product.no_reviews': 'No reviews for this product yet.',
+    'product.related_title': 'You may also like',
+    'product.detail_eyebrow': 'Product detail',
+    'product.no_description': 'No description for this product.',
+    'product.info_payment': 'Pay with PromptPay',
+    'product.info_shipping': 'Ships within 2–5 business days',
+    'product.out_of_stock': 'This product is temporarily out of stock',
+    'product.favorite_add': 'Add to favorites',
+    'product.favorite_remove': 'Remove from favorites',
+    'product.reviews_eyebrow': 'Reviews',
+    'product.in_stock': 'In stock',
+    'product.low_stock': 'Low stock',
+    'product.out_of_stock_tag': 'Out of stock',
+    'product.not_found': 'Product not found',
+
+    'cart.title': 'Shopping cart',
+    'cart.empty': 'Your cart is empty',
+    'cart.empty_hint': 'Let us find something you will love.',
+    'cart.items_title': 'Items in your cart',
+    'cart.subtotal': 'Subtotal',
+    'cart.shipping': 'Shipping',
+    'cart.total': 'Total',
+    'cart.checkout': 'Proceed to checkout',
+    'cart.continue_shopping': 'Continue shopping',
+    'cart.remove': 'Remove',
+    'cart.free_hint': 'Spend {amount} more for free shipping',
+    'cart.free_done': 'You have earned free shipping',
+    'cart.free': 'Free',
+    'cart.per_item': ' / item',
+    'cart.stock_changed': 'Price or stock changed for some items — please review your cart.',
+
+    'checkout.title': 'Checkout',
+    'checkout.sub': 'Fill in your delivery details, then scan the PromptPay QR code.',
+    'checkout.shipping_info': 'Delivery information',
+    'checkout.recipient': 'Recipient name',
+    'checkout.recipient_ph': 'Full name of the recipient',
+    'checkout.phone': 'Phone number',
+    'checkout.phone_ph': '0812345678',
+    'checkout.address': 'Delivery address',
+    'checkout.address_ph': 'House no., soi, road, subdistrict, district, province, postal code',
+    'checkout.payment_method': 'Payment method',
+    'checkout.promptpay': 'PromptPay',
+    'checkout.promptpay_desc': 'Scan the QR code below to pay',
+    'checkout.summary': 'Order summary',
+    'checkout.place_order': 'Place order',
+    'checkout.placing': 'Processing...',
+    'checkout.qr_title': 'Scan to pay',
+    'checkout.qr_amount': 'Amount due',
+    'checkout.qr_note': 'After paying, upload your receipt on the order page so we can verify it.',
+    'checkout.agree': 'By placing the order you agree to our delivery terms.',
+    'checkout.login_required': 'Please log in before ordering',
+    'checkout.login_required_desc': 'So we can deliver to the right address and you can track your order.',
+    'checkout.register_cta': 'Sign up and order',
+    'checkout.back_cart': 'Back to cart',
+    'checkout.login_cta': 'Log in to check out',
+
+    'auth.login_title': 'Log in',
+    'auth.login_sub': 'Welcome back to ZenMarket',
+    'auth.register_title': 'Create an account',
+    'auth.register_sub': 'Sign up to order and track your purchases',
+    'auth.reset_title': 'Set a new password',
+    'auth.reset_sub': 'Choose a new password for your account',
+    'auth.identifier': 'Username or email',
+    'auth.identifier_ph': 'username or email',
+    'auth.username': 'Username',
+    'auth.username_ph': 'letters, numbers and _',
+    'auth.email': 'Email',
+    'auth.email_ph': 'you@example.com',
+    'auth.phone': 'Phone number',
+    'auth.phone_ph': '0812345678',
+    'auth.password': 'Password',
+    'auth.password_ph': 'At least 6 characters',
+    'auth.password2': 'Confirm password',
+    'auth.password2_ph': '••••••••',
+    'auth.remember': 'Remember me',
+    'auth.forgot': 'Forgot password?',
+    'auth.submit_login': 'Log in',
+    'auth.submit_register': 'Sign up',
+    'auth.submit_reset': 'Save new password',
+    'auth.no_account': 'No account yet?',
+    'auth.have_account': 'Already have an account?',
+    'auth.back_login': 'Back to log in',
+    'auth.forgot_title': 'Forgot password',
+    'auth.forgot_sub': 'Enter the email you signed up with and we will send a reset link.',
+    'auth.forgot_submit': 'Send reset link',
+    'auth.forgot_sent': 'Reset link sent — please check your inbox.',
+    'auth.invalid_credentials': 'Incorrect username or password',
+    'auth.password_mismatch': 'Passwords do not match',
+    'auth.password_too_short': 'Password must be at least 6 characters',
+    'auth.reset_success': 'Password updated successfully',
+    'auth.username_taken': 'That username is already taken',
+
+    'account.title': 'My account',
+    'account.profile': 'Profile',
+    'account.addresses': 'Addresses',
+    'account.orders': 'Orders',
+    'account.favorites': 'Favorites',
+    'account.tab_profile': 'Profile',
+    'account.tab_orders': 'Orders',
+    'account.tab_addresses': 'Addresses',
+    'account.tab_favorites': 'Favorites',
+    'account.nickname': 'Nickname',
+    'account.age': 'Age',
+    'account.save_profile': 'Save changes',
+    'account.profile_saved': 'Profile updated',
+    'account.recent_orders': 'Recent orders',
+    'account.view_all_orders': 'View all orders',
+    'account.no_orders': 'No orders yet',
+    'account.address_book': 'Address book',
+    'account.no_address': 'No saved addresses yet',
+    'account.add_address': 'Add address',
+    'account.address_label': 'Label',
+    'account.address_label_ph': 'e.g. Home / Work',
+    'account.set_default': 'Set as default',
+    'account.default_badge': 'Default',
+    'account.delete_address': 'Delete this address',
+    'account.address_saved': 'Address saved',
+    'account.address_deleted': 'Address deleted',
+    'account.edit_address': 'Edit address',
+    'account.delete_address_confirm': 'Delete this address?',
+    'account.address_recipient': 'Recipient name',
+    'account.address_address': 'Delivery address',
+    'account.favorites_empty': 'No favorites yet — tap the heart on any product.',
+
+    'order.title': 'Orders',
+    'order.sub': 'Track every order you have placed.',
+    'order.no': 'Order',
+    'order.items': 'Items ordered',
+    'order.status_title': 'Delivery status',
+    'order.payment': 'Payment',
+    'order.upload_slip': 'Upload your payment receipt so we can verify it.',
+    'order.upload_slip_btn': 'Upload receipt',
+    'order.slip_sent': 'Receipt uploaded — waiting for verification.',
+    'order.review_title': 'Rate the products',
+    'order.review_hint': 'Tell the shop owner what you think.',
+    'order.review_send': 'Send review',
+    'order.review_sent': 'Thanks for the review!',
+    'order.review_pending': 'You can rate the products once they arrive.',
+    'order.tracking': 'Tracking number',
+    'order.shipping_updates': 'Shipping updates',
+    'order.no_updates': 'No shipping updates yet.',
+    'order.cancel': 'Cancel order',
+    'order.cancel_confirm': 'Cancel this order? The items will be returned to stock.',
+    'order.cancelled': 'Order cancelled.',
+    'order.confirm_received': 'Confirm delivery',
+    'order.received': 'Thanks! Delivery confirmed.',
+    'order.not_found': 'Order not found',
+    'order.back_orders': 'Back to orders',
+    'order.slip_unavailable': 'The receipt could not be opened',
+
+    'status.pending': 'Awaiting confirmation',
+    'status.review': 'Verifying receipt',
+    'status.paid': 'Paid',
+    'status.shipped': 'Shipped',
+    'status.delivered': 'Delivered',
+    'status.cancelled': 'Cancelled',
+
+    'timeline.ordered': 'Order placed',
+    'timeline.verify': 'Verifying receipt',
+    'timeline.paid': 'Payment received',
+    'timeline.shipped': 'Shipped',
+    'timeline.delivered': 'Delivered',
+
+    'footer.shop': 'Shop',
+    'footer.help': 'Help',
+    'footer.contact': 'Contact',
+    'footer.all_products': 'All products',
+    'footer.categories': 'Categories',
+    'footer.cart': 'Cart',
+    'footer.help_shipping': 'Shipping & payment',
+    'footer.about': 'About',
+    'footer.contact_us': 'Contact us',
+    'footer.privacy': 'Privacy policy',
+    'footer.rights': 'All rights reserved',
+    'footer.tagline': 'An online store run with care, attention and good taste.',
+
+    'admin.dashboard': 'Dashboard',
+    'admin.page_dashboard': 'Admin Dashboard',
+    'admin.page_orders': 'Admin Orders',
+    'admin.page_products': 'Admin Products',
+    'admin.page_categories': 'Admin Categories',
+    'admin.page_reviews': 'Admin Reviews',
+    'admin.page_settings': 'Admin Settings',
+    'admin.page_payments': 'Admin Payments',
+    'admin.page_operations': 'Admin Operations',
+    'admin.page_login': 'Admin Log in',
+    'admin.orders': 'Orders',
+    'admin.products': 'Products',
+    'admin.categories': 'Categories',
+    'admin.reviews': 'Reviews',
+    'admin.settings': 'Settings',
+    'admin.payments': 'Payments',
+    'admin.operations': 'Operations',
+    'admin.system': 'Store management',
+    'admin.back_store': 'Back to store',
+    'admin.logout': 'Log out',
+    'admin.menu': 'Admin menu',
+    'admin.kpi_sales': 'Total revenue',
+    'admin.kpi_pending': 'Awaiting receipt',
+    'admin.kpi_products': 'Products live',
+    'admin.kpi_rating': 'Average rating',
+    'admin.chart_title': 'Revenue, last 7 days',
+    'admin.low_stock': 'Low stock',
+    'admin.recent_reviews': 'Latest reviews',
+    'admin.no_reviews': 'No reviews yet',
+    'admin.add_product': 'Add product',
+    'admin.edit_product': 'Edit product',
+    'admin.new_product': 'New product',
+    'admin.product_name': 'Product name',
+    'admin.product_sku': 'SKU',
+    'admin.product_category': 'Category',
+    'admin.product_price': 'Price (THB)',
+    'admin.product_stock': 'Stock',
+    'admin.product_image': 'Product image',
+    'admin.product_upload': 'Upload image',
+    'admin.product_desc': 'Description',
+    'admin.product_active': 'This product is for sale',
+    'admin.save_product': 'Save product',
+    'admin.hide': 'Hide',
+    'admin.show': 'Show',
+    'admin.active': 'Active',
+    'admin.hidden': 'Hidden',
+    'admin.delete_confirm': 'Delete this item? This cannot be undone.',
+    'admin.filter_all': 'All',
+    'admin.add_category': 'Add category',
+    'admin.all_categories': 'All categories',
+    'admin.reviewer': 'Reviewer',
+    'admin.product': 'Product',
+    'admin.rating': 'Rating',
+    'admin.comment': 'Comment',
+    'admin.settings_store': 'Store details',
+    'admin.settings_shop_name': 'Shop name',
+    'admin.settings_logo': 'Logo',
+    'admin.settings_logo_upload': 'Upload logo',
+    'admin.settings_tagline': 'Tagline',
+    'admin.settings_contact': 'Contact channels',
+    'admin.settings_shipping': 'Shipping',
+    'admin.settings_shipping_fee': 'Shipping fee (THB)',
+    'admin.settings_free_threshold': 'Free shipping over (THB)',
+    'admin.settings_shipping_note': 'Shipping note',
+    'admin.settings_about': 'About the shop',
+    'admin.settings_about_text': 'About text',
+    'admin.settings_saved': 'Settings saved',
+    'admin.payments_account': 'Payout account',
+    'admin.payments_promptpay_id': 'PromptPay ID',
+    'admin.payments_recipient': 'Recipient name',
+    'admin.payments_hint': '10-digit mobile number or 13-digit national ID',
+    'admin.payments_saved': 'Payment settings saved',
+    'admin.payments_test': 'Test PromptPay QR',
+    'admin.payments_amount': 'Amount',
+    'admin.payments_reference': 'Reference',
+    'admin.payments_generate': 'Generate QR',
+    'admin.order_number': 'Order',
+    'admin.order_customer': 'Recipient',
+    'admin.order_receipt': 'Payment receipt',
+    'admin.order_no_receipt': 'No receipt found',
+    'admin.order_status': 'Order status',
+    'admin.order_tracking': 'Tracking number',
+    'admin.order_message': 'Message to customer',
+    'admin.order_message_ph': 'e.g. Shipped today, arriving Friday',
+    'admin.order_send_update': 'Send update to customer',
+    'admin.order_updated': 'Order updated',
+    'admin.order_update_sent': 'Update sent to the customer.',
+    'admin.back_orders': 'Back to list',
+    'admin.backup_title': 'Backup & restore',
+    'admin.backup_desc': 'Download all store data (products, orders, reviews) encrypted with your password.',
+    'admin.backup_password': 'Encryption password',
+    'admin.backup_download': 'Download backup',
+    'admin.backup_restore': 'Restore from file',
+    'admin.backup_ok': 'Backup file verified.',
+    'admin.status_title': 'System status',
+    'admin.notifications': 'Notifications',
+    'admin.restock_status': 'Restock status',
+    'admin.no_data': 'No data yet',
+    'admin.no_notifications': 'No new notifications',
+    'admin.owner_only': 'For the shop owner only',
+    'admin.login_title': 'Admin log in',
+    'admin.logo_preview': 'Logo preview',
+    'admin.logo_remove': 'Remove logo',
+    'admin.logo_updated': 'Logo updated',
+    'admin.logo_hint': 'PNG, JPG, SVG or WebP up to 1 MB',
+    'admin.logo_invalid_type': 'Only PNG, JPG, SVG or WebP files are supported',
+    'admin.logo_too_large': 'The logo file must be 1 MB or smaller',
+    'admin.system_error': 'The system is unavailable. Please try again.',
+    'admin.filter_pending': 'Awaiting confirmation',
+    'admin.filter_review': 'Verifying receipt',
+    'admin.filter_paid': 'Paid',
+    'admin.filter_shipped': 'Shipped',
+    'admin.filter_delivered': 'Delivered',
+    'admin.filter_cancelled': 'Cancelled',
+    'admin.shipping_updates': 'Shipping updates',
+    'admin.shipping_add': 'Add shipping update',
+    'admin.shipping_message': 'Message to the customer',
+    'admin.shipping_images': 'Shipping photos (up to 4)',
+    'admin.shipping_sent': 'Shipping update sent',
+    'admin.shipping_empty': 'Add a message or at least one photo',
+    'admin.shipping_too_many': 'You can attach up to 4 photos',
+    'admin.client_errors': 'Client-side errors',
+    'admin.no_client_errors': 'No errors reported',
+    'admin.login_attempts': 'Login attempts',
+    'admin.product_saved': 'Product updated',
+    'admin.product_added': 'Product added',
+    'admin.product_name_required': 'Please enter a product name',
+    'admin.category_added': 'Category added',
+    'admin.payments_missing_id': 'Set the PromptPay ID first',
+    'admin.no_orders_in_status': 'No orders in this status',
+    'admin.backup_password_required': 'Enter a password to encrypt or decrypt',
+    'admin.backup_saved': 'Backup downloaded',
+    'admin.backup_ok': 'Backup file verified',
+    'admin.backup_restored': 'Data restored successfully',
+    'admin.backup_restore_confirm': 'Restore data from this file? Existing rows will be updated to match the backup.',
+    'admin.no_login_attempts': 'No login attempts recorded',
+    'admin.no_permission': 'This account has no admin access.',
+
+    'page.about_title': 'About the shop',
+    'page.about_sub': 'An online store that handles every order by hand, so your products arrive in the best possible condition.',
+    'page.about_p1': 'ZenMarket started out of a love for choosing good products — not just selling them. We want you to receive something you love, packed safely and handled like a friend would.',
+    'page.about_p2': 'Every order is checked and packed by hand, so we are confident that what arrives matches the photos and the quality we promised.',
+    'page.about_step1': 'Select',
+    'page.about_step1_desc': 'Every product passes a quality check before it is listed.',
+    'page.about_step2': 'Pack',
+    'page.about_step2_desc': 'Packed in a nice bag with a handwritten note, so opening the box feels special.',
+    'page.about_step3': 'Ship',
+    'page.about_step3_desc': 'Packed and shipped with care, with the tracking number sent right away.',
+    'page.contact_title': 'Contact us',
+    'page.contact_sub': 'Questions about a product, shipping or anything else? Reach us below.',
+    'page.contact_hours': 'Opening hours',
+    'page.contact_hours_note': 'Outside opening hours you can leave us a message on LINE and we will get back to you as soon as possible.',
+    'page.help_title': 'Shipping & payment',
+    'page.help_sub': 'How ordering, paying and tracking work.',
+    'page.help_shipping': 'Shipping fee',
+    'page.help_shipping_fee': 'Standard shipping',
+    'page.help_free': 'Free shipping over',
+    'page.help_note': 'Delivery takes 2–5 business days after payment is confirmed. Items with low stock may take a little longer.',
+    'page.help_return': 'Returns',
+    'page.help_return_text': 'You can request a return within 7 days of receiving your order if the item is damaged or not as described. The item must be unused and in its original condition.',
+    'page.privacy_title': 'Privacy policy',
+    'page.privacy_sub': 'We collect only what we need to serve you properly.',
+    'page.privacy_collect': 'What we collect',
+    'page.privacy_collect_text': 'Username, email, phone number, delivery address and order history — used to contact you, deliver your order and provide after-sales care.',
+    'page.privacy_use': 'How we use it',
+    'page.privacy_use_text': 'Your data is never sold or shared with third parties. It is used only to provide the service you asked for.',
+    'page.privacy_security': 'How we protect it',
+    'page.privacy_security_text': 'Passwords are hashed with industry-standard algorithms and database connections use TLS encryption.',
+    'page.privacy_rights': 'Your rights',
+    'page.privacy_rights_text': 'You can edit your personal data or request account deletion at any time via the contact page.',
+
+    'toast.order_placed': 'Order placed! Please pay with the PromptPay QR code.',
+    'toast.login_success': 'Welcome back',
+    'toast.register_success': 'Account created! Please log in.',
+    'toast.logout_success': 'You have been logged out.',
+    'toast.saved': 'Saved',
+    'toast.deleted': 'Deleted',
+    'toast.login_required': 'Please log in to use this feature.',
+    'toast.error_generic': 'Something went wrong. Please try again.',
+    'toast.db_missing': 'Database connection is not configured (VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY)',
+    'toast.too_many_login': 'Too many attempts. Please wait a moment and try again.',
+    'toast.rate_limited': 'You are ordering too quickly. Please wait a moment and try again.',
+    'toast.out_of_stock': 'Some items are out of stock — please review your cart.',
+    'toast.network': 'Could not reach the server. Check your connection.',
   },
 };
 
 let currentLang = 'th';
+let listeners = [];
+let brandName = 'ZenMarket';
 
-/**
- * ตั้งค่าภาษาปัจจุบัน
- */
-export function setLanguage(lang) {
-  if (TRANSLATIONS[lang]) {
-    currentLang = lang;
-    localStorage.setItem('zenmarket_lang', lang);
-    translatePage();
-  }
-}
-
-/**
- * รับภาษาปัจจุบัน
- */
-export function getLanguage() {
-  if (currentLang !== 'th') return currentLang;
+export function initI18n() {
   const stored = localStorage.getItem('zenmarket_lang');
-  if (stored && TRANSLATIONS[stored]) {
-    currentLang = stored;
-    return currentLang;
+  if (stored && DICT[stored]) currentLang = stored;
+  applyDocumentLang();
+  translatePage();
+  applyDocumentTitle();
+  return currentLang;
+}
+
+/**
+ * ตั้งชื่อแบรนด์ (ใช้ชื่อร้านจากฐานข้อมูล) แล้วอัปเดตแท็บหัวเว็บ
+ */
+export function setBrandName(name) {
+  if (name) brandName = name;
+  applyDocumentTitle();
+}
+
+export function getBrandName() {
+  return brandName;
+}
+
+/**
+ * แท็บหัวเว็บรูปแบบ "ZenMarket | หน้าปัจจุบัน"
+ * @param {string} [override] ชื่อหน้าเฉพาะ (เช่น ชื่อสินค้า)
+ */
+export function applyDocumentTitle(override) {
+  if (typeof document === 'undefined') return;
+  const key = getPageTitleKey(window.location.pathname);
+  const pageLabel = override || t(key);
+  const brand = brandName || 'ZenMarket';
+  document.title = pageLabel && pageLabel !== key
+    ? `${brand} | ${pageLabel}`
+    : brand;
+}
+
+export function getLanguage() {
+  return currentLang;
+}
+
+export function setLanguage(lang) {
+  if (!DICT[lang]) return;
+  currentLang = lang;
+  localStorage.setItem('zenmarket_lang', lang);
+  applyDocumentLang();
+  translatePage();
+  applyDocumentTitle();
+  listeners.forEach(fn => { try { fn(lang); } catch {} });
+  window.dispatchEvent(new CustomEvent('zenmarket:lang-change', { detail: { lang } }));
+}
+
+export function toggleLanguage() {
+  setLanguage(currentLang === 'th' ? 'en' : 'th');
+}
+
+export function onLanguageChange(fn) {
+  if (typeof fn === 'function') listeners.push(fn);
+}
+
+/**
+ * แปลข้อความด้วย key — รองรับตัวแปร {name}
+ */
+export function t(key, vars) {
+  const strings = DICT[currentLang] || DICT.th;
+  let value = strings[key] ?? DICT.th[key] ?? key;
+  if (vars) {
+    Object.entries(vars).forEach(([k, v]) => {
+      value = value.replace(new RegExp(`\\{${k}\\}`, 'g'), v);
+    });
   }
-  return 'th';
+  return value;
+}
+
+function applyDocumentLang() {
+  if (typeof document !== 'undefined' && document.documentElement) {
+    document.documentElement.lang = currentLang === 'th' ? 'th' : 'en';
+  }
 }
 
 /**
- * แปลข้อความด้วย key
+ * แทนที่ข้อความโดยไม่ลบ element ลูก (เช่น <a><svg/>text</a>)
  */
-export function t(key) {
-  const strings = TRANSLATIONS[currentLang];
-  return strings && strings[key] ? strings[key] : key;
-}
-
-/**
- * แปลทั้งหน้าโดยใช้ data-i18n attribute
- * ใช้ DOM TreeWalker เพื่อแปลเฉพาะข้อความ UI ที่กำหนด
- */
-export function translatePage() {
-  const lang = getLanguage();
-  const strings = TRANSLATIONS[lang];
-
-  const walker = document.createTreeWalker(
-    document.body,
-    NodeFilter.SHOW_ELEMENT,
-    {
-      acceptNode: (node) => {
-        const key = node.getAttribute('data-i18n');
-        if (key && strings[key]) {
-          return NodeFilter.FILTER_ACCEPT;
-        }
-        return NodeFilter.FILTER_SKIP;
-      },
+function setText(node, str) {
+  if (!node) return;
+  if (node.tagName === 'INPUT' || node.tagName === 'TEXTAREA') {
+    if (!node.value || node.dataset.i18nOriginal === node.value) {
+      node.placeholder = str;
+      node.dataset.i18nOriginal = str;
     }
-  );
-
-  const nodes = [];
-  let currentNode;
-  while ((currentNode = walker.nextNode())) {
-    nodes.push(currentNode);
+    return;
   }
 
-  for (const node of nodes) {
-    const key = node.getAttribute('data-i18n');
-    if (key && strings[key]) {
-      if (node.tagName === 'INPUT' || node.tagName === 'TEXTAREA') {
-        if (!node.value || node.value === node.getAttribute('data-i18n-original')) {
-          node.placeholder = strings[key];
-          node.setAttribute('data-i18n-original', strings[key]);
-        }
-      } else {
-        node.textContent = strings[key];
+  if (node.children.length > 0) {
+    for (const child of node.childNodes) {
+      if (child.nodeType === Node.TEXT_NODE) {
+        child.textContent = str;
+        return;
       }
     }
+    // ไม่มี text node ตรง ๆ → ใส่ข้อความไว้ท้าย ๆ แทนการลบลูก
+    const span = document.createElement('span');
+    span.className = 'i18n-text';
+    span.textContent = str;
+    node.appendChild(span);
+    return;
   }
+
+  node.textContent = str;
 }
 
 /**
- * เริ่มต้นระบบ i18n
+ * แปลทั้งหน้า
  */
-export function initI18n() {
-  const lang = getLanguage();
-  translatePage();
+export function translatePage(root = document) {
+  const strings = DICT[currentLang] || DICT.th;
+
+  root.querySelectorAll('[data-i18n]').forEach(node => {
+    const key = node.getAttribute('data-i18n');
+    if (key && strings[key]) setText(node, strings[key]);
+  });
+
+  root.querySelectorAll('[data-i18n-html]').forEach(node => {
+    const key = node.getAttribute('data-i18n-html');
+    if (key && strings[key]) node.innerHTML = strings[key];
+  });
+
+  root.querySelectorAll('[data-i18n-placeholder]').forEach(node => {
+    const key = node.getAttribute('data-i18n-placeholder');
+    if (key && strings[key]) node.setAttribute('placeholder', strings[key]);
+  });
+
+  root.querySelectorAll('[data-i18n-title]').forEach(node => {
+    const key = node.getAttribute('data-i18n-title');
+    if (key && strings[key]) node.setAttribute('title', strings[key]);
+  });
+
+  root.querySelectorAll('[data-i18n-aria-label]').forEach(node => {
+    const key = node.getAttribute('data-i18n-aria-label');
+    if (key && strings[key]) node.setAttribute('aria-label', strings[key]);
+  });
 }

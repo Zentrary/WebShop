@@ -5,9 +5,14 @@
 
 import { setAudience } from '/src/core/audience.js';
 import { notify } from '/src/core/ui.js';
+import { initI18n, t, translatePage } from '/src/core/i18n.js';
 
 document.addEventListener('DOMContentLoaded', () => {
+  initI18n();
+  translatePage();
+
   const form = document.getElementById('admin-login-form');
+  if (!form) return;
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -16,7 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const btn = form.querySelector('button[type="submit"]');
     btn.disabled = true;
-    btn.textContent = 'กำลังเข้าสู่ระบบ...';
+    btn.textContent = t('common.loading');
 
     try {
       const { createClient } = await import('@supabase/supabase-js');
@@ -25,11 +30,22 @@ document.addEventListener('DOMContentLoaded', () => {
         import.meta.env.VITE_SUPABASE_ANON_KEY
       );
 
+      // จำกัดความพยายามเข้าสู่ระบบ
+      try {
+        const { data: allowed } = await supabase.rpc('login_allow', { bucket_key: `admin:${username.toLowerCase()}` });
+        if (allowed === false) {
+          notify(t('toast.too_many_login'), 'error');
+          btn.disabled = false;
+          btn.textContent = t('admin.login_title');
+          return;
+        }
+      } catch {}
+
       // username → email ผ่าน RPC
       let email = username;
       if (!username.includes('@')) {
         const { data: resolved } = await supabase.rpc('login_email', { login_name: username.toLowerCase() });
-        if (!resolved) throw new Error('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
+        if (!resolved) throw new Error(t('auth.invalid_credentials'));
         email = resolved;
       }
 
@@ -40,16 +56,17 @@ document.addEventListener('DOMContentLoaded', () => {
       const { data: adminCheck } = await supabase.rpc('is_admin');
       if (!adminCheck) {
         await supabase.auth.signOut();
-        throw new Error('บัญชีนี้ไม่มีสิทธิ์เข้าถึงหลังบ้าน');
+        throw new Error(t('admin.no_permission'));
       }
 
       setAudience('owner', { id: data.user.id, email: data.user.email, username });
-      window.location.href = '/admin/dashboard.html';
+      notify(t('toast.login_success'), 'success');
+      setTimeout(() => { window.location.href = '/admin/dashboard.html'; }, 400);
     } catch (err) {
       console.error(err);
-      notify(err.message || 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง', 'error');
+      notify(err.message || t('auth.invalid_credentials'), 'error');
       btn.disabled = false;
-      btn.textContent = 'เข้าสู่ระบบแอดมิน';
+      btn.textContent = t('admin.login_title');
     }
   });
 });

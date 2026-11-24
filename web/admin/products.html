@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>สินค้า — ZenMarket Admin</title>
+  <title>ZenMarket | สินค้า</title>
   <link rel="stylesheet" href="/src/styles/base.css">
   <link rel="stylesheet" href="/src/styles/spaces.css">
   <link rel="stylesheet" href="/src/styles/responsive.css">
@@ -16,23 +16,23 @@
     <div class="admin-content">
       <div class="admin-head">
         <div>
-          <span class="eyebrow">Products</span>
-          <h1 style="font-size:var(--font-size-2xl)">สินค้า</h1>
+          <span class="eyebrow" data-i18n="admin.products">Products</span>
+          <h1 style="font-size:var(--font-size-2xl)" data-i18n="admin.products">สินค้า</h1>
         </div>
         <div class="flex gap-sm">
           <div class="search-wrap" style="min-width:240px">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-            <input type="text" id="admin-product-search" class="form-input" placeholder="ค้นหาสินค้า...">
+            <input type="text" id="admin-product-search" class="form-input" placeholder="ค้นหาสินค้า..." data-i18n-placeholder="shop.search">
           </div>
-          <button id="admin-add-product-btn" class="btn btn-primary">+ เพิ่มสินค้า</button>
+          <button id="admin-add-product-btn" class="btn btn-primary" data-i18n="admin.add_product">+ เพิ่มสินค้า</button>
         </div>
       </div>
 
       <form id="admin-product-form" class="panel mb-lg hidden reveal">
-        <h2 id="admin-product-form-title">เพิ่มสินค้าใหม่</h2>
+        <h2 id="admin-product-form-title" data-i18n="admin.new_product">เพิ่มสินค้าใหม่</h2>
         <div class="flex gap-md" style="flex-wrap:wrap">
           <div class="form-group" style="flex:1;min-width:220px">
-            <label class="form-label" for="product-name">ชื่อสินค้า</label>
+            <label class="form-label" for="product-name" data-i18n="admin.product_name">ชื่อสินค้า</label>
             <input type="text" id="product-name" class="form-input" required placeholder="ชื่อสินค้า">
           </div>
           <div class="form-group" style="flex:0 1 160px">
@@ -40,17 +40,17 @@
             <input type="text" id="product-sku" class="form-input" placeholder="C001">
           </div>
           <div class="form-group" style="flex:0 1 200px">
-            <label class="form-label" for="product-category">หมวดหมู่</label>
+            <label class="form-label" for="product-category" data-i18n="admin.product_category">หมวดหมู่</label>
             <input type="text" id="product-category" class="form-input" placeholder="ชื่อหมวดหมู่">
           </div>
         </div>
         <div class="flex gap-md" style="flex-wrap:wrap">
           <div class="form-group" style="flex:0 1 160px">
-            <label class="form-label" for="product-price">ราคา (บาท)</label>
+            <label class="form-label" for="product-price" data-i18n="admin.product_price">ราคา (บาท)</label>
             <input type="number" id="product-price" class="form-input" min="0" step="1" required placeholder="50">
           </div>
           <div class="form-group" style="flex:0 1 160px">
-            <label class="form-label" for="product-stock">จำนวนสต็อก</label>
+            <label class="form-label" for="product-stock" data-i18n="admin.product_stock">จำนวนสต็อก</label>
             <input type="number" id="product-stock" class="form-input" min="0" step="1" required placeholder="10">
           </div>
           <div class="form-group" style="flex:1;min-width:240px">
@@ -59,16 +59,16 @@
           </div>
         </div>
         <div class="form-group">
-          <label class="form-label" for="product-description">รายละเอียดสินค้า</label>
+          <label class="form-label" for="product-description" data-i18n="admin.product_desc">รายละเอียดสินค้า</label>
           <textarea id="product-description" class="form-input" rows="3" placeholder="รายละเอียดสินค้า"></textarea>
         </div>
         <label class="form-checkbox mb-lg">
           <input type="checkbox" id="product-active" checked>
-          <span>เปิดขายสินค้านี้</span>
+          <span data-i18n="admin.product_active">เปิดขายสินค้านี้</span>
         </label>
         <div class="flex gap-sm">
-          <button type="submit" class="btn btn-primary">บันทึกสินค้า</button>
-          <button type="button" id="admin-product-cancel" class="btn btn-ghost">ยกเลิก</button>
+          <button type="submit" class="btn btn-primary" data-i18n="admin.save_product">บันทึกสินค้า</button>
+          <button type="button" id="admin-product-cancel" class="btn btn-ghost" data-i18n="common.cancel">ยกเลิก</button>
         </div>
       </form>
 
@@ -76,13 +76,13 @@
         <table class="data">
           <thead>
             <tr>
-              <th>รูป</th>
-              <th>ชื่อสินค้า</th>
-              <th>หมวดหมู่</th>
-              <th class="num">ราคา</th>
-              <th style="text-align:center">สต็อก</th>
-              <th>สถานะ</th>
-              <th>จัดการ</th>
+              <th data-i18n="admin.product_image">รูป</th>
+              <th data-i18n="admin.product_name">ชื่อสินค้า</th>
+              <th data-i18n="admin.product_category">หมวดหมู่</th>
+              <th class="num" data-i18n="common.price">ราคา</th>
+              <th style="text-align:center" data-i18n="admin.product_stock">สต็อก</th>
+              <th data-i18n="common.status">สถานะ</th>
+              <th data-i18n="common.actions">จัดการ</th>
             </tr>
           </thead>
           <tbody id="admin-products-list"></tbody>

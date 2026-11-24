@@ -3,13 +3,15 @@
  * ใช้ RPC create_order + schema จริง (orders.status/total/shipping/address/recipient/phone)
  */
 
-import { initApp, state, updateCartBadge, requireSupabase } from '/src/app.js';
-import { isMember } from '/src/core/audience.js';
-import { translatePage } from '/src/core/i18n.js';
+import { initApp, state, updateCartBadge, requireSupabase, renderGuestGate, applyMemberGating } from '/src/app.js';
+import { isSignedIn } from '/src/core/audience.js';
+import { translatePage, t, onLanguageChange } from '/src/core/i18n.js';
 import { notify } from '/src/core/ui.js';
-import { formatTHB, escapeHTML, createPromptPayPayload, createPromptPayQRDataURL, getPrivateImageUrl, buildSlipObjectPath } from '/src/core/lib.js';
+import { formatTHB, escapeHTML, createPromptPayPayload, createPromptPayQRDataURL, getPrivateImageUrl, buildSlipObjectPath, bindOnce } from '/src/core/lib.js';
 import { getOrderStatusBadge, getTimelineProgress } from '/src/core/experience.js';
 import { calculateShipping, amountToFreeShipping } from '/src/core/settings.js';
+
+let currentRenderer = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
   await initApp();
@@ -20,21 +22,32 @@ document.addEventListener('DOMContentLoaded', async () => {
   const path = window.location.pathname;
 
   if (path.includes('/shop/cart.html')) {
-    initCartPage();
+    currentRenderer = initCartPage;
   } else if (path.includes('/shop/checkout.html')) {
-    initCheckoutPage();
+    currentRenderer = initCheckoutPage;
   } else if (path.includes('/account/orders.html')) {
-    initCustomerOrdersPage();
+    currentRenderer = initCustomerOrdersPage;
   } else if (path.includes('/account/order.html')) {
-    initCustomerOrderDetailPage();
+    currentRenderer = initCustomerOrderDetailPage;
   }
+
+  if (currentRenderer) await currentRenderer();
+
+  applyMemberGating();
+
+  // เปลี่ยนภาษาแล้ววาดหน้าใหม่
+  onLanguageChange(() => {
+    translatePage();
+    if (currentRenderer) currentRenderer();
+    applyMemberGating();
+  });
 });
 
 /* ================= ตะกร้า ================= */
 function initCartPage() {
   renderCart();
 
-  document.getElementById('cart-items').addEventListener('click', (e) => {
+  bindOnce(document.getElementById('cart-items'), 'click', (e) => {
     const removeBtn = e.target.closest('[data-remove-item]');
     if (removeBtn) {
       state.cart = state.cart.filter(i => i.product_id !== removeBtn.getAttribute('data-remove-item'));
@@ -86,16 +99,16 @@ function renderCart() {
       <img src="/images/placeholder.svg" alt="${escapeHTML(item.name)}">
       <div>
         <div class="nm">${escapeHTML(item.name)}</div>
-        <div class="pr">${formatTHB(item.price)} / ชิ้น</div>
+        <div class="pr">${formatTHB(item.price)} ${t('cart.per_item')}</div>
       </div>
       <div class="qty-ctl">
-        <button data-change-qty="${item.product_id}" data-dir="-1" aria-label="ลด">−</button>
-        <input type="text" value="${item.quantity}" readonly>
-        <button data-change-qty="${item.product_id}" data-dir="1" aria-label="เพิ่ม">+</button>
+        <button data-change-qty="${item.product_id}" data-dir="-1" aria-label="${t('common.decrease')}">−</button>
+        <input type="text" value="${item.quantity}" readonly aria-label="${t('common.quantity')}">
+        <button data-change-qty="${item.product_id}" data-dir="1" aria-label="${t('common.increase')}">+</button>
       </div>
       <div style="text-align:right">
         <div class="font-semibold">${formatTHB(item.price * item.quantity)}</div>
-        <button class="text-error text-sm mt-sm" data-remove-item="${item.product_id}">ลบออก</button>
+        <button class="text-error text-sm mt-sm" data-remove-item="${item.product_id}">${t('cart.remove')}</button>
       </div>
     `;
     cartItemsEl.appendChild(el);
@@ -103,15 +116,15 @@ function renderCart() {
 
   const { subtotal, shipping, total } = cartTotals();
   document.getElementById('cart-subtotal').textContent = formatTHB(subtotal);
-  document.getElementById('cart-shipping').textContent = shipping === 0 ? 'ฟรี' : formatTHB(shipping);
+  document.getElementById('cart-shipping').textContent = shipping === 0 ? t('cart.free') : formatTHB(shipping);
   document.getElementById('cart-total').textContent = formatTHB(total);
 
   const hint = document.getElementById('cart-shipping-hint');
   if (hint) {
     const remain = amountToFreeShipping(subtotal, state.storeSettings || {});
     hint.textContent = remain > 0
-      ? `สั่งซื้อเพิ่มอีก ${formatTHB(remain)} จะได้ส่งฟรี`
-      : 'คุณได้สิทธิ์ส่งฟรีแล้ว';
+      ? t('cart.free_hint', { amount: formatTHB(remain) })
+      : t('cart.free_done');
     hint.style.color = remain > 0 ? 'var(--color-accent)' : 'var(--color-success)';
   }
 }
@@ -127,9 +140,15 @@ async function initCheckoutPage() {
   }
 
   // ต้องเข้าสู่ระบบก่อนจึงจะสั่งซื้อได้ (backend บังคับ auth)
-  if (!isMember()) {
+  if (!isSignedIn() || !state.user) {
     sessionStorage.setItem('zenmarket_return_path', '/shop/checkout.html');
-    window.location.href = '/auth/login.html';
+    const gate = document.getElementById('checkout-gate');
+    const content = document.getElementById('checkout-content');
+    if (content) content.classList.add('hidden');
+    if (gate) {
+      renderGuestGate('checkout-gate');
+      applyMemberGating(gate);
+    }
     return;
   }
 
@@ -138,13 +157,13 @@ async function initCheckoutPage() {
     <div class="sum-row"><span>${escapeHTML(item.name)} × ${item.quantity}</span><span>${formatTHB(item.price * item.quantity)}</span></div>
   `).join('');
   document.getElementById('checkout-subtotal').textContent = formatTHB(subtotal);
-  document.getElementById('checkout-shipping').textContent = shipping === 0 ? 'ฟรี' : formatTHB(shipping);
+  document.getElementById('checkout-shipping').textContent = shipping === 0 ? t('cart.free') : formatTHB(shipping);
   document.getElementById('checkout-total').textContent = formatTHB(total);
 
   // ตัวเลือกวิธีชำระเงิน (PromptPay เท่านั้นตาม backend — COD ตัดออก)
   const payOpts = document.querySelectorAll('.pay-opt');
   payOpts.forEach(opt => {
-    opt.addEventListener('click', () => {
+    bindOnce(opt, 'click', () => {
       payOpts.forEach(o => o.classList.remove('selected'));
       opt.classList.add('selected');
       opt.querySelector('input').checked = true;
@@ -154,13 +173,13 @@ async function initCheckoutPage() {
   // แสดง QR ทันที
   showQR(total);
 
-  placeOrderBtn.addEventListener('click', async () => {
+  bindOnce(placeOrderBtn, 'click', async () => {
     if (!form.checkValidity()) {
       form.reportValidity();
       return;
     }
     placeOrderBtn.disabled = true;
-    placeOrderBtn.textContent = 'กำลังดำเนินการ...';
+    placeOrderBtn.textContent = t('checkout.placing');
 
     try {
       const cart = state.cart.map(i => ({ id: i.product_id, quantity: i.quantity }));
@@ -183,15 +202,15 @@ async function initCheckoutPage() {
       localStorage.setItem('zenmarket_cart', '[]');
       updateCartBadge();
 
-      notify('สั่งซื้อสำเร็จ! กรุณาชำระเงินด้วย QR PromptPay', 'success');
+      notify(t('toast.order_placed'), 'success');
       setTimeout(() => {
         window.location.href = `/account/order.html?id=${order.id}`;
       }, 1200);
     } catch (err) {
       console.error(err);
-      notify(err.message || 'เกิดข้อผิดพลาดในการสั่งซื้อ', 'error');
+      notify(err.message || t('toast.error_generic'), 'error');
       placeOrderBtn.disabled = false;
-      placeOrderBtn.textContent = 'ยืนยันคำสั่งซื้อ';
+      placeOrderBtn.textContent = t('checkout.place_order');
     }
   });
 }
@@ -213,7 +232,8 @@ async function showQR(amount) {
 
 /* ================= รายการคำสั่งซื้อ ================= */
 async function initCustomerOrdersPage() {
-  if (!isMember() || !state.user?.id) {
+  if (!isSignedIn() || !state.user?.id) {
+    sessionStorage.setItem('zenmarket_return_path', window.location.pathname + window.location.search);
     window.location.href = '/auth/login.html';
     return;
   }
@@ -231,7 +251,7 @@ async function initCustomerOrdersPage() {
     tbody.innerHTML = '';
 
     if (!orders || orders.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem">ยังไม่มีคำสั่งซื้อ</td></tr>';
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:2rem">${t('account.no_orders')}</td></tr>`;
       return;
     }
 
@@ -243,18 +263,70 @@ async function initCustomerOrdersPage() {
         `<td>${order.created_at ? new Date(order.created_at).toLocaleDateString('th-TH') : '-'}</td>` +
         `<td><span class="badge badge-${badge.variant}">${badge.label}</span></td>` +
         `<td class="num">${formatTHB(order.total)}</td>` +
-        `<td><a href="/account/order.html?id=${order.id}" class="btn btn-outline btn-sm">ดูรายละเอียด</a></td>`;
+        `<td><a href="/account/order.html?id=${order.id}" class="btn btn-outline btn-sm">${t('common.view')}</a></td>`;
       tbody.appendChild(tr);
     });
   } catch (err) {
     console.error(err);
-    notify('เกิดข้อผิดพลาดในการโหลดคำสั่งซื้อ', 'error');
+    notify(t('toast.error_generic'), 'error');
+  }
+}
+
+/* ================= อัปเดตการจัดส่ง (มุมมองลูกค้า) ================= */
+async function loadCustomerShippingUpdates(orderId) {
+  const box = document.getElementById('order-shipping-updates');
+  if (!box) return;
+  try {
+    const { data, error } = await state.supabase
+      .from('order_shipping_updates')
+      .select('*')
+      .eq('order_id', orderId)
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+
+    if (!data || data.length === 0) {
+      box.innerHTML = `<p class="text-muted text-sm">${t('order.no_updates')}</p>`;
+      return;
+    }
+
+    box.innerHTML = '';
+    for (const update of data) {
+      const wrap = document.createElement('div');
+      wrap.style.cssText = 'padding:0.75rem 0;border-bottom:1px solid var(--color-border-soft)';
+      wrap.innerHTML = `
+        <div class="text-sm">${escapeHTML(update.message || '')}</div>
+        <div class="text-muted text-xs">${update.created_at ? new Date(update.created_at).toLocaleString('th-TH') : ''}</div>
+      `;
+
+      const paths = Array.isArray(update.image_paths) ? update.image_paths : [];
+      if (paths.length) {
+        const gallery = document.createElement('div');
+        gallery.className = 'flex gap-sm mt-sm';
+        gallery.style.flexWrap = 'wrap';
+        for (const path of paths) {
+          const signedUrl = await getPrivateImageUrl(state.supabase, 'shipping-updates', path);
+          if (!signedUrl) continue;
+          const img = document.createElement('img');
+          img.src = signedUrl;
+          img.alt = 'shipping';
+          img.style.cssText = 'width:96px;height:96px;object-fit:cover;border-radius:8px;border:1px solid var(--color-border)';
+          gallery.appendChild(img);
+        }
+        if (gallery.children.length) wrap.appendChild(gallery);
+      }
+
+      box.appendChild(wrap);
+    }
+  } catch (err) {
+    console.warn('[ZenMarket] load shipping updates failed', err);
+    box.innerHTML = `<p class="text-muted text-sm">${t('order.no_updates')}</p>`;
   }
 }
 
 /* ================= รายละเอียดคำสั่งซื้อ ================= */
 async function initCustomerOrderDetailPage() {
-  if (!isMember() || !state.user?.id) {
+  if (!isSignedIn() || !state.user?.id) {
+    sessionStorage.setItem('zenmarket_return_path', window.location.pathname + window.location.search);
     window.location.href = '/auth/login.html';
     return;
   }
@@ -284,7 +356,7 @@ async function initCustomerOrderDetailPage() {
     const statusEl = document.getElementById('order-status');
     statusEl.textContent = badge.label;
     statusEl.className = 'badge badge-' + badge.variant;
-    document.getElementById('order-payment').textContent = 'พร้อมเพย์ (PromptPay)';
+    document.getElementById('order-payment').textContent = t('checkout.promptpay');
     document.getElementById('order-shipping-address').textContent = order.address || '-';
     document.getElementById('order-subtotal').textContent = formatTHB(order.subtotal);
     document.getElementById('order-shipping').textContent = formatTHB(order.shipping);
@@ -328,14 +400,14 @@ async function initCustomerOrderDetailPage() {
       } else {
         preview.replaceWith(Object.assign(document.createElement('p'), {
           className: 'text-muted text-sm',
-          textContent: 'ไม่สามารถเปิดสลิปได้',
+          textContent: t('order.slip_unavailable'),
         }));
       }
     } else {
-      document.getElementById('upload-receipt-btn').addEventListener('click', () => {
+      bindOnce(document.getElementById('upload-receipt-btn'), 'click', () => {
         document.getElementById('slip-input').click();
       });
-      document.getElementById('slip-input').addEventListener('change', async (e) => {
+      bindOnce(document.getElementById('slip-input'), 'change', async (e) => {
         const file = e.target.files[0];
         if (!file) return;
         try {
@@ -351,12 +423,65 @@ async function initCustomerOrderDetailPage() {
           });
           if (rpcErr) throw rpcErr;
 
-          notify('อัปโหลดสลิปสำเร็จ รอร้านตรวจสอบ', 'success');
+          notify(t('order.slip_sent'), 'success');
           setTimeout(() => location.reload(), 900);
         } catch (err) {
-          notify(err.message || 'อัปโหลดสลิปไม่สำเร็จ', 'error');
+          notify(err.message || t('toast.error_generic'), 'error');
         }
       });
+    }
+
+    // อัปเดตการจัดส่งจากร้าน
+    await loadCustomerShippingUpdates(order.id);
+
+    // ปุ่มการกระทำของลูกค้า (ยกเลิก / ยืนยันได้รับ)
+    const actionsBox = document.getElementById('order-actions');
+    if (actionsBox) {
+      const buttons = [];
+      if (order.status === 'pending') {
+        buttons.push(`<button id="order-cancel-btn" class="btn btn-outline btn-sm" data-i18n="order.cancel">${t('order.cancel')}</button>`);
+      }
+      if (order.status === 'shipped') {
+        buttons.push(`<button id="order-received-btn" class="btn btn-primary btn-sm" data-i18n="order.confirm_received">${t('order.confirm_received')}</button>`);
+      }
+      actionsBox.innerHTML = buttons.join('');
+
+      const cancelBtn = document.getElementById('order-cancel-btn');
+      if (cancelBtn) {
+        cancelBtn.addEventListener('click', async () => {
+          if (!window.confirm(t('order.cancel_confirm'))) return;
+          try {
+            const { error } = await state.supabase.rpc('transition_order', {
+              order_id: order.id,
+              next_status: 'cancelled',
+              tracking_number: null,
+            });
+            if (error) throw error;
+            notify(t('order.cancelled'), 'success');
+            setTimeout(() => location.reload(), 800);
+          } catch (err) {
+            notify(err.message || t('toast.error_generic'), 'error');
+          }
+        });
+      }
+
+      const receivedBtn = document.getElementById('order-received-btn');
+      if (receivedBtn) {
+        receivedBtn.addEventListener('click', async () => {
+          try {
+            const { error } = await state.supabase.rpc('transition_order', {
+              order_id: order.id,
+              next_status: 'delivered',
+              tracking_number: null,
+            });
+            if (error) throw error;
+            notify(t('order.received'), 'success');
+            setTimeout(() => location.reload(), 800);
+          } catch (err) {
+            notify(err.message || t('toast.error_generic'), 'error');
+          }
+        });
+      }
     }
 
     // ฟอร์มรีวิว (เปิดเมื่อสินค้าส่งถึงมือแล้วเท่านั้น)
@@ -370,15 +495,15 @@ async function initCustomerOrderDetailPage() {
           <label class="form-label">${escapeHTML(item.name || '')}</label>
           <div class="flex gap-sm items-center">
             <select class="form-select" id="rating-${item.id}" style="width:auto">
-              <option value="5">5 ดาว</option><option value="4">4 ดาว</option>
-              <option value="3">3 ดาว</option><option value="2">2 ดาว</option><option value="1">1 ดาว</option>
+              <option value="5">5 ★</option><option value="4">4 ★</option>
+              <option value="3">3 ★</option><option value="2">2 ★</option><option value="1">1 ★</option>
             </select>
-            <input type="text" class="form-input" id="comment-${item.id}" placeholder="เขียนรีวิว...">
-            <button class="btn btn-outline btn-sm" data-review="${item.id}">ส่งรีวิว</button>
+            <input type="text" class="form-input" id="comment-${item.id}" placeholder="${t('order.review_hint')}">
+            <button class="btn btn-outline btn-sm" data-review="${item.id}">${t('order.review_send')}</button>
           </div>
         </div>
       `).join('');
-      reviewForm.addEventListener('click', async (e) => {
+      bindOnce(reviewForm, 'click', async (e) => {
         const btn = e.target.closest('[data-review]');
         if (!btn) return;
         const pid = btn.getAttribute('data-review');
@@ -390,12 +515,12 @@ async function initCustomerOrderDetailPage() {
           p_rating: rating,
           p_comment: comment,
         });
-        if (error) notify(error.message || 'ส่งรีวิวไม่สำเร็จ', 'error');
-        else notify('ส่งรีวิวสำเร็จ ขอบคุณครับ!', 'success');
+        if (error) notify(error.message || t('toast.error_generic'), 'error');
+        else notify(t('order.review_sent'), 'success');
       });
     }
   } catch (err) {
     console.error(err);
-    notify('เกิดข้อผิดพลาดในการโหลดคำสั่งซื้อ', 'error');
+    notify(t('toast.error_generic'), 'error');
   }
 }

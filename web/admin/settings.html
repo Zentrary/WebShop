@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>การตั้งค่า — ZenMarket Admin</title>
+  <title>ZenMarket | การตั้งค่า</title>
   <link rel="stylesheet" href="/src/styles/base.css">
   <link rel="stylesheet" href="/src/styles/spaces.css">
   <link rel="stylesheet" href="/src/styles/responsive.css">
@@ -16,34 +16,46 @@
     <div class="admin-content">
       <div class="admin-head">
         <div>
-          <span class="eyebrow">Settings</span>
-          <h1 style="font-size:var(--font-size-2xl)">การตั้งค่าร้าน</h1>
+          <span class="eyebrow" data-i18n="admin.settings">Settings</span>
+          <h1 style="font-size:var(--font-size-2xl)" data-i18n="admin.settings">การตั้งค่าร้าน</h1>
         </div>
       </div>
 
       <form id="admin-settings-form" class="panel reveal">
-        <h2>ข้อมูลร้าน</h2>
+        <h2 data-i18n="admin.settings_store">ข้อมูลร้าน</h2>
         <div class="form-group">
-          <label class="form-label" for="setting-store-name">ชื่อร้าน</label>
+          <label class="form-label" for="setting-store-name" data-i18n="admin.settings_shop_name">ชื่อร้าน</label>
           <input type="text" id="setting-store-name" class="form-input" placeholder="ZenMarket">
         </div>
         <div class="form-group">
-          <label class="form-label" for="setting-store-logo">URL โลโก้</label>
-          <input type="url" id="setting-store-logo" class="form-input" placeholder="https://...">
+          <label class="form-label" for="setting-store-logo" data-i18n="admin.settings_logo">โลโก้ร้าน</label>
+          <input type="url" id="setting-store-logo" class="form-input" placeholder="https://..." data-i18n-placeholder="admin.logo_hint">
+          <div class="form-hint" data-i18n="admin.logo_hint">รองรับไฟล์ PNG, JPG, SVG หรือ WebP ขนาดไม่เกิน 1 MB</div>
+
+          <div class="flex gap-md items-center mt-sm" style="flex-wrap:wrap">
+            <div id="setting-logo-preview" style="width:72px;height:72px;border:1px solid var(--color-border);border-radius:var(--radius-md);display:grid;place-items:center;overflow:hidden;background:var(--color-surface-2)">
+              <span class="text-muted text-xs" data-i18n="admin.logo_preview">โลโก้</span>
+            </div>
+            <div class="flex gap-sm" style="flex-wrap:wrap">
+              <input type="file" id="setting-logo-file" accept="image/png,image/jpeg,image/svg+xml,image/webp" class="hidden">
+              <button type="button" id="setting-logo-upload-btn" class="btn btn-outline btn-sm" data-i18n="admin.settings_logo_upload">อัปโหลดโลโก้</button>
+              <button type="button" id="setting-logo-remove-btn" class="btn btn-ghost btn-sm" data-i18n="admin.logo_remove">ลบโลโก้</button>
+            </div>
+          </div>
         </div>
         <div class="form-group">
           <label class="form-label" for="setting-store-description">คำโปรยร้าน</label>
           <input type="text" id="setting-store-description" class="form-input" placeholder="ร้านค้าออนไลน์ด้วยความตั้งใจ">
         </div>
 
-        <h2 class="mt-lg">ช่องทางติดต่อ</h2>
+        <h2 class="mt-lg" data-i18n="admin.settings_contact">ช่องทางติดต่อ</h2>
         <div class="flex gap-md" style="flex-wrap:wrap">
           <div class="form-group" style="flex:1;min-width:220px">
-            <label class="form-label" for="setting-contact-email">อีเมล</label>
+            <label class="form-label" for="setting-contact-email" data-i18n="common.email">อีเมล</label>
             <input type="email" id="setting-contact-email" class="form-input" placeholder="hello@example.com">
           </div>
           <div class="form-group" style="flex:1;min-width:220px">
-            <label class="form-label" for="setting-contact-phone">เบอร์โทรศัพท์</label>
+            <label class="form-label" for="setting-contact-phone" data-i18n="common.phone">เบอร์โทรศัพท์</label>
             <input type="tel" id="setting-contact-phone" class="form-input" placeholder="0812345678">
           </div>
         </div>
@@ -62,29 +74,30 @@
           </div>
         </div>
 
-        <h2 class="mt-lg">การจัดส่ง</h2>
+        <h2 class="mt-lg" data-i18n="admin.settings_shipping">การจัดส่ง</h2>
         <div class="flex gap-md" style="flex-wrap:wrap">
           <div class="form-group" style="flex:1;min-width:220px">
-            <label class="form-label" for="setting-shipping-fee">ค่าจัดส่ง (บาท)</label>
+            <label class="form-label" for="setting-shipping-fee" data-i18n="admin.settings_shipping_fee">ค่าจัดส่ง (บาท)</label>
             <input type="number" id="setting-shipping-fee" class="form-input" min="0" step="1" placeholder="50">
           </div>
           <div class="form-group" style="flex:1;min-width:220px">
-            <label class="form-label" for="setting-free-shipping-threshold">ส่งฟรีเมื่อช้อปครบ (บาท)</label>
+            <label class="form-label" for="setting-free-shipping-threshold" data-i18n="admin.settings_free_threshold">ส่งฟรีเมื่อช้อปครบ (บาท)</label>
             <input type="number" id="setting-free-shipping-threshold" class="form-input" min="0" step="1" placeholder="300">
           </div>
         </div>
         <div class="form-group">
-          <label class="form-label" for="setting-shipping-note">หมายเหตุการจัดส่ง</label>
+          <label class="form-label" for="setting-shipping-note" data-i18n="admin.settings_shipping_note">หมายเหตุการจัดส่ง</label>
           <textarea id="setting-shipping-note" class="form-input" rows="3" placeholder="จัดส่งช่วงเวลา หรือหมายเหตุอื่น ๆ"></textarea>
         </div>
 
-        <h2 class="mt-lg">เกี่ยวกับร้าน</h2>
+        <h2 class="mt-lg" data-i18n="admin.settings_about">เกี่ยวกับร้าน</h2>
         <div class="form-group">
-          <label class="form-label" for="setting-about">ข้อความแนะนำร้าน</label>
+          <label class="form-label" for="setting-about" data-i18n="admin.settings_about_text">ข้อความแนะนำร้าน</label>
           <textarea id="setting-about" class="form-input" rows="5" placeholder="เขียนเกี่ยวกับร้านของคุณ..."></textarea>
         </div>
 
-        <button type="submit" class="btn btn-primary">บันทึกการตั้งค่า</button>
+        <button type="submit" class="btn btn-primary" data-i18n="common.save">บันทึกการตั้งค่า</button>
+        <button type="button" id="admin-settings-logout" class="btn btn-ghost" data-i18n="admin.logout">ออกจากระบบ</button>
       </form>
     </div>
   </div>

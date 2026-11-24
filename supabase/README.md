@@ -19,6 +19,11 @@
 | `customer_addresses` | `id, user_id, label, recipient, phone, address, is_default, created_at` |
 | `store_admin` | `singleton, user_id` (ตรวจสิทธิ์แอดมินด้วย `is_admin()`) |
 | `order_shipping_updates` | `id, order_id, message, image_paths, created_at` |
+| `favorites` | `id, user_id, product_id, created_at` (unique `user_id, product_id`, RLS owner-only) |
+| `client_errors` | `id, user_id, area, code, created_at` (เขียนผ่าน RPC `report_client_error` เท่านั้น) |
+| `login_attempts` | `key, hits, expires` (เขียนผ่าน RPC `login_allow` เท่านั้น, อ่านได้เฉพาะแอดมิน) |
+| `owner_notifications` | `id, order_id, kind, created_at, seen_at` |
+| `operation_status` | `name, last_success, affected` |
 
 สถานะออเดอร์: `pending → review → paid → shipped → delivered` (มี `cancelled`)
 
@@ -40,6 +45,25 @@
 | `ship_order_with_update(p_order_id, p_tracking, p_message, p_images)` | void |
 | `get_order_reviews(p_order_id)` | jsonb |
 | `is_admin()` | boolean |
+| `login_allow(bucket_key)` | boolean (สูงสุด 15 ครั้ง / 15 นาที ต่อ 1 bucket) |
+| `report_client_error(p_area, p_code)` | void (จำกัด 1 ครั้ง/นาที และ 10 ครั้ง/วัน) |
+| `delete_address(p_id)` | void (ลบได้เฉพาะที่อยู่ของตัวเอง) |
+| `add_shipping_update(p_order_id, p_message, p_images)` | uuid (admin เท่านั้น, ≤ 4 รูป, ข้อความ ≤ 1,000 ตัว) |
+| `restore_admin_backup(p_backup)` | jsonb (admin เท่านั้น, กู้คืนจากไฟล์ `zenmarket-data-v1`) |
+| `expire_unpaid_orders()` | void (คืนสต็อกคำสั่งซื้อที่หมดเวลา) |
+
+## ฟีเจอร์ที่เพิ่มล่าสุด
+
+| ฟีเจอร์ | ที่มา |
+|---|---|
+| รายการโปรด (กดหัวใจ) | ตาราง `favorites` + RLS owner-only |
+| จำกัดความพยายามเข้าสู่ระบบ | RPC `login_allow` (15 ครั้ง / 15 นาที) |
+| รายงานข้อผิดพลาดฝั่งผู้ใช้ | RPC `report_client_error` + แสดงในหน้า Operations |
+| เพิ่ม/ลบที่อยู่ | RPC `save_address` / `delete_address` |
+| อัปเดตการจัดส่งพร้อมรูป | RPC `add_shipping_update` + bucket `shipping-updates` (private) |
+| ยกเลิก/ยืนยันได้รับสินค้า | RPC `transition_order` (ลูกค้าเป็นเจ้าของคำสั่งซื้อ) |
+| อัปโหลดโลโก้ร้าน | bucket `store-assets` (public) + คอลัมน์ `store_settings.logo_url` |
+| สำรอง/กู้คืนข้อมูลจริง | RPC `get_admin_backup` + `restore_admin_backup` (เข้ารหัส AES-GCM ฝั่งเบราว์เซอร์) |
 
 ## Storage buckets
 
@@ -53,7 +77,11 @@
 ## ไฟล์ในโฟลเดอร์
 
 - `migrations/001_initial_schema.sql`, `migrations/002_rls_policies.sql` — เอกสารสคีมายุคแรก (legacy) ใช้อ้างอิงประวัติเท่านั้น
-- `migrations/003_public_read_policies.sql` — migration ล่าสุดที่ถูก apply แล้ว (แก้ RLS ให้ anon อ่านสินค้า/รีวิวได้)
+- `migrations/003_public_read_policies.sql` — แก้ RLS ให้ anon อ่านสินค้า/รีวิวได้ (apply แล้ว)
+- `migrations/004_admin_manage_reviews.sql` — ให้แอดมินแก้ไข/ลบรีวิวได้ (apply แล้ว)
+- `migrations/005_add_favorites.sql` — ตาราง `favorites` + RLS owner-only (apply แล้ว)
+- `migrations/006_restore_admin_backup.sql` — RPC `restore_admin_backup(jsonb)` กู้คืนข้อมูลจริงจากไฟล์สำรอง (apply แล้ว)
+- `migrations/007_admin_read_login_attempts.sql` — ให้แอดมินอ่าน `login_attempts` ได้ (apply แล้ว)
 - `admin-bootstrap.sql` — สคริปต์ตั้งค่าเจ้าของร้านเป็นแอดมินครั้งแรก
 - `seed.sql` — ข้อมูลตัวอย่าง
 - Edge function `username-login` ถูกลบแล้ว (เคยเรียกคอลัมน์ `profiles.user_name/email/role` ที่ไม่มีจริง และใช้ service role key ยืนยันรหัสผ่าน — ตอนนี้หน้าเว็บเรียก RPC `login_email` + `supabase.auth.signInWithPassword` โดยตรงแทน)

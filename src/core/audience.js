@@ -2,26 +2,39 @@ export const AUDIENCE_GUEST = 'guest';
 export const AUDIENCE_MEMBER = 'member';
 export const AUDIENCE_OWNER = 'owner';
 
-let currentAudience = AUDIENCE_GUEST;
+let currentAudience = null;
 let currentUser = null;
-let customerViewMode = false;
+let customerViewMode = null;
 
 export function setAudience(audience, user = null) {
   currentAudience = audience;
   currentUser = user;
-  localStorage.setItem('zenmarket_audience', audience);
-  if (user) {
-    localStorage.setItem('zenmarket_user', JSON.stringify(user));
-  } else {
-    localStorage.removeItem('zenmarket_user');
-  }
+  try {
+    localStorage.setItem('zenmarket_audience', audience);
+    if (user) {
+      localStorage.setItem('zenmarket_user', JSON.stringify(user));
+    } else {
+      localStorage.removeItem('zenmarket_user');
+    }
+  } catch {}
 }
 
+/**
+ * อ่านบทบาทที่บันทึกไว้ (ยังไม่ยืนยันกับ Supabase Auth)
+ */
 export function getAudience() {
   if (currentAudience) return currentAudience;
-  const stored = localStorage.getItem('zenmarket_audience');
-  if (stored) currentAudience = stored;
-  return currentAudience || AUDIENCE_GUEST;
+  try {
+    const stored = localStorage.getItem('zenmarket_audience');
+    if (stored === AUDIENCE_MEMBER || stored === AUDIENCE_OWNER || stored === AUDIENCE_GUEST) {
+      currentAudience = stored;
+    } else {
+      currentAudience = AUDIENCE_GUEST;
+    }
+  } catch {
+    currentAudience = AUDIENCE_GUEST;
+  }
+  return currentAudience;
 }
 
 export function getCurrentUser() {
@@ -45,14 +58,27 @@ export function isGuest() {
   return getAudience() === AUDIENCE_GUEST;
 }
 
+/**
+ * ผู้ใช้ที่ล็อกอินแล้ว (สมาชิกหรือเจ้าของร้าน)
+ */
+export function isSignedIn() {
+  return isMember() || isOwner();
+}
+
 export function setCustomerView(enabled) {
   customerViewMode = enabled;
-  localStorage.setItem('zenmarket_customer_view', String(enabled));
+  try {
+    localStorage.setItem('zenmarket_customer_view', String(enabled));
+  } catch {}
 }
 
 export function getCustomerView() {
-  if (customerViewMode !== undefined) return customerViewMode;
-  customerViewMode = localStorage.getItem('zenmarket_customer_view') === 'true';
+  if (customerViewMode !== null) return customerViewMode;
+  try {
+    customerViewMode = localStorage.getItem('zenmarket_customer_view') === 'true';
+  } catch {
+    customerViewMode = false;
+  }
   return customerViewMode;
 }
 
@@ -60,8 +86,18 @@ export function logout() {
   currentAudience = AUDIENCE_GUEST;
   currentUser = null;
   customerViewMode = false;
-  localStorage.removeItem('zenmarket_audience');
-  localStorage.removeItem('zenmarket_user');
-  localStorage.removeItem('zenmarket_customer_view');
-  localStorage.removeItem('zenmarket_session_token');
+  try {
+    localStorage.removeItem('zenmarket_audience');
+    localStorage.removeItem('zenmarket_user');
+    localStorage.removeItem('zenmarket_customer_view');
+    localStorage.removeItem('zenmarket_session_token');
+  } catch {}
+}
+
+/**
+ * ล้างบทบาทที่ค้างอยู่เมื่อไม่มี session จริงจาก Supabase
+ */
+export function clearStaleRole() {
+  if (currentAudience === AUDIENCE_GUEST && !currentUser) return;
+  logout();
 }

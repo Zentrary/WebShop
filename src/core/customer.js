@@ -13,6 +13,8 @@ export function validateLogoUrl(url) {
   return '/images/placeholder.svg';
 }
 
+import { t } from '/src/core/i18n.js';
+
 export function getStockStatus(stockQuantity) {
   if (!stockQuantity || stockQuantity <= 0) return 'out_of_stock';
   if (stockQuantity <= 3) return 'low_stock';
@@ -21,12 +23,12 @@ export function getStockStatus(stockQuantity) {
 
 export function getStockStatusText(stockQuantity) {
   const status = getStockStatus(stockQuantity);
-  const texts = {
-    out_of_stock: 'สินค้าหมด',
-    low_stock: 'เหลือน้อย',
-    in_stock: 'พร้อมส่ง',
+  const map = {
+    out_of_stock: 'product.out_of_stock_tag',
+    low_stock: 'product.low_stock',
+    in_stock: 'product.in_stock',
   };
-  return texts[status] || texts.in_stock;
+  return t(map[status] || map.in_stock);
 }
 
 export function getStockStatusClass(stockQuantity) {

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>รายละเอียดคำสั่งซื้อ — ZenMarket</title>
+  <title>ZenMarket | คำสั่งซื้อ</title>
   <link rel="stylesheet" href="/src/styles/base.css">
   <link rel="stylesheet" href="/src/styles/spaces.css">
   <link rel="stylesheet" href="/src/styles/responsive.css">
@@ -14,39 +14,39 @@
 <body>
   <main class="container page">
     <div id="order-not-found" class="empty-state hidden">
-      <h1 style="font-size:var(--font-size-xl)">ไม่พบคำสั่งซื้อ</h1>
-      <a href="/account/orders.html" class="btn btn-outline mt-md">กลับไปรายการคำสั่งซื้อ</a>
+      <h1 style="font-size:var(--font-size-xl)" data-i18n="order.not_found">ไม่พบคำสั่งซื้อ</h1>
+      <a href="/account/orders.html" class="btn btn-outline mt-md" data-i18n="order.back_orders">กลับไปรายการคำสั่งซื้อ</a>
     </div>
 
     <div id="order-detail" class="hidden">
       <div class="page-head reveal">
-        <span class="eyebrow">Order</span>
+        <span class="eyebrow" data-i18n="nav.orders">คำสั่งซื้อ</span>
         <h1 class="page-title">คำสั่งซื้อ <span id="order-number" class="text-accent"></span></h1>
-        <p class="page-sub">วันที่สั่งซื้อ <span id="order-date"></span></p>
+        <p class="page-sub"><span data-i18n="common.date">วันที่</span> <span id="order-date"></span></p>
       </div>
 
       <div class="cart-grid">
         <div class="flex flex-col gap-lg">
           <div class="panel reveal">
-            <h2>สถานะการจัดส่ง</h2>
+            <h2 data-i18n="order.status_title">สถานะการจัดส่ง</h2>
             <div class="timeline" id="order-timeline"></div>
           </div>
 
           <div class="panel reveal" data-delay="1">
-            <h2>สินค้าที่สั่งซื้อ</h2>
+            <h2 data-i18n="order.items">สินค้าที่สั่งซื้อ</h2>
             <div id="order-items-list"></div>
           </div>
 
           <div class="panel reveal" data-delay="2">
-            <h2>ชำระเงิน</h2>
+            <h2 data-i18n="order.payment">การชำระเงิน</h2>
             <div class="flex gap-md items-center" style="flex-wrap:wrap">
               <span class="badge badge-info" id="order-payment">พร้อมเพย์ (PromptPay)</span>
             </div>
             <hr class="divider">
             <div id="receipt-upload">
-              <p class="text-sm text-secondary mb-md">อัปโหลดสลิปการชำระเงินเพื่อให้ร้านตรวจสอบ</p>
+              <p class="text-sm text-secondary mb-md" data-i18n="order.upload_slip">อัปโหลดสลิปการชำระเงินเพื่อให้ร้านตรวจสอบ</p>
               <input type="file" id="slip-input" accept="image/*" class="hidden">
-              <button id="upload-receipt-btn" class="btn btn-outline">อัปโหลดสลิป</button>
+              <button id="upload-receipt-btn" class="btn btn-outline" data-i18n="order.upload_slip_btn">อัปโหลดสลิป</button>
             </div>
             <div id="receipt-image" class="hidden">
               <img id="receipt-preview" src="" alt="สลิปการชำระเงิน" style="max-width:320px;border-radius:var(--radius-md);border:1px solid var(--color-border)">
@@ -54,30 +54,36 @@
           </div>
 
           <div class="panel reveal" data-delay="3">
-            <h2>ให้คะแนนสินค้า</h2>
+            <h2 data-i18n="order.shipping_updates">อัปเดตการจัดส่ง</h2>
+            <div id="order-shipping-updates"></div>
+          </div>
+
+          <div class="panel reveal" data-delay="4">
+            <h2 data-i18n="order.review_title">ให้คะแนนสินค้า</h2>
             <form id="review-form"></form>
           </div>
         </div>
 
         <aside class="summary reveal" data-delay="1">
-          <h2>สรุป</h2>
+          <h2 data-i18n="checkout.summary">สรุป</h2>
           <div class="sum-row"><span>ยอดรวมสินค้า</span><span id="order-subtotal">฿0.00</span></div>
           <div class="sum-row"><span>ค่าจัดส่ง</span><span id="order-shipping">฿0.00</span></div>
           <div class="sum-row total"><span>รวมทั้งหมด</span><span id="order-total">฿0.00</span></div>
           <div class="mt-lg">
             <div class="flex items-center justify-between mb-sm">
-              <span class="text-muted text-sm">สถานะ</span>
+              <span class="text-muted text-sm" data-i18n="common.status">สถานะ</span>
               <span id="order-status" class="badge badge-info"></span>
             </div>
+            <div id="order-actions" class="flex gap-sm mt-md" style="flex-wrap:wrap"></div>
             <div id="order-tracking-row" class="flex items-center justify-between hidden">
-              <span class="text-muted text-sm">เลขพัสดุ</span>
+              <span class="text-muted text-sm" data-i18n="order.tracking">เลขพัสดุ</span>
               <span id="order-tracking" class="text-sm font-semibold"></span>
             </div>
           </div>
           <hr class="divider">
-          <h3 style="font-size:var(--font-size-base);margin-bottom:var(--space-sm)">ที่อยู่จัดส่ง</h3>
+          <h3 style="font-size:var(--font-size-base);margin-bottom:var(--space-sm)" data-i18n="checkout.address">ที่อยู่จัดส่ง</h3>
           <p class="text-sm" id="order-shipping-address"></p>
-          <a href="/account/orders.html" class="btn btn-ghost btn-full mt-lg">กลับไปรายการคำสั่งซื้อ</a>
+          <a href="/account/orders.html" class="btn btn-ghost btn-full mt-lg" data-i18n="order.back_orders">กลับไปรายการคำสั่งซื้อ</a>
         </aside>
       </div>
     </div>

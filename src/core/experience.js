@@ -31,25 +31,29 @@ export function validateSocialUrl(url) {
   }
 }
 
+import { t } from '/src/core/i18n.js';
+
 export const ORDER_STATUS_BADGES = {
-  pending: { label: 'รอการยืนยัน', variant: 'warning' },
-  review: { label: 'รอตรวจสอบสลิป', variant: 'warning' },
-  paid: { label: 'ชำระเงินแล้ว', variant: 'info' },
-  shipped: { label: 'จัดส่งแล้ว', variant: 'info' },
-  delivered: { label: 'ส่งถึงมือแล้ว', variant: 'success' },
-  cancelled: { label: 'ยกเลิกแล้ว', variant: 'error' },
+  pending: { key: 'status.pending', variant: 'warning' },
+  review: { key: 'status.review', variant: 'warning' },
+  paid: { key: 'status.paid', variant: 'info' },
+  shipped: { key: 'status.shipped', variant: 'info' },
+  delivered: { key: 'status.delivered', variant: 'success' },
+  cancelled: { key: 'status.cancelled', variant: 'error' },
 };
 
 export function getOrderStatusBadge(status) {
-  return ORDER_STATUS_BADGES[status] || { label: status || '-', variant: 'info' };
+  const badge = ORDER_STATUS_BADGES[status];
+  if (!badge) return { label: status || '-', variant: 'info' };
+  return { label: t(badge.key), variant: badge.variant };
 }
 
 export const ORDER_TIMELINE_STEPS = [
-  { key: 'pending', label: 'สั่งซื้อสำเร็จ' },
-  { key: 'review', label: 'ตรวจสอบสลิป' },
-  { key: 'paid', label: 'ชำระเงินแล้ว' },
-  { key: 'shipped', label: 'จัดส่งพัสดุ' },
-  { key: 'delivered', label: 'ส่งถึงมือลูกค้า' },
+  { key: 'pending', labelKey: 'timeline.ordered' },
+  { key: 'review', labelKey: 'timeline.verify' },
+  { key: 'paid', labelKey: 'timeline.paid' },
+  { key: 'shipped', labelKey: 'timeline.shipped' },
+  { key: 'delivered', labelKey: 'timeline.delivered' },
 ];
 
 export function getTimelineProgress(currentStatus) {
@@ -57,6 +61,7 @@ export function getTimelineProgress(currentStatus) {
   const currentIndex = stepKeys.indexOf(currentStatus);
   return ORDER_TIMELINE_STEPS.map((step, index) => ({
     ...step,
+    label: t(step.labelKey),
     completed: index <= Math.max(0, currentIndex),
     current: index === Math.max(0, currentIndex),
   }));

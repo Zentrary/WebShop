@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>บัญชีของฉัน — ZenMarket</title>
+  <title>ZenMarket | บัญชีของฉัน</title>
   <link rel="stylesheet" href="/src/styles/base.css">
   <link rel="stylesheet" href="/src/styles/spaces.css">
   <link rel="stylesheet" href="/src/styles/responsive.css">
@@ -14,7 +14,7 @@
 <body>
   <main class="container page">
     <div class="page-head reveal">
-      <span class="eyebrow">Account</span>
+      <span class="eyebrow" data-i18n="nav.account">บัญชีของฉัน</span>
       <h1 class="page-title" data-i18n="account.title">บัญชีของฉัน</h1>
     </div>
 
@@ -47,10 +47,10 @@
       <div>
         <!-- โปรไฟล์ -->
         <section id="account-profile" class="panel reveal">
-          <h2>โปรไฟล์</h2>
+          <h2 data-i18n="account.profile">โปรไฟล์</h2>
           <form id="profile-form">
             <div class="form-group">
-              <label class="form-label" for="profile-username">ชื่อผู้ใช้</label>
+              <label class="form-label" for="profile-username" data-i18n="auth.username">ชื่อผู้ใช้</label>
               <input type="text" id="profile-username" class="form-input" placeholder="username">
             </div>
             <div class="flex gap-md" style="flex-wrap:wrap">
@@ -64,23 +64,57 @@
               </div>
             </div>
             <div class="form-group">
-              <label class="form-label" for="profile-phone">เบอร์โทรศัพท์</label>
+              <label class="form-label" for="profile-phone" data-i18n="common.phone">เบอร์โทรศัพท์</label>
               <input type="tel" id="profile-phone" class="form-input" placeholder="0812345678">
             </div>
-            <button type="submit" class="btn btn-primary">บันทึกการเปลี่ยนแปลง</button>
+            <button type="submit" class="btn btn-primary" data-i18n="account.save_profile">บันทึกการเปลี่ยนแปลง</button>
           </form>
         </section>
 
         <!-- คำสั่งซื้อ -->
         <section id="account-orders" class="panel reveal hidden">
-          <h2>คำสั่งซื้อล่าสุด</h2>
+          <h2 data-i18n="account.recent_orders">คำสั่งซื้อล่าสุด</h2>
           <div id="customer-orders-list"></div>
-          <a href="/account/orders.html" class="btn btn-outline mt-lg">ดูคำสั่งซื้อทั้งหมด</a>
+          <a href="/account/orders.html" class="btn btn-outline mt-lg" data-i18n="account.view_all_orders">ดูคำสั่งซื้อทั้งหมด</a>
         </section>
 
         <!-- ที่อยู่ -->
         <section id="account-addresses" class="panel reveal hidden">
-          <h2>สมุดที่อยู่</h2>
+          <div class="flex justify-between items-center mb-md" style="flex-wrap:wrap;gap:var(--space-sm)">
+            <h2 style="margin:0" data-i18n="account.address_book">สมุดที่อยู่</h2>
+            <button id="address-add-btn" type="button" class="btn btn-outline btn-sm" data-i18n="account.add_address">+ เพิ่มที่อยู่</button>
+          </div>
+
+          <form id="address-form" class="panel hidden" style="padding:1rem;margin-bottom:var(--space-lg)">
+            <h3 id="address-form-title" style="font-size:var(--font-size-base);margin-bottom:var(--space-sm)" data-i18n="account.add_address">เพิ่มที่อยู่</h3>
+            <div class="form-group">
+              <label class="form-label" for="address-label" data-i18n="account.address_label">ชื่อเรียกที่อยู่</label>
+              <input type="text" id="address-label" class="form-input" placeholder="เช่น บ้าน / ที่ทำงาน" data-i18n-placeholder="account.address_label_ph">
+            </div>
+            <div class="flex gap-md" style="flex-wrap:wrap">
+              <div class="form-group" style="flex:1;min-width:180px">
+                <label class="form-label" for="address-recipient" data-i18n="account.address_recipient">ชื่อผู้รับ</label>
+                <input type="text" id="address-recipient" class="form-input" required>
+              </div>
+              <div class="form-group" style="flex:1;min-width:180px">
+                <label class="form-label" for="address-phone" data-i18n="common.phone">เบอร์โทรศัพท์</label>
+                <input type="tel" id="address-phone" class="form-input" required>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="address-address" data-i18n="account.address_address">ที่อยู่จัดส่ง</label>
+              <textarea id="address-address" class="form-input" rows="3" required></textarea>
+            </div>
+            <label class="form-checkbox">
+              <input type="checkbox" id="address-default">
+              <span data-i18n="account.set_default">ตั้งเป็นค่าเริ่มต้น</span>
+            </label>
+            <div class="flex gap-sm mt-md">
+              <button type="submit" class="btn btn-primary btn-sm" data-i18n="common.save">บันทึก</button>
+              <button type="button" id="address-cancel-btn" class="btn btn-ghost btn-sm" data-i18n="common.cancel">ยกเลิก</button>
+            </div>
+          </form>
+
           <div id="addresses-list"></div>
         </section>
       </div>

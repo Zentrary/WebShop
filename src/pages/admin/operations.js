@@ -5,13 +5,18 @@
 
 import { isOwner, setAudience } from '/src/core/audience.js';
 import { notify } from '/src/core/ui.js';
-import { escapeHTML } from '/src/core/lib.js';
+import { escapeHTML, bindOnce } from '/src/core/lib.js';
 import { initReveal } from '/src/core/reveal.js';
 import { initAdminLayout } from '/src/pages/admin/layout.js';
+import { initI18n, t, translatePage, onLanguageChange } from '/src/core/i18n.js';
+import { reportClientError } from '/src/core/errors.js';
 
 let supabase;
 
 document.addEventListener('DOMContentLoaded', async () => {
+  initI18n();
+  translatePage();
+
   const { createClient } = await import('@supabase/supabase-js');
   supabase = createClient(
     import.meta.env.VITE_SUPABASE_URL,
@@ -47,6 +52,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   initBackup();
   loadStatus();
+  loadAudit();
+
+  onLanguageChange(() => {
+    translatePage();
+    loadStatus();
+    loadAudit();
+  });
 });
 
 /* ============ สำรอง / กู้คืน ============ */
@@ -71,15 +83,15 @@ async function initBackup() {
   const passwordInput = document.getElementById('backup-password');
   const errorLog = document.getElementById('operations-error-log');
 
-  downloadBtn.addEventListener('click', async () => {
+  bindOnce(downloadBtn, 'click', async () => {
     const password = passwordInput.value;
     if (!password) {
-      notify('กรุณาระบุรหัสผ่านสำหรับเข้ารหัส', 'error');
+      notify(t('admin.backup_password_required'), 'error');
       return;
     }
 
     downloadBtn.disabled = true;
-    downloadBtn.textContent = 'กำลังสำรอง...';
+    downloadBtn.textContent = t('common.loading');
 
     try {
       const { data, error } = await supabase.rpc('get_admin_backup');
@@ -106,26 +118,26 @@ async function initBackup() {
       a.click();
       URL.revokeObjectURL(url);
 
-      notify('สำรองข้อมูลสำเร็จ', 'success');
+      notify(t('admin.backup_saved'), 'success');
     } catch (err) {
       console.error(err);
-      errorLog.innerHTML = `<div class="badge badge-error">${escapeHTML(err.message || 'เกิดข้อผิดพลาดในการสำรองข้อมูล')}</div>`;
-      notify(err.message || 'เกิดข้อผิดพลาดในการสำรองข้อมูล', 'error');
+      errorLog.innerHTML = `<div class="badge badge-error">${escapeHTML(err.message || t('toast.error_generic'))}</div>`;
+      notify(err.message || t('toast.error_generic'), 'error');
     } finally {
       downloadBtn.disabled = false;
-      downloadBtn.textContent = 'ดาวน์โหลดข้อมูล';
+      downloadBtn.textContent = t('admin.backup_download');
     }
   });
 
-  uploadBtn.addEventListener('click', () => fileInput.click());
+  bindOnce(uploadBtn, 'click', () => fileInput.click());
 
-  fileInput.addEventListener('change', async (e) => {
+  bindOnce(fileInput, 'change', async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
     const password = passwordInput.value;
     if (!password) {
-      notify('กรุณาระบุรหัสผ่านสำหรับถอดรหัส', 'error');
+      notify(t('admin.backup_password_required'), 'error');
       return;
     }
 
@@ -141,24 +153,90 @@ async function initBackup() {
       const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ciphertext);
       const backup = JSON.parse(new TextDecoder().decode(decrypted));
 
-      // แสดงสรุปสิ่งที่จะกู้คืน (การเขียนกลับลงตารางต้องทำผ่าน service role เท่านั้น)
       const tables = backup?.tables || {};
+
+      // ตรวจสอบไฟล์ก่อน แล้วค่อยกู้คืนจริงผ่าน RPC restore_admin_backup
+      if (!window.confirm(t('admin.backup_restore_confirm'))) {
+        errorLog.innerHTML = `
+          <div class="panel" style="padding:var(--space-md)">
+            <div class="font-semibold mb-sm">${t('admin.backup_ok')}</div>
+            <div class="text-sm text-secondary">
+              ${Object.entries(tables).map(([k, v]) => `${escapeHTML(k)}: ${Array.isArray(v) ? v.length : 0}`).join('<br>')}
+            </div>
+            <div class="text-muted text-sm mt-sm">${escapeHTML(backup?.format || '-')} · ${escapeHTML(backup?.created_at ? new Date(backup.created_at).toLocaleString('th-TH') : '-')}</div>
+          </div>
+        `;
+        notify(t('admin.backup_ok'), 'success');
+        return;
+      }
+
+      const { data: restored, error: restoreErr } = await supabase.rpc('restore_admin_backup', {
+        p_backup: backup,
+      });
+      if (restoreErr) throw restoreErr;
+
       errorLog.innerHTML = `
         <div class="panel" style="padding:var(--space-md)">
-          <div class="font-semibold mb-sm">ตรวจสอบไฟล์สำรองสำเร็จ</div>
+          <div class="font-semibold mb-sm">${t('admin.backup_restored')}</div>
           <div class="text-sm text-secondary">
-            ${Object.entries(tables).map(([k, v]) => `${k}: ${Array.isArray(v) ? v.length : 0} แถว`).join('<br>')}
+            ${Object.entries(restored || {}).map(([k, v]) => `${escapeHTML(k)}: ${v}`).join('<br>')}
           </div>
-          <div class="text-muted text-sm mt-sm">รูปแบบ: ${escapeHTML(backup?.format || 'ไม่ทราบ')} · สร้างเมื่อ ${escapeHTML(backup?.created_at ? new Date(backup.created_at).toLocaleString('th-TH') : '-')}</div>
         </div>
       `;
-      notify('กู้คืนข้อมูลสำเร็จ', 'success');
+      notify(t('admin.backup_restored'), 'success');
     } catch (err) {
       console.error(err);
-      errorLog.innerHTML = `<div class="badge badge-error">${escapeHTML(err.message || 'รหัสผ่านไม่ถูกต้อง หรือไฟล์เสีย')}</div>`;
-      notify(err.message || 'เกิดข้อผิดพลาดในการกู้คืนข้อมูล', 'error');
+      reportClientError('admin', err?.message || 'restore');
+      errorLog.innerHTML = `<div class="badge badge-error">${escapeHTML(err.message || t('toast.error_generic'))}</div>`;
+      notify(err.message || t('toast.error_generic'), 'error');
     }
   });
+}
+
+/* ============ บันทึกการตรวจสอบ (audit) ============ */
+async function loadAudit() {
+  const errorsEl = document.getElementById('operations-client-errors');
+  const attemptsEl = document.getElementById('operations-login-attempts');
+
+  try {
+    const { data: errors } = await supabase
+      .from('client_errors')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(20);
+    if (errorsEl) {
+      errorsEl.innerHTML = errors && errors.length
+        ? errors.map(e => `
+            <div class="flex justify-between items-center" style="padding:0.5rem 0;border-bottom:1px solid var(--color-border-soft)">
+              <span class="text-sm">${escapeHTML(e.area || '-')} · ${escapeHTML(e.code || '-')}</span>
+              <span class="text-muted text-xs">${e.created_at ? new Date(e.created_at).toLocaleString('th-TH') : '-'}</span>
+            </div>
+          `).join('')
+        : `<p class="text-muted text-sm">${t('admin.no_client_errors')}</p>`;
+    }
+  } catch (err) {
+    if (errorsEl) errorsEl.innerHTML = `<p class="text-muted text-sm">${escapeHTML(err.message)}</p>`;
+  }
+
+  try {
+    const { data: attempts } = await supabase
+      .from('login_attempts')
+      .select('*')
+      .order('expires', { ascending: false })
+      .limit(20);
+    if (attemptsEl) {
+      attemptsEl.innerHTML = attempts && attempts.length
+        ? attempts.map(a => `
+            <div class="flex justify-between items-center" style="padding:0.5rem 0;border-bottom:1px solid var(--color-border-soft)">
+              <span class="text-sm">${escapeHTML(a.key || '-')}</span>
+              <span class="text-muted text-xs">${a.hits || 0} · ${a.expires ? new Date(a.expires).toLocaleString('th-TH') : '-'}</span>
+            </div>
+          `).join('')
+        : `<p class="text-muted text-sm">${t('admin.no_login_attempts')}</p>`;
+    }
+  } catch (err) {
+    if (attemptsEl) attemptsEl.innerHTML = `<p class="text-muted text-sm">${escapeHTML(err.message)}</p>`;
+  }
 }
 
 /* ============ สถานะระบบ ============ */
@@ -176,11 +254,11 @@ async function loadStatus() {
     notificationsEl.innerHTML = notifications && notifications.length
       ? notifications.map(n => `
           <div class="flex justify-between items-center" style="padding:0.5rem 0;border-bottom:1px solid var(--color-border-soft)">
-            <span class="text-sm">${escapeHTML(n.kind || 'แจ้งเตือน')}</span>
+            <span class="text-sm">${escapeHTML(n.kind || t('admin.notifications'))}</span>
             <span class="text-muted text-sm">${n.created_at ? new Date(n.created_at).toLocaleString('th-TH') : '-'}</span>
           </div>
         `).join('')
-      : '<p class="text-muted text-sm">ไม่มีการแจ้งเตือนใหม่</p>';
+      : `<p class="text-muted text-sm">${t('admin.no_notifications')}</p>`;
   } catch (err) {
     notificationsEl.innerHTML = `<p class="text-muted text-sm">${escapeHTML(err.message)}</p>`;
   }
@@ -193,11 +271,11 @@ async function loadStatus() {
     restockEl.innerHTML = status && status.length
       ? status.map(s => `
           <div class="flex justify-between items-center" style="padding:0.5rem 0;border-bottom:1px solid var(--color-border-soft)">
-            <span class="text-sm">${escapeHTML(s.name || 'งาน')}</span>
-            <span class="text-muted text-sm">${s.last_success ? new Date(s.last_success).toLocaleString('th-TH') : 'ยังไม่มีข้อมูล'}</span>
+            <span class="text-sm">${escapeHTML(s.name || '-')}</span>
+            <span class="text-muted text-sm">${s.last_success ? new Date(s.last_success).toLocaleString('th-TH') : t('admin.no_data')}</span>
           </div>
         `).join('')
-      : '<p class="text-muted text-sm">ยังไม่มีข้อมูลสถานะ</p>';
+      : `<p class="text-muted text-sm">${t('admin.no_data')}</p>`;
   } catch (err) {
     restockEl.innerHTML = `<p class="text-muted text-sm">${escapeHTML(err.message)}</p>`;
   }
