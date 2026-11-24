@@ -153,6 +153,11 @@
               />
             </div>
             <div class="form-group" style="flex: 1; min-width: 220px">
+              <label class="form-label" for="setting-low-stock" data-i18n="admin.low_stock_threshold">เกณฑ์แจ้งเตือนสต็อก</label>
+              <input type="number" id="setting-low-stock" class="form-input" min="0" max="1000" step="1" placeholder="5" />
+              <div class="form-hint" data-i18n="admin.low_stock_threshold_hint">แจ้งเตือนเมื่อสต็อกเหลือน้อยกว่าหรือเท่ากับจำนวนนี้</div>
+            </div>
+            <div class="form-group" style="flex: 1; min-width: 220px">
               <label class="form-label" for="setting-free-shipping-threshold" data-i18n="admin.settings_free_threshold"
                 >ส่งฟรีเมื่อช้อปครบ (บาท)</label
               >
@@ -190,6 +195,36 @@
               data-i18n-placeholder="admin.settings_about_ph"
             ></textarea>
           </div>
+
+          <h2 class="mt-lg" data-i18n="admin.pages_title">ข้อความหน้าเว็บ</h2>
+          <p class="text-muted text-sm" data-i18n="admin.pages_sub">แก้ข้อความในหน้า เกี่ยวกับร้าน / ช่วยเหลือ / ความเป็นส่วนตัว</p>
+          <div class="flex gap-md" style="flex-wrap: wrap; margin-top: 0.75rem">
+            <div class="form-group" style="flex: 0 1 220px">
+              <label class="form-label" for="pages-slug" data-i18n="admin.pages_title_field">หน้า</label>
+              <select id="pages-slug" class="form-select">
+                <option value="about" data-i18n="admin.pages_about">เกี่ยวกับร้าน</option>
+                <option value="help" data-i18n="admin.pages_help">การจัดส่งและชำระเงิน</option>
+                <option value="privacy" data-i18n="admin.pages_privacy">ความเป็นส่วนตัว</option>
+              </select>
+            </div>
+            <div class="form-group" style="flex: 0 1 160px">
+              <label class="form-label" for="pages-lang" data-i18n="common.language">ภาษา</label>
+              <select id="pages-lang" class="form-select">
+                <option value="th">ไทย</option>
+                <option value="en">English</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="pages-title" data-i18n="admin.pages_title_field">หัวข้อ</label>
+            <input type="text" id="pages-title" class="form-input" maxlength="120" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="pages-body" data-i18n="admin.pages_body">เนื้อหา (เว้นว่าง = ใช้ข้อความเริ่มต้น)</label>
+            <textarea id="pages-body" class="form-input" rows="8"></textarea>
+            <div class="form-hint" data-i18n="admin.pages_hint">เว้นบรรทัดเพื่อขึ้นย่อหน้าใหม่</div>
+          </div>
+          <button type="button" id="pages-save" class="btn btn-outline" data-i18n="common.save">บันทึก</button>
 
           <div class="settings-actions">
             <button type="submit" class="btn btn-primary" data-i18n="common.save">บันทึกการตั้งค่า</button>

@@ -1,16 +1,16 @@
-import {
-  initApp,
-  state,
-  addToCart,
-  updateCartBadge,
-  requireSupabase,
-  renderGuestGate,
-  applyMemberGating,
-} from '/src/app.js';
+import { initApp, state, addToCart, updateCartBadge, requireSupabase } from '/src/app.js';
 import { isSignedIn } from '/src/core/audience.js';
 import { translatePage } from '/src/core/i18n.js';
 import { notify } from '/src/core/ui.js';
-import { formatTHB, safeImage, escapeHTML, bindOnce, ratingStars } from '/src/core/lib.js';
+import {
+  formatTHB,
+  safeImage,
+  escapeHTML,
+  bindOnce,
+  ratingStars,
+  effectivePrice,
+  hasSalePrice,
+} from '/src/core/lib.js';
 import { getStockStatusText, getStockStatusClass } from '/src/core/customer.js';
 import { observeReveals } from '/src/core/reveal.js';
 import { loadFavorites, toggleFavorite, isFavorite, canUseFavorites } from '/src/core/favorites.js';
@@ -33,19 +33,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const path = window.location.pathname;
 
-  if (!isSignedIn()) {
-    sessionStorage.setItem('zenmarket_return_path', path + window.location.search);
-    const gate = document.getElementById('shop-gate');
-    const content = document.getElementById('shop-content');
-    if (content) content.classList.add('hidden');
-    if (gate) {
-      renderGuestGate('shop-gate');
-      applyMemberGating(gate);
-    }
-    return;
-  }
-
-  await loadFavorites();
+  // ลูกค้าทั่วไปดูสินค้าได้เลย ไม่ต้องล็อกอิน — จะขอล็อกอินตอนกดสั่งซื้อเท่านั้น
+  renderGuestNotice();
+  if (isSignedIn()) await loadFavorites();
 
   const route = normalizePath(path);
   if (route.startsWith('/shop/product')) {
@@ -61,6 +51,36 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (currentRenderer) currentRenderer();
   });
 });
+
+/**
+ * แถบเล็ก ๆ บอกลูกค้าที่ยังไม่ล็อกอินว่าเลือกดูได้เต็มที่
+ * แล้วค่อยเข้าสู่ระบบตอนกดสั่งซื้อ
+ */
+function renderGuestNotice() {
+  if (isSignedIn()) return;
+  const host = document.querySelector('main.container.page');
+  if (!host || document.getElementById('shop-guest-note')) return;
+  const note = document.createElement('div');
+  note.id = 'shop-guest-note';
+  note.className = 'guest-note reveal';
+  note.innerHTML = `<span>${escapeHTML(t('shop.guest_banner'))}</span>
+    <a class="btn btn-outline btn-sm" href="/auth/login">${escapeHTML(t('shop.guest_banner_cta'))}</a>`;
+  host.prepend(note);
+}
+
+/**
+ * การสั่งซื้อต้องมีบัญชี — ถ้ายังไม่ล็อกอินให้พาไปหน้าล็อกอิน
+ * แล้วพากลับมาหน้าเดิมหลังเข้าสู่ระบบ
+ */
+function requireMemberForOrder() {
+  if (isSignedIn()) return true;
+  notify(t('toast.login_to_buy'), 'warning');
+  sessionStorage.setItem('zenmarket_return_path', window.location.pathname + window.location.search);
+  setTimeout(() => {
+    window.location.href = '/auth/login';
+  }, 900);
+  return false;
+}
 
 function productImages(product) {
   const urls = [];
@@ -82,9 +102,12 @@ function createProductCard(product) {
   productCache.set(product.id, product);
 
   const favActive = isFavorite(product.id);
+  const onSale = hasSalePrice(product);
+  const price = effectivePrice(product);
   card.innerHTML = `
     <div class="thumb">
       <img src="${firstImage}" alt="${escapeHTML(product.name)}" loading="lazy">
+      ${onSale ? `<span class="sale-badge">${escapeHTML(t('product.sale'))}</span>` : ''}
       <button class="favorite-btn ${favActive ? 'active' : ''}" data-favorite="${product.id}"
         title="${t(favActive ? 'product.favorite_remove' : 'product.favorite_add')}"
         aria-label="${t(favActive ? 'product.favorite_remove' : 'product.favorite_add')}">${HEART_SVG}</button>
@@ -94,7 +117,9 @@ function createProductCard(product) {
       <span class="cat">${escapeHTML(product.category || '')}</span>
       <h3 class="name">${escapeHTML(product.name)}</h3>
       <div class="foot">
-        <span class="price">${formatTHB(product.price)}</span>
+        <span class="price">${formatTHB(price)}${
+          onSale ? `<s class="price-was">${formatTHB(product.price)}</s>` : ''
+        }</span>
         <span class="stock-tag ${stockClass}">${stockStatus}</span>
       </div>
     </div>
@@ -288,7 +313,10 @@ async function initProductPage() {
     applyDocumentTitle(`${product.name}`);
 
     document.getElementById('product-title').textContent = product.name;
-    document.getElementById('product-price').textContent = formatTHB(product.price);
+    const unitPrice = effectivePrice(product);
+    document.getElementById('product-price').innerHTML = hasSalePrice(product)
+      ? `${formatTHB(unitPrice)} <s class="price-was">${formatTHB(product.price)}</s>`
+      : formatTHB(unitPrice);
     document.getElementById('product-cat').textContent = product.category || '';
     document.getElementById('product-stock').innerHTML = `
       <span class="${getStockStatusClass(product.stock)} font-medium">${getStockStatusText(product.stock)}</span>
@@ -355,6 +383,7 @@ async function initProductPage() {
     }
 
     bindOnce(document.getElementById('buy-now-btn'), 'click', () => {
+      if (!requireMemberForOrder()) return;
       const qty = parseInt(qtyInput.value) || 1;
       addToCart(product, qty);
       updateCartBadge();

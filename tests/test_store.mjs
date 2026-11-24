@@ -45,13 +45,15 @@ const PRODUCTS = [
     scripts: ['src/pages/storefront/store.js'],
     supabase,
   });
-  await wait(200);
+  await wait(250);
   const gate = el(document, 'shop-gate');
   const content = el(document, 'shop-content');
-  A.ok('store: guest เห็นประตูสมัครสมาชิก', !!gate && !gate.classList.contains('hidden'));
-  A.ok('store: guest ถูกซ่อนเนื้อหาสินค้า', !!content && content.classList.contains('hidden'));
-  A.ok('store: guest มีปุ่มสมัครสมาชิก', !!gate.querySelector('a[href="/auth/register"]'));
-  A.eq('store: guest ไม่เห็นการ์ดสินค้า', el(document, 'product-grid').querySelectorAll('.product-card').length, 0);
+  const notice = el(document, 'shop-guest-note');
+  A.ok('store: guest เห็นเนื้อหาสินค้าได้โดยไม่ต้องล็อกอิน', !!content && !content.classList.contains('hidden'));
+  A.ok('store: guest ไม่ถูกบังคับด้วยประตูสมัครสมาชิก', !gate || gate.classList.contains('hidden'));
+  A.ok('store: guest เห็นแถบเชิญเข้าสู่ระบบ', !!notice);
+  A.ok('store: แถบเชิญมีลิงก์เข้าสู่ระบบ', !!notice.querySelector('a[href="/auth/login"]'));
+  A.ok('store: guest เห็นการ์ดสินค้า', el(document, 'product-grid').querySelectorAll('.product-card').length > 0);
 }
 
 {
@@ -183,7 +185,9 @@ const PRODUCTS = [
   });
   await wait(250);
   const grid = el(document, 'product-grid');
-  A.eq('store: guest ไม่มีปุ่มหัวใจ', grid.querySelectorAll('[data-favorite]').length, 0);
+  // guest เห็นปุ่มหัวใจได้ แต่กดแล้วระบบจะพาไปเข้าสู่ระบบก่อน
+  A.ok('store: guest เห็นปุ่มหัวใจแต่ยังไม่ได้เป็นรายการโปรด', grid.querySelectorAll('[data-favorite]').length > 0);
+  A.eq('store: ปุ่มหัวใจของ guest ยังไม่ติดสถานะโปรด', grid.querySelectorAll('[data-favorite].active').length, 0);
   A.eq('store: guest กดหัวใจ → ไม่ insert', supabase.calls.insert.filter((i) => i.table === 'favorites').length, 0);
 }
 
@@ -203,8 +207,12 @@ const PRODUCTS = [
     supabase,
   });
   await wait(250);
-  const gate = el(document, 'shop-gate');
-  A.ok('store: หน้ารายการสินค้ากำหนดประตูสมัครสมาชิก', !!gate && !gate.classList.contains('hidden'));
+  const notice = el(document, 'shop-guest-note');
+  A.ok('store: หน้ารายการสินค้าเชื้อเชิญให้เข้าสู่ระบบเมื่อจะสั่งซื้อ', !!notice);
+  A.ok(
+    'store: หน้ารายการสินค้าแสดงสินค้าให้ guest ดู',
+    el(document, 'product-grid').querySelectorAll('.product-card').length > 0,
+  );
 }
 
 {
@@ -219,8 +227,9 @@ const PRODUCTS = [
     supabase,
   });
   await wait(250);
-  const gate = el(document, 'shop-gate');
-  A.ok('store: หน้ารายละเอียดสินค้ากำหนดประตูสมัครสมาชิก', !!gate && !gate.classList.contains('hidden'));
+  const notice = el(document, 'shop-guest-note');
+  A.ok('store: หน้ารายละเอียดสินค้าเชื้อเชิญให้เข้าสู่ระบบเมื่อจะสั่งซื้อ', !!notice);
+  A.ok('store: หน้ารายละเอียดสินค้าแสดงชื่อสินค้าให้ guest ดู', !!el(document, 'product-title'));
 }
 
 {

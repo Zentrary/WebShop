@@ -42,8 +42,20 @@
               </div>
 
               <div class="panel reveal" data-delay="1">
-                <h2 data-i18n="admin.order_receipt">สลิปการชำระเงิน</h2>
+                <h2 data-i18n="admin.slip_title">ตรวจสอบสลิป</h2>
                 <div id="admin-order-receipt"><p class="text-muted text-sm" data-i18n="admin.order_no_receipt">ไม่พบสลิป</p></div>
+                <div id="admin-slip-review" class="slip-review hidden">
+                  <p class="text-muted text-sm" data-i18n="admin.slip_manual_note">ร้านตรวจสลิปด้วยตัวเองทีละใบ (ยังไม่ได้ต่อ API ตรวจสลิปอัตโนมัติ)</p>
+                  <div class="slip-review-actions">
+                    <button type="button" id="admin-slip-approve" class="btn btn-primary btn-sm" data-i18n="admin.slip_approve">
+                      สลิปถูกต้อง อนุมัติชำระเงิน
+                    </button>
+                    <button type="button" id="admin-slip-reject" class="btn btn-danger btn-sm" data-i18n="admin.slip_reject">
+                      สลิปไม่ถูกต้อง
+                    </button>
+                  </div>
+                </div>
+                <p id="admin-slip-status" class="slip-status hidden"></p>
               </div>
 
               <div class="panel reveal" data-delay="2">

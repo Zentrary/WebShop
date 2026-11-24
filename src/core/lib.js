@@ -3,6 +3,23 @@ import { getLanguage, t } from './i18n.js';
 export const CURRENCY = 'THB';
 export const CURRENCY_SYMBOL = '฿';
 
+/**
+ * ราคาที่ลูกค้าจ่ายจริง — ถ้าร้านตั้งราคาโปรโมชั่นไว้และถูกกว่าราคาปกติ
+ * ให้ใช้ราคาโปรฯ (ตรงกับที่เซิร์ฟเวอร์คิดตอนสร้างออเดอร์)
+ */
+export function effectivePrice(product) {
+  const price = Number(product?.price) || 0;
+  const sale = Number(product?.sale_price);
+  if (Number.isFinite(sale) && sale > 0 && sale < price) return sale;
+  return price;
+}
+
+export function hasSalePrice(product) {
+  const price = Number(product?.price) || 0;
+  const sale = Number(product?.sale_price);
+  return Number.isFinite(sale) && sale > 0 && sale < price;
+}
+
 export function formatTHB(amount, lang = getLanguage()) {
   const locale = lang === 'en' ? 'en-US' : 'th-TH';
   return new Intl.NumberFormat(locale, {

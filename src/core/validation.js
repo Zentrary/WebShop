@@ -67,6 +67,16 @@ export function validateProduct(product = {}) {
     return { ok: false, errorKey: 'validation.product_images_too_many' };
   }
 
+  // ราคาโปรโมชั่น (ไม่บังคับ) — ต้องถูกกว่าราคาปกติและมากกว่าศูนย์
+  const rawSale = product.sale_price;
+  let salePrice = null;
+  if (rawSale !== undefined && rawSale !== null && String(rawSale).trim() !== '') {
+    salePrice = Number(rawSale);
+    if (!Number.isFinite(salePrice) || salePrice <= 0 || salePrice >= price) {
+      return { ok: false, errorKey: 'validation.product_sale_price_invalid' };
+    }
+  }
+
   return {
     ok: true,
     value: {
@@ -77,6 +87,7 @@ export function validateProduct(product = {}) {
       stock,
       description: description || null,
       image_url: imageUrl || null,
+      sale_price: salePrice,
     },
   };
 }
@@ -153,6 +164,13 @@ export function validateStoreSettings(settings = {}) {
     return { ok: false, errorKey: 'validation.free_shipping_invalid' };
   }
 
+  // เกณฑ์แจ้งเตือนสต็อกใกล้หมด (อนุญาต 0 = แจ้งเฉพาะของหมด)
+  const rawLowStock = toNumber(settings.low_stock_threshold);
+  const lowStockThreshold = rawLowStock === null ? 5 : rawLowStock;
+  if (!Number.isInteger(lowStockThreshold) || lowStockThreshold < 0 || lowStockThreshold > 1000) {
+    return { ok: false, errorKey: 'validation.low_stock_invalid' };
+  }
+
   return {
     ok: true,
     value: {
@@ -168,6 +186,7 @@ export function validateStoreSettings(settings = {}) {
       shipping_fee: shippingFee,
       free_shipping_threshold: threshold,
       show_contact: settings.show_contact !== false,
+      low_stock_threshold: lowStockThreshold,
     },
   };
 }

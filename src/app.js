@@ -26,7 +26,7 @@ import { mergeStoreSettings } from '/src/core/settings.js';
 import { initReveal } from '/src/core/reveal.js';
 import { installGlobalErrorHandlers } from '/src/core/errors.js';
 import { applyBrandAssets } from '/src/core/brand.js';
-import { escapeHTML, safeImage } from '/src/core/lib.js';
+import { escapeHTML, safeImage, effectivePrice } from '/src/core/lib.js';
 import { socialChannels, contactDetails, renderContactBands } from '/src/core/contact.js';
 import { state } from '/src/core/state.js';
 
@@ -66,7 +66,7 @@ export function addToCart(product, quantity = 1) {
     state.cart.push({
       product_id: product.id,
       name: product.name,
-      price: Number(product.price),
+      price: effectivePrice(product),
       image_url: product.image_url || null,
       quantity,
     });
@@ -452,6 +452,16 @@ window.addEventListener('zenmarket:add-to-cart', async (event) => {
   const productId = event.detail?.productId;
   if (!productId || !state.supabase) return;
 
+  // การสั่งซื้อต้องมีบัญชี (ลูกค้าทั่วไปยังดูสินค้าได้ตามปกติ)
+  if (!isSignedIn()) {
+    notify(t('toast.login_to_buy'), 'warning');
+    sessionStorage.setItem('zenmarket_return_path', window.location.pathname + window.location.search);
+    setTimeout(() => {
+      window.location.href = '/auth/login';
+    }, 900);
+    return;
+  }
+
   try {
     const { data } = await state.supabase.from('products').select('*').eq('id', productId).maybeSingle();
     if (!data) {
@@ -509,6 +519,44 @@ async function restoreSession() {
   }
 }
 
+const COOKIE_KEY = 'zenmarket_cookie_consent';
+
+/**
+ * แถบแจ้งคุกกี้แบบเรียบง่าย — จำคำตอบไว้ในเครื่อง ไม่ต้องถามซ้ำ
+ * (คุกกี้ที่ใช้มีแค่การเข้าสู่ระบบและภาษาที่เลือก)
+ */
+export function renderCookieNotice() {
+  if (typeof document === 'undefined' || !document.body) return;
+  try {
+    if (localStorage.getItem(COOKIE_KEY) === '1') return;
+  } catch {
+    return;
+  }
+  if (document.getElementById('cookie-notice')) return;
+
+  const bar = document.createElement('div');
+  bar.id = 'cookie-notice';
+  bar.className = 'cookie-notice';
+  bar.setAttribute('role', 'status');
+  bar.innerHTML = `
+    <p>${escapeHTML(t('cookie.text'))}
+      <a href="/pages/privacy">${escapeHTML(t('cookie.more'))}</a>
+    </p>
+    <button type="button" class="btn btn-primary btn-sm" id="cookie-accept">${escapeHTML(t('cookie.accept'))}</button>
+  `;
+  document.body.appendChild(bar);
+  // กันไม่ให้แถบทับเนื้อหาด้านล่างของหน้า
+  document.body.style.paddingBottom = '5.5rem';
+
+  bar.querySelector('#cookie-accept')?.addEventListener('click', () => {
+    try {
+      localStorage.setItem(COOKIE_KEY, '1');
+    } catch {}
+    document.body.style.paddingBottom = '';
+    bar.remove();
+  });
+}
+
 let initPromise = null;
 
 export function initApp() {
@@ -559,6 +607,7 @@ async function doInit() {
   });
 
   flash();
+  renderCookieNotice();
   state.initialized = true;
   return state;
 }

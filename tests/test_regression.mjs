@@ -415,4 +415,55 @@ const THAI = /[\u0E00-\u0E7F]/;
   A.ok('header: ใช้ฟังก์ชันออกจากระบบเดียวกันทั้งสองที่', /signOutNow/.test(appJs));
 }
 
+/* ------------------------------------------------------------------ *
+ * 12. ระบบที่เพิ่มรอบล่าสุด: คูปอง, รายงาน, ตรวจสลิป, สต็อก, หน้าเว็บ, 404
+ * ------------------------------------------------------------------ */
+{
+  const fs = await import('node:fs');
+  const read = (rel) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
+
+  // 404 + ความยินยอมคุกกี้
+  A.ok('404: มีหน้า 404 ของร้านเอง', fs.existsSync(path.join(ROOT, 'web/404.html')));
+  A.ok('404: หน้า 404 มีข้อความแปลภาษา', read('web/404.html').includes('data-i18n="notfound.title"'));
+  A.ok('cookie: มีแถบความยินยอมคุกกี้', /renderCookieNotice/.test(read('src/app.js')));
+  A.ok('cookie: จำคำตอบของผู้ใช้', /zenmarket_cookie_consent/.test(read('src/app.js')));
+
+  // ข้อความหน้าเว็บที่แก้ได้จากหลังบ้าน
+  for (const page of ['about', 'help', 'privacy']) {
+    A.ok(`pages: ${page} โหลดตัวแก้ข้อความ`, read(`web/pages/${page}.html`).includes('site-page.js'));
+  }
+  A.ok('pages: อ่านเนื้อหาจากตาราง site_pages', /from\('site_pages'\)/.test(read('src/pages/content/site-page.js')));
+  A.ok('pages: หลังบ้านมีตัวแก้ข้อความ', read('web/admin/settings.html').includes('id="pages-slug"'));
+
+  // คูปอง + ราคาโปรโมชั่น
+  A.ok('coupon: หน้าชำระเงินมีช่องกรอกโค้ด', read('web/shop/checkout.html').includes('id="coupon-input"'));
+  A.ok('coupon: เรียก check_coupon ก่อนใช้โค้ด', /rpc\('check_coupon'/.test(read('src/pages/customer/checkout.js')));
+  A.ok('coupon: ส่งโค้ดไปกับ create_order', /p_coupon/.test(read('src/pages/customer/checkout.js')));
+  A.ok('coupon: มีหน้าจัดการคูปองหลังบ้าน', fs.existsSync(path.join(ROOT, 'web/admin/coupons.html')));
+  A.ok('sale: คำนวณราคาที่จ่ายจริงจาก sale_price', /export function effectivePrice/.test(read('src/core/lib.js')));
+  A.ok('sale: การ์ดสินค้าแสดงป้ายลดราคา', /sale-badge/.test(read('src/pages/storefront/store.js')));
+  A.ok('sale: ฟอร์มสินค้ามีช่องราคาโปร', read('web/admin/products.html').includes('id="product-sale-price"'));
+
+  // ที่อยู่ที่บันทึกไว้ใน checkout
+  A.ok('address: checkout มีที่อยู่ที่บันทึกไว้', read('web/shop/checkout.html').includes('id="checkout-saved"'));
+  A.ok('address: เติมข้อมูลจากที่อยู่ที่เลือก', /customer_addresses/.test(read('src/pages/customer/checkout.js')));
+
+  // ตรวจสลิปโดยเจ้าของร้าน
+  A.ok('slip: มีแผงตรวจสลิปในหน้าออเดอร์', read('web/admin/order.html').includes('id="admin-slip-review"'));
+  A.ok('slip: เรียกฟังก์ชัน review_slip', /review_slip/.test(read('src/pages/admin/index.js')));
+  A.ok('slip: ลูกค้าเห็นเหตุผลที่สลิปไม่ผ่าน', read('web/account/order.html').includes('id="order-slip-status"'));
+
+  // สต็อกใกล้หมด + รายงานยอดขาย
+  A.ok('stock: ตั้งเกณฑ์แจ้งเตือนได้', read('web/admin/settings.html').includes('id="setting-low-stock"'));
+  A.ok('stock: แดชบอร์ดกรองตามเกณฑ์', /low_stock_threshold/.test(read('src/pages/admin/index.js')));
+  A.ok('reports: มีหน้ารายงานยอดขาย', fs.existsSync(path.join(ROOT, 'web/admin/reports.html')));
+  A.ok('reports: ดาวน์โหลด CSV ได้', /text\/csv/.test(read('src/pages/admin/index.js')));
+  A.ok('reports: เรียก get_sales_report', /get_sales_report/.test(read('src/pages/admin/index.js')));
+
+  // เส้นทางของหน้าใหม่
+  const routes = read('src/core/routes.js');
+  A.ok('routes: มีเส้นทางคูปอง', routes.includes("'/admin/coupons'"));
+  A.ok('routes: มีเส้นทางรายงาน', routes.includes("'/admin/reports'"));
+}
+
 process.exit(A.report('regression') ? 1 : 0);

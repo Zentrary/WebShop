@@ -3,7 +3,7 @@ import { pathToFileURL } from 'node:url';
 
 register(new URL('./loader.mjs', import.meta.url).href, import.meta.url);
 
-const { loadPage, makeSupabaseMock, setVal, submit, wait, makeAssert } = await import('./harness.mjs');
+const { loadPage, makeSupabaseMock, setVal, submit, fire, wait, makeAssert } = await import('./harness.mjs');
 
 const A = makeAssert();
 
@@ -180,7 +180,7 @@ const ADMIN_SESSION = { user: { id: 'admin-1', email: 'admin@zenmarket.test' } }
   A.eq('admin: เมนูแบ่งเป็น 2 กลุ่ม', groups.length, 2);
   const labels = [...document.querySelectorAll('.admin-sidebar .admin-nav-label')].map((e) => e.textContent.trim());
   A.eq('admin: มีป้ายกำกับกลุ่มเมนู', labels, ['จัดการร้าน', 'ตั้งค่าระบบ']);
-  A.eq('admin: เมนูมีครบ 8 รายการ', document.querySelectorAll('.admin-sidebar .admin-nav a').length, 8);
+  A.eq('admin: เมนูมีครบ 10 รายการ', document.querySelectorAll('.admin-sidebar .admin-nav a').length, 10);
 
   const logout = document.getElementById('admin-logout');
   A.ok('admin: ปุ่มออกจากระบบเป็นสีแดง', !!logout && logout.classList.contains('btn-danger-solid'));
@@ -194,7 +194,7 @@ const ADMIN_SESSION = { user: { id: 'admin-1', email: 'admin@zenmarket.test' } }
   A.ok('admin: เมนูมือถือมีปุ่มสลับภาษา', !!document.getElementById('admin-mobile-lang-toggle'));
   const mobileLogout = document.getElementById('admin-mobile-logout');
   A.ok('admin: เมนูมือถือมีปุ่มออกจากระบบสีแดง', !!mobileLogout && mobileLogout.classList.contains('btn-danger-solid'));
-  A.eq('admin: เมนูมือถือมีลิงก์ครบ 8 รายการ', mobileNav?.querySelectorAll('.admin-nav a').length, 8);
+  A.eq('admin: เมนูมือถือมีลิงก์ครบ 10 รายการ', mobileNav?.querySelectorAll('.admin-nav a').length, 10);
 
   A.eq('admin: หัวหน้าหน้าไม่มี eyebrow ซ้ำ', document.querySelectorAll('.admin-content .eyebrow').length, 0);
   const title = document.querySelector('.admin-page-title');
@@ -525,6 +525,102 @@ const ADMIN_SESSION = { user: { id: 'admin-1', email: 'admin@zenmarket.test' } }
     'ยังไม่มียอดขายใน 7 วันล่าสุด',
   );
   A.eq('chart: วันเดียวก็ยังวาดแท่ง', document.querySelectorAll('#sales-chart .sales-day').length, 1);
+}
+
+{
+  // หน้าคูปอง: แสดงรายการ + บันทึกคูปองใหม่
+  const supabase = await makeSupabaseMock({
+    session: ADMIN_SESSION,
+    user: ADMIN_SESSION.user,
+    tableData: {
+      ...ADMIN_TABLE,
+      store_settings: { shop_name: 'ร้านทดสอบ' },
+      coupons: [
+        {
+          id: 'c1',
+          code: 'WELCOME10',
+          kind: 'percent',
+          value: 10,
+          min_subtotal: 0,
+          used_count: 2,
+          max_uses: 10,
+          active: true,
+        },
+        {
+          id: 'c2',
+          code: 'SAVE50',
+          kind: 'amount',
+          value: 50,
+          min_subtotal: 500,
+          used_count: 0,
+          max_uses: null,
+          active: false,
+        },
+      ],
+    },
+  });
+  const { document } = await loadPage({
+    htmlPath: '/home/user/WebShop/web/admin/coupons.html',
+    scripts: ['src/pages/admin/index.js'],
+    supabase,
+  });
+  await wait(200);
+
+  const rows = document.querySelectorAll('#admin-coupons-list tr');
+  A.eq('coupons: แสดงคูปองทั้งสองรายการ', rows.length, 2);
+  A.ok('coupons: แสดงโค้ด', document.getElementById('admin-coupons-list').textContent.includes('WELCOME10'));
+  A.ok('coupons: คูปองปิดใช้งานขึ้นป้ายสถานะ', document.querySelectorAll('#admin-coupons-list .badge').length === 2);
+
+  fire(document, 'admin-coupon-add', 'click');
+  await wait(60);
+  A.ok('coupons: กดเพิ่มคูปองแล้วฟอร์มเปิด', !document.getElementById('admin-coupon-form').classList.contains('hidden'));
+
+  setVal(document, 'coupon-code', 'newyear25');
+  setVal(document, 'coupon-value', '25');
+  setVal(document, 'coupon-min', '300');
+  submit(document, 'admin-coupon-form');
+  await wait(200);
+
+  const insert = supabase.calls.insert.find((i) => i.table === 'coupons');
+  A.ok('coupons: บันทึกคูปองใหม่', !!insert);
+  A.eq('coupons: แปลงโค้ดเป็นตัวพิมพ์ใหญ่', insert?.payload?.code, 'NEWYEAR25');
+  A.eq('coupons: เก็บยอดซื้อขั้นต่ำ', insert?.payload?.min_subtotal, 300);
+  A.eq('coupons: เก็บประเภทส่วนลด', insert?.payload?.kind, 'percent');
+}
+
+{
+  // หน้ารายงาน: KPI + สินค้าขายดี + CSV
+  const supabase = await makeSupabaseMock({
+    session: ADMIN_SESSION,
+    user: ADMIN_SESSION.user,
+    rpcResults: {
+      get_sales_report: {
+        from: '2026-11-01',
+        to: '2026-11-30',
+        orders: 3,
+        revenue: 1500,
+        units: 7,
+        discount: 100,
+        daily: [],
+        top_products: [{ name: 'กาแฟ', units: 4, revenue: 800 }],
+      },
+    },
+    tableData: { ...ADMIN_TABLE, store_settings: { shop_name: 'ร้านทดสอบ' } },
+  });
+  const { document } = await loadPage({
+    htmlPath: '/home/user/WebShop/web/admin/reports.html',
+    scripts: ['src/pages/admin/index.js'],
+    supabase,
+  });
+  await wait(250);
+
+  A.eq('reports: มีการ์ดสรุป 4 ใบ', document.querySelectorAll('#report-kpis .kpi').length, 4);
+  A.ok('reports: แสดงยอดขายรวม', document.getElementById('report-kpis').textContent.includes('1,500'));
+  A.eq('reports: แสดงสินค้าขายดี 1 รายการ', document.querySelectorAll('#report-top-list tr').length, 1);
+  A.ok(
+    'reports: เรียกรายงานพร้อมช่วงวันที่',
+    supabase.calls.rpc.some((r) => r.name === 'get_sales_report'),
+  );
 }
 
 process.exit(A.report('admin') ? 1 : 0);

@@ -73,10 +73,32 @@ function initCartPage() {
   });
 }
 
+// คูปองที่ใช้อยู่ (ตรวจกับเซิร์ฟเวอร์แล้วเท่านั้น — ฝั่งเซิร์ฟเวอร์คิดส่วนลดซ้ำอีกครั้งตอนสร้างออเดอร์)
+let appliedCoupon = null;
+
 function cartTotals() {
   const subtotal = state.cart.reduce((s, i) => s + i.price * i.quantity, 0);
+  const discount = Math.min(appliedCoupon?.discount || 0, subtotal);
   const shipping = calculateShipping(subtotal, state.storeSettings || {});
-  return { subtotal, shipping, total: subtotal + shipping };
+  return { subtotal, shipping, discount, total: Math.max(subtotal - discount, 0) + shipping };
+}
+
+function renderCheckoutTotals() {
+  const totals = cartTotals();
+  const subtotalEl = document.getElementById('checkout-subtotal');
+  if (!subtotalEl) return totals;
+  subtotalEl.textContent = formatTHB(totals.subtotal);
+
+  const discountRow = document.getElementById('checkout-discount-row');
+  if (discountRow) {
+    discountRow.classList.toggle('hidden', !totals.discount);
+    document.getElementById('checkout-discount').textContent = `−${formatTHB(totals.discount)}`;
+  }
+  document.getElementById('checkout-shipping').textContent =
+    totals.shipping === 0 ? t('cart.free') : formatTHB(totals.shipping);
+  document.getElementById('checkout-total').textContent = formatTHB(totals.total);
+  showQR(totals.total);
+  return totals;
 }
 
 function renderCart() {
@@ -150,7 +172,6 @@ async function initCheckoutPage() {
     return;
   }
 
-  const { subtotal, shipping, total } = cartTotals();
   document.getElementById('checkout-items').innerHTML = state.cart
     .map(
       (item) => `
@@ -158,9 +179,9 @@ async function initCheckoutPage() {
   `,
     )
     .join('');
-  document.getElementById('checkout-subtotal').textContent = formatTHB(subtotal);
-  document.getElementById('checkout-shipping').textContent = shipping === 0 ? t('cart.free') : formatTHB(shipping);
-  document.getElementById('checkout-total').textContent = formatTHB(total);
+  renderCheckoutTotals();
+  loadSavedAddresses();
+  bindCouponBox();
 
   const payOpts = document.querySelectorAll('.pay-opt');
   payOpts.forEach((opt) => {
@@ -170,8 +191,6 @@ async function initCheckoutPage() {
       opt.querySelector('input').checked = true;
     });
   });
-
-  showQR(total);
 
   bindOnce(placeOrderBtn, 'click', async () => {
     if (!form.checkValidity()) {
@@ -202,6 +221,7 @@ async function initCheckoutPage() {
         cart,
         delivery,
         request_key: requestKey,
+        p_coupon: appliedCoupon?.code || null,
       });
 
       if (error) throw error;
@@ -220,6 +240,139 @@ async function initCheckoutPage() {
       placeOrderBtn.disabled = false;
       placeOrderBtn.textContent = t('checkout.place_order');
     }
+  });
+}
+
+/**
+ * ที่อยู่ที่ลูกค้าเคยบันทึกไว้ — แตะครั้งเดียวก็เติมชื่อ/เบอร์/ที่อยู่ให้
+ * (ไม่ต้องพิมพ์ใหม่ทุกครั้งที่สั่งซื้อ)
+ */
+async function loadSavedAddresses() {
+  const host = document.getElementById('checkout-saved');
+  if (!host || !state.user?.id) return;
+  try {
+    const { data, error } = await state.supabase
+      .from('customer_addresses')
+      .select('*')
+      .order('is_default', { ascending: false })
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    if (!data || data.length === 0) {
+      host.classList.add('hidden');
+      return;
+    }
+
+    host.innerHTML = `
+      <p class="text-muted text-sm">${escapeHTML(t('checkout.saved_addresses'))} · ${escapeHTML(t('checkout.saved_addresses_hint'))}</p>
+      <div class="checkout-saved-list">
+        ${data
+          .map(
+            (addr, index) => `
+          <button type="button" class="saved-address" data-address-index="${index}">
+            <span class="lbl">${escapeHTML(addr.label || addr.recipient || '')}</span>
+            <span class="addr">${escapeHTML(addr.address || '')}</span>
+            ${addr.is_default ? `<span class="pill">${escapeHTML(t('checkout.default_address'))}</span>` : ''}
+          </button>`,
+          )
+          .join('')}
+      </div>`;
+
+    host.classList.remove('hidden');
+    host.querySelectorAll('[data-address-index]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const addr = data[Number(btn.getAttribute('data-address-index'))];
+        if (!addr) return;
+        document.getElementById('checkout-name').value = addr.recipient || '';
+        document.getElementById('checkout-phone').value = addr.phone || '';
+        document.getElementById('checkout-address').value = addr.address || '';
+        host.querySelectorAll('.saved-address').forEach((el) => el.classList.remove('is-active'));
+        btn.classList.add('is-active');
+      });
+    });
+  } catch (err) {
+    console.warn('[ZenMarket] saved addresses unavailable', err);
+    host.classList.add('hidden');
+  }
+}
+
+function setCouponStatus(message, variant) {
+  const el = document.getElementById('coupon-status');
+  if (!el) return;
+  el.textContent = message || '';
+  el.classList.toggle('is-ok', variant === 'ok');
+  el.classList.toggle('is-error', variant === 'error');
+}
+
+/**
+ * ใช้โค้ดส่วนลด: ตรวจกับเซิร์ฟเวอร์ก่อน แล้วค่อยเอายอดลดมาแสดง
+ * ฝั่งเซิร์ฟเวอร์จะคิดส่วนลดซ้ำตอนสร้างออเดอร์จริง
+ */
+async function applyCouponCode(rawCode) {
+  const code = (rawCode || '').trim();
+  if (!code) {
+    setCouponStatus('', null);
+    return;
+  }
+  const { subtotal } = cartTotals();
+
+  try {
+    const { data, error } = await state.supabase.rpc('check_coupon', { p_code: code, p_subtotal: subtotal });
+    if (error) throw error;
+
+    if (!data || data.ok !== true) {
+      const reason = data?.reason;
+      const message =
+        reason === 'min_subtotal'
+          ? t('coupon.min_subtotal', { amount: formatTHB(data.min_subtotal) })
+          : reason === 'used_up'
+            ? t('coupon.used_up')
+            : reason === 'expired'
+              ? t('coupon.expired')
+              : reason === 'not_started'
+                ? t('coupon.not_started')
+                : t('coupon.invalid');
+      appliedCoupon = null;
+      renderCheckoutTotals();
+      setCouponStatus(message, 'error');
+      return;
+    }
+
+    appliedCoupon = { code: data.code, discount: Number(data.discount) || 0 };
+    const totals = renderCheckoutTotals();
+    setCouponStatus(t('coupon.applied', { code: data.code, amount: formatTHB(totals.discount) }), 'ok');
+  } catch (err) {
+    console.error(err);
+    appliedCoupon = null;
+    renderCheckoutTotals();
+    setCouponStatus(t('coupon.invalid'), 'error');
+  }
+}
+
+function bindCouponBox() {
+  const input = document.getElementById('coupon-input');
+  const applyBtn = document.getElementById('coupon-apply');
+  if (!input || !applyBtn) return;
+
+  applyBtn.addEventListener('click', () => {
+    if (appliedCoupon) {
+      appliedCoupon = null;
+      input.value = '';
+      setCouponStatus('', null);
+      renderCheckoutTotals();
+      applyBtn.textContent = t('coupon.apply');
+      return;
+    }
+    applyCouponCode(input.value).then(() => {
+      applyBtn.textContent = appliedCoupon ? t('coupon.remove') : t('coupon.apply');
+    });
+  });
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    applyCouponCode(input.value).then(() => {
+      applyBtn.textContent = appliedCoupon ? t('coupon.remove') : t('coupon.apply');
+    });
   });
 }
 
@@ -398,6 +551,23 @@ async function initCustomerOrderDetailPage() {
     `,
       )
       .join('');
+
+    const slipStatus = document.getElementById('order-slip-status');
+    if (slipStatus) {
+      if (order.status === 'review') {
+        slipStatus.textContent = t('order.slip_waiting');
+        slipStatus.className = 'slip-status';
+      } else if (order.slip_status === 'rejected') {
+        slipStatus.textContent = t('order.slip_rejected', { note: order.slip_note || '' });
+        slipStatus.className = 'slip-status is-error';
+      } else if (order.slip_status === 'approved') {
+        slipStatus.textContent = t('order.slip_approved');
+        slipStatus.className = 'slip-status is-ok';
+      } else {
+        slipStatus.className = 'slip-status hidden';
+        slipStatus.textContent = '';
+      }
+    }
 
     if (order.slip_path) {
       const slipUrl = await getPrivateImageUrl(state.supabase, 'payment-slips', order.slip_path);

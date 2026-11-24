@@ -85,6 +85,10 @@ export const ROUTE_MAP = {
   '/admin/settings.html': '/admin/settings',
   '/admin/payments': '/admin/payments',
   '/admin/payments.html': '/admin/payments',
+  '/admin/coupons': '/admin/coupons',
+  '/admin/coupons.html': '/admin/coupons',
+  '/admin/reports': '/admin/reports',
+  '/admin/reports.html': '/admin/reports',
   '/admin/operations': '/admin/operations',
   '/admin/operations.html': '/admin/operations',
 };
@@ -110,6 +114,8 @@ export const PAGE_TITLE_KEYS = [
   ['/admin/reviews', 'admin.page_reviews'],
   ['/admin/settings', 'admin.page_settings'],
   ['/admin/payments', 'admin.page_payments'],
+  ['/admin/coupons', 'admin.page_coupons'],
+  ['/admin/reports', 'admin.page_reports'],
   ['/admin/operations', 'admin.page_operations'],
   ['/admin/login', 'admin.page_login'],
   ['/shop/product', 'shop.product_title'],
@@ -161,6 +167,8 @@ export const EXACT_TITLE_KEYS = {
   '/admin/reviews': 'admin.page_reviews',
   '/admin/settings': 'admin.page_settings',
   '/admin/payments': 'admin.page_payments',
+  '/admin/coupons': 'admin.page_coupons',
+  '/admin/reports': 'admin.page_reports',
   '/admin/operations': 'admin.page_operations',
   '/admin/login': 'admin.page_login',
 };
@@ -174,6 +182,8 @@ export const ADMIN_ROUTES = [
   '/admin/reviews',
   '/admin/settings',
   '/admin/payments',
+  '/admin/coupons',
+  '/admin/reports',
   '/admin/operations',
 ];
 

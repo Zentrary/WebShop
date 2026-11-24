@@ -27,6 +27,11 @@ const NAV_GROUPS = [
         icon: 'M4 4h7v7H4V4Zm9 0h7v7h-7V4ZM4 13h7v7H4v-7Zm9 0h7v7h-7v-7Z',
       },
       {
+        href: '/admin/coupons',
+        key: 'admin.nav_coupons',
+        icon: 'M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8ZM7.5 7.5h.01',
+      },
+      {
         href: '/admin/reviews',
         key: 'admin.reviews',
         icon: 'm12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1L12 2Z',
@@ -36,6 +41,11 @@ const NAV_GROUPS = [
   {
     labelKey: 'admin.nav_group_system',
     items: [
+      {
+        href: '/admin/reports',
+        key: 'admin.nav_reports',
+        icon: 'M3 3v18h18M7 15l4-4 3 3 5-6',
+      },
       {
         href: '/admin/settings',
         key: 'admin.settings',

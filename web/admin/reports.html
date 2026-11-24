@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ZenMarket | รายงานยอดขาย</title>
+    <link rel="stylesheet" href="/src/styles/base.css" />
+    <link rel="stylesheet" href="/src/styles/spaces.css" />
+    <link rel="stylesheet" href="/src/styles/responsive.css" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <script type="module" src="/src/pages/admin/index.js"></script>
+    <noscript
+      ><style>
+        .reveal {
+          opacity: 1 !important;
+          transform: none !important;
+        }
+      </style></noscript
+    >
+  </head>
+  <body>
+    <div class="admin-layout">
+      <div class="admin-content">
+        <div class="admin-head">
+          <div class="admin-head-text">
+            <h1 class="admin-page-title" data-i18n="admin.page_reports">รายงานยอดขาย</h1>
+            <p class="admin-page-sub" data-i18n="admin.reports_sub">สรุปยอดขายตามช่วงวันที่ และดาวน์โหลดเป็นไฟล์ CSV</p>
+          </div>
+        </div>
+
+        <form id="admin-report-form" class="panel mb-lg reveal">
+          <div class="flex gap-md items-end" style="flex-wrap: wrap">
+            <div class="form-group" style="flex: 0 1 190px">
+              <label class="form-label" for="report-from" data-i18n="admin.reports_from">ตั้งแต่วันที่</label>
+              <input type="date" id="report-from" class="form-input" />
+            </div>
+            <div class="form-group" style="flex: 0 1 190px">
+              <label class="form-label" for="report-to" data-i18n="admin.reports_to">ถึงวันที่</label>
+              <input type="date" id="report-to" class="form-input" />
+            </div>
+            <div class="flex gap-sm mb-md">
+              <button type="submit" class="btn btn-primary" data-i18n="admin.reports_apply">ดูรายงาน</button>
+              <button type="button" id="report-export" class="btn btn-outline" data-i18n="admin.reports_export">ดาวน์โหลด CSV</button>
+            </div>
+          </div>
+        </form>
+
+        <div class="kpi-grid mb-lg" id="report-kpis"></div>
+
+        <div class="table-wrap reveal" id="report-top-wrap">
+          <table class="data">
+            <thead>
+              <tr>
+                <th data-i18n="admin.product">สินค้า</th>
+                <th data-i18n="admin.reports_units">ชิ้นที่ขายได้</th>
+                <th data-i18n="admin.reports_revenue">ยอดขายรวม</th>
+              </tr>
+            </thead>
+            <tbody id="report-top-list"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
