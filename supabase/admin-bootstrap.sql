@@ -1,49 +1,55 @@
--- ZenMarket Admin Bootstrap
--- สคริปต์ตั้งค่าบัญชีเจ้าของร้านคนเดียวอย่างปลอดภัยด้วยตนเอง
--- ให้เจ้าของร้านรันคำสั่งนี้ใน Supabase SQL Editor หลังจากสร้างโปรเจกต์แล้ว
+-- ZenMarket Admin Bootstrap (ตรงกับสคีมาจริงของโปรเจกต์ njjrgklfjwgmtcoefctc)
+-- ให้เจ้าของร้านรันคำสั่งนี้ใน Supabase SQL Editor หลังสร้างผู้ใช้ใน Auth แล้ว
+--
+-- ใช้ได้กับผู้ใช้ที่มีอยู่แล้วใน auth.users (เช่น zenadmin)
+-- ผลลัพธ์: ผู้ใช้คนนั้นจะมีสิทธิ์แอดมิน (is_admin() = true)
 
--- ขั้นตอนที่ 1: สร้างผู้ใช้ใน Auth (ทำผ่าน Supabase Dashboard Authentication > Users)
--- หรือใช้คำสั่งด้านล่างผ่าน Supabase CLI:
---   supabase auth users create --email admin@zenmarket.store --password 'ChangeMe123!'
-
--- ขั้นตอนที่ 2: สร้างโปรไฟล์สำหรับเจ้าของร้าน
-insert into public.profiles (id, user_name, full_name, role, email)
-select id, 'admin', 'เจ้าของร้าน ZenMarket', 'owner', email
-from auth.users
-where email = 'admin@zenmarket.store'
+-- ขั้นตอนที่ 1: สร้างโปรไฟล์ + สิทธิ์แอดมิน (ใช้ email ของผู้ใช้ที่ต้องการ)
+insert into public.profiles (id, username, first_name, last_name, phone)
+select id,
+       coalesce(u.raw_user_meta_data->>'username', split_part(u.email, '@', 1)),
+       u.raw_user_meta_data->>'first_name',
+       u.raw_user_meta_data->>'last_name',
+       u.raw_user_meta_data->>'phone'
+from auth.users u
+where u.email = 'admin@zenmarket.store'
 on conflict (id) do nothing;
 
--- ขั้นตอนที่ 3: ตั้งค่าร้านค้าเริ่มต้น
-insert into public.store_settings (
-  store_name, store_logo, store_description,
-  contact_email, contact_phone, contact_line,
-  contact_facebook, contact_instagram, contact_tiktok,
-  shipping_fee, free_shipping_threshold,
-  enable_cod, enable_promptpay,
-  terms_and_conditions, privacy_policy
-) values (
-  'ZenMarket',
-  '/public/images/placeholder.svg',
-  'ร้านค้าออนไลน์สำหรับเจ้าของคนเดียว ด้วยความตั้งใจและความใส่ใจ',
-  'admin@zenmarket.store',
-  '',
-  '',
-  '',
-  '',
-  '',
-  50,
-  500,
-  true,
-  true,
-  'ข้อกำหนดและเงื่อนไขการใช้บริการ',
-  'นโยบายความเป็นส่วนตัว'
-) on conflict (id) do nothing;
+insert into public.store_admin (singleton, user_id)
+select true, u.id
+from auth.users u
+where u.email = 'admin@zenmarket.store'
+on conflict (singleton) do update set user_id = excluded.user_id;
 
--- ขั้นตอนที่ 4: สร้างหมวดหมู่เริ่มต้น
-insert into public.categories (name, icon, description, sort_order) values
-  ('อุปกรณ์อิเล็กทรอนิกส์', 'Package', 'สินค้าอิเล็กทรอนิกส์และ gadget ต่างๆ', 1),
-  ('เสื้อผ้าและแฟชั่น', 'ShoppingBag', 'เสื้อผ้า เครื่องแต่งกาย และแฟชั่น', 2),
-  ('ของใช้ในบ้าน', 'Home', 'ของใช้ในบ้านและครัวเรือน', 3),
-  ('ผลิตภัณฑ์ความงาม', 'Star', 'สกินแคร์และผลิตภัณฑ์ความงาม', 4),
-  ('หนังสือและสื่อการเรียน', 'Book', 'หนังสือและสื่อการเรียนการสอน', 5)
-on conflict do nothing;
+-- ขั้นตอนที่ 2: ตั้งค่าร้านค้าเริ่มต้น (ตาราง store_settings เป็น singleton แถวเดียว)
+insert into public.store_settings (
+  singleton, shop_name, tagline, logo_url,
+  contact_email, contact_phone, contact_address,
+  shipping_fee, free_shipping_threshold,
+  promptpay_id, recipient_name
+) values (
+  true, 'ZenMarket', 'ร้านค้าออนไลน์สำหรับเจ้าของคนเดียว ด้วยความตั้งใจและความใส่ใจ',
+  '/images/placeholder.svg',
+  '', '', '',
+  50, 300,
+  '', ''
+)
+on conflict (singleton) do nothing;
+
+-- ขั้นตอนที่ 3: หมวดหมู่เริ่มต้น (ตาราง categories มีแค่ name)
+insert into public.categories (name)
+select v.name
+from (values
+  ('เครื่องสำอาง'),
+  ('ดูแลผิวหน้า'),
+  ('เพอร์นิเจอร์'),
+  ('ของใช้ทั่วไป')
+) as v(name)
+where not exists (select 1 from public.categories c where c.name = v.name);
+
+-- ตรวจสอบผลลัพธ์
+select
+  (select count(*) from public.store_admin) as admins,
+  (select count(*) from public.profiles) as profiles,
+  (select count(*) from public.categories) as categories,
+  (select count(*) from public.store_settings) as settings;

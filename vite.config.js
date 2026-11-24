@@ -25,6 +25,10 @@ export default defineConfig({
   root: 'web',
   envDir: '..',
   publicDir: '../public',
+  preview: {
+    host: '0.0.0.0',
+    allowedHosts: true,
+  },
   build: {
     outDir: '../dist',
     emptyOutDir: true,

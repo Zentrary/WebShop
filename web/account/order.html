@@ -3,85 +3,82 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>รายละเอียดคำสั่งซื้อ - ZenMarket</title>
+  <title>รายละเอียดคำสั่งซื้อ — ZenMarket</title>
   <link rel="stylesheet" href="/src/styles/base.css">
   <link rel="stylesheet" href="/src/styles/spaces.css">
   <link rel="stylesheet" href="/src/styles/responsive.css">
-  <link rel="icon" href="/public/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <script type="module" src="/src/pages/customer/checkout.js"></script>
+  <noscript><style>.reveal{opacity:1!important;transform:none!important}</style></noscript>
 </head>
 <body>
-  <main class="container pt-lg pb-xl">
-    <h1 id="order-title" class="mb-lg">รายละเอียดคำสั่งซื้อ</h1>
-
-    <div id="order-not-found" class="text-center py-xl hidden">
-      <div class="text-muted font-medium">ไม่พบคำสั่งซื้อที่ระบุ</div>
+  <main class="container page">
+    <div id="order-not-found" class="empty-state hidden">
+      <h1 style="font-size:var(--font-size-xl)">ไม่พบคำสั่งซื้อ</h1>
+      <a href="/account/orders.html" class="btn btn-outline mt-md">กลับไปรายการคำสั่งซื้อ</a>
     </div>
 
     <div id="order-detail" class="hidden">
-      <div class="grid grid-cols-2 gap-grid-lg mb-xl">
-        <div class="order-info">
-          <h2 class="font-semibold mb-md">ข้อมูลคำสั่งซื้อ</h2>
-          <div class="space-y-sm mb-lg">
-            <p><span class="text-secondary">เลขคำสั่งซื้อ:</span> <span id="order-number" class="font-semibold"></span></p>
-            <p><span class="text-secondary">วันที่สั่ง:</span> <span id="order-date"></span></p>
-            <p><span class="text-secondary">สถานะ:</span> <span id="order-status" class="badge badge-info"></span></p>
-            <p><span class="text-secondary">วิธีชำระ:</span> <span id="order-payment"></span></p>
+      <div class="page-head reveal">
+        <span class="eyebrow">Order</span>
+        <h1 class="page-title">คำสั่งซื้อ <span id="order-number" class="text-accent"></span></h1>
+        <p class="page-sub">วันที่สั่งซื้อ <span id="order-date"></span></p>
+      </div>
+
+      <div class="cart-grid">
+        <div class="flex flex-col gap-lg">
+          <div class="panel reveal">
+            <h2>สถานะการจัดส่ง</h2>
+            <div class="timeline" id="order-timeline"></div>
           </div>
 
-          <h3 class="font-semibold mb-sm">ที่อยู่จัดส่ง</h3>
-          <div id="order-shipping-address" class="text-secondary mb-lg"></div>
-        </div>
+          <div class="panel reveal" data-delay="1">
+            <h2>สินค้าที่สั่งซื้อ</h2>
+            <div id="order-items-list"></div>
+          </div>
 
-        <div class="order-summary">
-          <h2 class="font-semibold mb-md">สรุปยอดเงิน</h2>
-          <div class="space-y-sm mb-lg">
-            <div class="flex justify-between">
-              <span>ยอดรวมสินค้า</span>
-              <span id="order-subtotal" class="font-semibold">฿0.00</span>
+          <div class="panel reveal" data-delay="2">
+            <h2>ชำระเงิน</h2>
+            <div class="flex gap-md items-center" style="flex-wrap:wrap">
+              <span class="badge badge-info" id="order-payment">พร้อมเพย์ (PromptPay)</span>
             </div>
-            <div class="flex justify-between">
-              <span>ค่าจัดส่ง</span>
-              <span id="order-shipping" class="font-semibold">฿0.00</span>
+            <hr class="divider">
+            <div id="receipt-upload">
+              <p class="text-sm text-secondary mb-md">อัปโหลดสลิปการชำระเงินเพื่อให้ร้านตรวจสอบ</p>
+              <input type="file" id="slip-input" accept="image/*" class="hidden">
+              <button id="upload-receipt-btn" class="btn btn-outline">อัปโหลดสลิป</button>
             </div>
-            <div class="flex justify-between border-t pt-md">
-              <span class="font-bold">รวมทั้งหมด</span>
-              <span id="order-total" class="font-bold text-primary">฿0.00</span>
+            <div id="receipt-image" class="hidden">
+              <img id="receipt-preview" src="" alt="สลิปการชำระเงิน" style="max-width:320px;border-radius:var(--radius-md);border:1px solid var(--color-border)">
             </div>
           </div>
-        </div>
-      </div>
 
-      <div class="timeline mb-xl">
-        <h2 class="font-semibold mb-md">ไทม์ไลน์คำสั่งซื้อ</h2>
-        <div id="order-timeline" class="relative pl-md border-l border-border">
-          <!-- Timeline steps loaded via JavaScript -->
+          <div class="panel reveal" data-delay="3">
+            <h2>ให้คะแนนสินค้า</h2>
+            <form id="review-form"></form>
+          </div>
         </div>
-      </div>
 
-      <div class="order-items mb-xl">
-        <h2 class="font-semibold mb-md">สินค้าในคำสั่งซื้อ</h2>
-        <div id="order-items-list" class="grid grid-cols-4 gap-grid-md">
-          <!-- Order items loaded via JavaScript -->
-        </div>
-      </div>
-
-      <div id="order-receipt-section" class="mb-xl">
-        <h2 class="font-semibold mb-md">สลิปการโอนเงิน</h2>
-        <div id="receipt-upload" class="border rounded-lg p-md text-center">
-          <p class="text-secondary">ยังไม่มีสลิปการโอนเงิน</p>
-          <button id="upload-receipt-btn" class="btn btn-outline mt-sm">อัปโหลดสลิป</button>
-        </div>
-        <div id="receipt-image" class="hidden mt-md">
-          <img id="receipt-preview" src="" alt="สลิป" class="max-w-full max-h-96 mx-auto rounded-md border">
-        </div>
-      </div>
-
-      <div id="order-review-section" class="mb-xl">
-        <h2 class="font-semibold mb-md">รีวิวสินค้า</h2>
-        <div id="review-form" class="card p-lg">
-          <!-- Review form loaded via JavaScript -->
-        </div>
+        <aside class="summary reveal" data-delay="1">
+          <h2>สรุป</h2>
+          <div class="sum-row"><span>ยอดรวมสินค้า</span><span id="order-subtotal">฿0.00</span></div>
+          <div class="sum-row"><span>ค่าจัดส่ง</span><span id="order-shipping">฿0.00</span></div>
+          <div class="sum-row total"><span>รวมทั้งหมด</span><span id="order-total">฿0.00</span></div>
+          <div class="mt-lg">
+            <div class="flex items-center justify-between mb-sm">
+              <span class="text-muted text-sm">สถานะ</span>
+              <span id="order-status" class="badge badge-info"></span>
+            </div>
+            <div id="order-tracking-row" class="flex items-center justify-between hidden">
+              <span class="text-muted text-sm">เลขพัสดุ</span>
+              <span id="order-tracking" class="text-sm font-semibold"></span>
+            </div>
+          </div>
+          <hr class="divider">
+          <h3 style="font-size:var(--font-size-base);margin-bottom:var(--space-sm)">ที่อยู่จัดส่ง</h3>
+          <p class="text-sm" id="order-shipping-address"></p>
+          <a href="/account/orders.html" class="btn btn-ghost btn-full mt-lg">กลับไปรายการคำสั่งซื้อ</a>
+        </aside>
       </div>
     </div>
   </main>

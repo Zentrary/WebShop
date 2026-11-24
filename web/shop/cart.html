@@ -3,43 +3,45 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ตะกร้าสินค้า - ZenMarket</title>
+  <title>ตะกร้าสินค้า — ZenMarket</title>
   <link rel="stylesheet" href="/src/styles/base.css">
   <link rel="stylesheet" href="/src/styles/spaces.css">
   <link rel="stylesheet" href="/src/styles/responsive.css">
-  <link rel="icon" href="/public/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <script type="module" src="/src/pages/customer/checkout.js"></script>
+  <noscript><style>.reveal{opacity:1!important;transform:none!important}</style></noscript>
 </head>
 <body>
-  <main class="container pt-lg pb-xl">
-    <h1 data-i18n="cart.title">ตะกร้าสินค้า</h1>
-
-    <div id="cart-empty" class="text-center py-xl hidden">
-      <div class="text-muted font-medium mb-lg" data-i18n="cart.empty">ตะกร้าสินค้าของคุณว่างเปล่า</div>
-      <a href="/shop/index.html" class="btn btn-primary" data-i18n="nav.shop">ไปยังร้านค้า</a>
+  <main class="container page">
+    <div class="page-head reveal">
+      <span class="eyebrow">Cart</span>
+      <h1 class="page-title" data-i18n="cart.title">ตะกร้าสินค้า</h1>
     </div>
 
-    <div id="cart-content" class="hidden">
-      <div id="cart-items" class="space-y-md mb-xl">
-        <!-- Cart items loaded via JavaScript -->
+    <!-- ตะกร้าว่าง -->
+    <div id="cart-empty" class="empty-state hidden">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+      <h2 style="font-size:var(--font-size-xl);margin-bottom:var(--space-sm)" data-i18n="cart.empty">ตะกร้าสินค้าของคุณว่างเปล่า</h2>
+      <p class="mb-lg">ลองเลือกสินค้าสักชิ้นสิดดู</p>
+      <a href="/shop/index.html" class="btn btn-primary">ไปที่ร้านค้า</a>
+    </div>
+
+    <!-- มีสินค้า -->
+    <div id="cart-content" class="cart-grid hidden">
+      <div class="panel">
+        <h2 data-i18n="cart.title">สินค้าในตะกร้า</h2>
+        <div id="cart-items"></div>
+        <p id="cart-shipping-hint" class="text-muted text-sm mt-lg"></p>
       </div>
 
-      <div class="order-summary card p-lg">
-        <div class="flex justify-between mb-sm">
-          <span data-i18n="cart.subtotal">ยอดรวมสินค้า</span>
-          <span id="cart-subtotal" class="font-semibold">฿0.00</span>
-        </div>
-        <div class="flex justify-between mb-sm">
-          <span data-i18n="cart.shipping">ค่าจัดส่ง</span>
-          <span id="cart-shipping" class="font-semibold">฿0.00</span>
-        </div>
-        <div class="flex justify-between mb-lg border-t pt-md">
-          <span data-i18n="cart.total" class="font-bold">รวมทั้งหมด</span>
-          <span id="cart-total" class="font-bold text-primary">฿0.00</span>
-        </div>
-
-        <a href="/shop/checkout.html" class="btn btn-primary btn-full" data-i18n="cart.checkout">ไปยังหน้าชำระเงิน</a>
-      </div>
+      <aside class="summary">
+        <h2>สรุปคำสั่งซื้อ</h2>
+        <div class="sum-row"><span data-i18n="cart.subtotal">ยอดรวมสินค้า</span><span id="cart-subtotal">฿0.00</span></div>
+        <div class="sum-row"><span data-i18n="cart.shipping">ค่าจัดส่ง</span><span id="cart-shipping">฿0.00</span></div>
+        <div class="sum-row total"><span data-i18n="cart.total">รวมทั้งหมด</span><span id="cart-total">฿0.00</span></div>
+        <a href="/shop/checkout.html" class="btn btn-primary btn-full mt-lg" data-i18n="cart.checkout">ไปยังหน้าชำระเงิน</a>
+        <a href="/shop/index.html" class="btn btn-ghost btn-full mt-sm">เลือกสินค้าเพิ่ม</a>
+      </aside>
     </div>
   </main>
 </body>

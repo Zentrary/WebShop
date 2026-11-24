@@ -1,24 +1,46 @@
-const popupQueue = [];
-let isProcessing = false;
-let activeDialog = null;
+/**
+ * ZenMarket UI — Toast notifications (มุมขวาล่าง ไม่บล็อกหน้าจอ)
+ */
+
+const ICONS = {
+  success: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
+  error: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6M9 9l6 6"/></svg>',
+  warning: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4M12 17h.01"/></svg>',
+  info: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a1a1aa" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>',
+};
+
+function getStack() {
+  let stack = document.querySelector('.toast-stack');
+  if (!stack) {
+    stack = document.createElement('div');
+    stack.className = 'toast-stack';
+    document.body.appendChild(stack);
+  }
+  return stack;
+}
 
 export function notify(message, type = 'info', duration = 4000) {
-  return new Promise((resolve) => {
-    popupQueue.push({ type: 'notify', message, type, duration, resolve });
-    processQueue();
-  });
+  const stack = getStack();
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.setAttribute('role', 'status');
+  toast.innerHTML = `${ICONS[type] || ICONS.info}<span></span>`;
+  toast.querySelector('span').textContent = message;
+  stack.appendChild(toast);
+
+  const dismiss = () => {
+    toast.classList.add('out');
+    setTimeout(() => toast.remove(), 260);
+  };
+  toast.addEventListener('click', dismiss);
+  setTimeout(dismiss, duration);
+  return Promise.resolve();
 }
 
 export function confirmAction(message, options = {}) {
   return new Promise((resolve) => {
-    popupQueue.push({
-      type: 'confirm',
-      message,
-      confirmText: options.confirmText || 'ยืนยัน',
-      cancelText: options.cancelText || 'ยกเลิก',
-      resolve,
-    });
-    processQueue();
+    const ok = window.confirm(message);
+    resolve(ok);
   });
 }
 
@@ -39,119 +61,6 @@ export function setFlash(message, type = 'info') {
   } catch {}
 }
 
-function processQueue() {
-  if (isProcessing || popupQueue.length === 0) return;
-  if (activeDialog) return;
-
-  isProcessing = true;
-  const item = popupQueue.shift();
-  showPopup(item);
-}
-
-function showPopup(item) {
-  if (item.type === 'notify') {
-    showNotify(item);
-  } else if (item.type === 'confirm') {
-    showConfirm(item);
-  }
-}
-
-function showNotify(item) {
-  const dialog = document.createElement('dialog');
-  dialog.setAttribute('role', 'alertdialog');
-  dialog.className = `popup-notify popup-${item.type}`;
-
-  const closeBtn = document.createElement('button');
-  closeBtn.className = 'popup-close';
-  closeBtn.innerHTML = '&times;';
-  closeBtn.onclick = () => {
-    dialog.close();
-    cleanup(item);
-  };
-
-  const msg = document.createElement('div');
-  msg.className = 'popup-message';
-  msg.textContent = item.message;
-
-  dialog.appendChild(closeBtn);
-  dialog.appendChild(msg);
-  document.body.appendChild(dialog);
-
-  activeDialog = dialog;
-
-  dialog.showModal();
-
-  setTimeout(() => {
-    if (!dialog.open) return;
-    dialog.close();
-    cleanup(item);
-  }, item.duration);
-}
-
-function showConfirm(item) {
-  const dialog = document.createElement('dialog');
-  dialog.setAttribute('role', 'alertdialog');
-  dialog.className = 'popup-confirm';
-
-  const closeBtn = document.createElement('button');
-  closeBtn.className = 'popup-close';
-  closeBtn.innerHTML = '&times;';
-  closeBtn.onclick = () => {
-    dialog.close();
-    cleanup(item, false);
-  };
-
-  const msg = document.createElement('div');
-  msg.className = 'popup-message';
-  msg.textContent = item.message;
-
-  const btnContainer = document.createElement('div');
-  btnContainer.className = 'popup-actions';
-
-  const cancelBtn = document.createElement('button');
-  cancelBtn.className = 'btn btn-outline';
-  cancelBtn.textContent = item.cancelText;
-  cancelBtn.onclick = () => {
-    dialog.close();
-    cleanup(item, false);
-  };
-
-  const confirmBtn = document.createElement('button');
-  confirmBtn.className = 'btn btn-primary';
-  confirmBtn.textContent = item.confirmText;
-  confirmBtn.onclick = () => {
-    dialog.close();
-    cleanup(item, true);
-  };
-
-  btnContainer.appendChild(cancelBtn);
-  btnContainer.appendChild(confirmBtn);
-
-  dialog.appendChild(closeBtn);
-  dialog.appendChild(msg);
-  dialog.appendChild(btnContainer);
-  document.body.appendChild(dialog);
-
-  activeDialog = dialog;
-  dialog.showModal();
-}
-
-function cleanup(item, result) {
-  if (activeDialog && document.body.contains(activeDialog)) {
-    document.body.removeChild(activeDialog);
-  }
-  activeDialog = null;
-  isProcessing = false;
-  item.resolve(result);
-  processQueue();
-}
-
 export function closeAllPopups() {
-  if (activeDialog) {
-    activeDialog.close();
-    document.body.removeChild(activeDialog);
-    activeDialog = null;
-  }
-  isProcessing = false;
-  popupQueue.length = 0;
+  document.querySelectorAll('.toast').forEach(t => t.remove());
 }

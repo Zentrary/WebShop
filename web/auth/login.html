@@ -3,48 +3,48 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>เข้าสู่ระบบ - ZenMarket</title>
+  <title>เข้าสู่ระบบ — ZenMarket</title>
   <link rel="stylesheet" href="/src/styles/base.css">
   <link rel="stylesheet" href="/src/styles/spaces.css">
   <link rel="stylesheet" href="/src/styles/responsive.css">
-  <link rel="icon" href="/public/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <script type="module" src="/src/pages/customer/account.js"></script>
+  <noscript><style>.reveal{opacity:1!important;transform:none!important}</style></noscript>
 </head>
 <body>
-  <main class="container pt-lg pb-xl">
-    <div class="auth-card card p-lg mx-auto w-full sm:w-96">
-      <div class="text-center mb-xl">
-        <div class="w-12 h-12 bg-primary rounded-full flex items-center justify-center mx-auto mb-md">
-          <span class="text-white font-bold text-lg">Z</span>
-        </div>
-        <h2 data-i18n="nav.login">เข้าสู่ระบบ</h2>
-        <p class="text-secondary text-sm">ยินดีต้อนรับกลับสู่ ZenMarket</p>
+  <main class="auth-wrap">
+    <div class="auth-card reveal">
+      <div class="auth-head">
+        <div class="mark">Z</div>
+        <h1 style="font-size:var(--font-size-2xl)">เข้าสู่ระบบ</h1>
+        <p class="text-sm mt-sm">ยินดีต้อนรับกลับสู่ ZenMarket</p>
       </div>
 
-      <form id="login-form" class="space-y-md">
+      <form id="login-form" novalidate>
         <div class="form-group">
-          <label class="form-label">ชื่อผู้ใช้ หรือ อีเมล</label>
-          <input type="text" id="login-identifier" class="form-input" required placeholder="username หรือ email">
+          <label class="form-label" for="login-identifier">ชื่อผู้ใช้ หรือ email</label>
+          <input type="text" id="login-identifier" class="form-input" required autocomplete="username" placeholder="username หรือ email">
         </div>
+
         <div class="form-group">
-          <label class="form-label">รหัสผ่าน</label>
-          <input type="password" id="login-password" class="form-input" required placeholder="••••••••">
+          <label class="form-label" for="login-password">รหัสผ่าน</label>
+          <input type="password" id="login-password" class="form-input" required autocomplete="current-password" placeholder="••••••••">
         </div>
-        <div class="form-group flex items-center justify-between">
-          <label class="form-checkbox cursor-pointer text-sm">
-            <input type="checkbox"> จดจำฉัน
+
+        <div class="flex items-center justify-between mb-lg">
+          <label class="form-checkbox">
+            <input type="checkbox" id="remember-me" checked>
+            <span>จดจำฉัน</span>
           </label>
-          <a href="/auth/reset-password.html" class="text-sm text-primary">ลืมรหัสผ่าน?</a>
+          <a href="/auth/reset-password.html" style="font-size:var(--font-size-sm);color:var(--color-accent)">ลืมรหัสผ่าน?</a>
         </div>
-        <button type="submit" class="btn btn-primary btn-full" data-i18n="nav.login">เข้าสู่ระบบ</button>
+
+        <div id="turnstile-container" class="mb-md" style="display:none"></div>
+
+        <button type="submit" class="btn btn-primary btn-full btn-lg">เข้าสู่ระบบ</button>
       </form>
 
-      <div class="text-center mt-lg">
-        <p class="text-secondary text-sm">ยังไม่มีบัญชี?</p>
-        <a href="/auth/register.html" class="btn btn-outline btn-full" data-i18n="nav.register">สมัครสมาชิก</a>
-      </div>
-
-      <div id="turnstile-container" class="mt-md" style="display:none;"></div>
+      <p class="auth-switch">ยังไม่มีบัญชี? <a href="/auth/register.html">สมัครสมาชิก</a></p>
     </div>
   </main>
 </body>

@@ -1,47 +1,55 @@
+/**
+ * ZenMarket Settings
+ * รูปแบบข้อมูลตรงกับตาราง store_settings จริงใน Supabase
+ */
+
 export const DEFAULT_STORE_SETTINGS = {
-  store_name: 'ZenMarket',
-  store_logo: '/public/images/placeholder.svg',
-  store_description: 'ร้านค้าออนไลน์สำหรับเจ้าของคนเดียว ด้วยความตั้งใจและความใส่ใจ',
+  singleton: true,
+  shop_name: 'ZenMarket',
+  tagline: 'ร้านค้าออนไลน์ ด้วยความตั้งใจและความใส่ใจในทุกรายละเอียด',
+  logo_url: '/images/placeholder.svg',
   contact_email: '',
   contact_phone: '',
-  contact_line: '',
-  contact_facebook: '',
-  contact_instagram: '',
-  contact_tiktok: '',
+  contact_address: '',
+  about_text: '',
+  shipping_note: '',
   shipping_fee: 50,
-  free_shipping_threshold: 500,
-  enable_cod: true,
-  enable_promptpay: true,
-  store_address: '',
-  store_tax_id: '',
-  terms_and_conditions: '',
-  privacy_policy: '',
-  maintenance_mode: false,
-  maintenance_message: 'ร้านกำลังปรับปรุงระบบ ขออภัยในความไม่สะดวก',
+  free_shipping_threshold: 300,
+  facebook_url: '',
+  instagram_url: '',
+  line_url: '',
+  promptpay_id: '',
+  recipient_name: '',
 };
 
-export function shippingFor(subtotal, settings = DEFAULT_STORE_SETTINGS) {
-  const freeThreshold = settings.free_shipping_threshold || 0;
-  const shippingFee = settings.shipping_fee || 0;
+/**
+ * ค่าจัดส่ง: ฟรีเมื่อยอดถึงเกณฑ์
+ */
+export function calculateShipping(subtotal, settings = DEFAULT_STORE_SETTINGS) {
+  const threshold = Number(settings.free_shipping_threshold ?? DEFAULT_STORE_SETTINGS.free_shipping_threshold);
+  const fee = Number(settings.shipping_fee ?? DEFAULT_STORE_SETTINGS.shipping_fee);
 
-  if (freeThreshold > 0 && subtotal >= freeThreshold) {
-    return 0;
+  if (threshold > 0 && subtotal >= threshold) return 0;
+  return fee;
+}
+
+/**
+ * ยอดที่ยังขาดถึงเกณฑ์ส่งฟรี (คืน 0 ถ้าถึงแล้ว)
+ */
+export function amountToFreeShipping(subtotal, settings = DEFAULT_STORE_SETTINGS) {
+  const threshold = Number(settings.free_shipping_threshold ?? DEFAULT_STORE_SETTINGS.free_shipping_threshold);
+  if (threshold <= 0) return 0;
+  return Math.max(0, threshold - subtotal);
+}
+
+/**
+ * รวมข้อมูลร้านจาก RPC get_storefront เข้ากับค่าเริ่มต้น
+ */
+export function mergeStoreSettings(data) {
+  if (!data) return { ...DEFAULT_STORE_SETTINGS };
+  const merged = { ...DEFAULT_STORE_SETTINGS };
+  for (const [key, value] of Object.entries(data)) {
+    if (value !== null && value !== undefined && value !== '') merged[key] = value;
   }
-  return shippingFee;
-}
-
-export function loadStoreSettings() {
-  try {
-    const stored = localStorage.getItem('zenmarket_store_settings');
-    if (stored) {
-      return { ...DEFAULT_STORE_SETTINGS, ...JSON.parse(stored) };
-    }
-  } catch {}
-  return { ...DEFAULT_STORE_SETTINGS };
-}
-
-export function saveStoreSettings(settings) {
-  try {
-    localStorage.setItem('zenmarket_store_settings', JSON.stringify(settings));
-  } catch {}
+  return merged;
 }
