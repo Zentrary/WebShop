@@ -468,9 +468,10 @@ async function initSettings() {
     bindOnce(logoRemoveBtn, 'click', async () => {
       if (!currentLogoUrl) return;
       try {
-        await removeStoreLogo(supabase, currentLogoUrl);
+        // อัปเดตฐานข้อมูลก่อน → ถ้าล้มเหลวไฟล์โลโก้เดิมยังไม่ถูกลบ
         const { error } = await supabase.from('store_settings').update({ logo_url: '' }).eq('singleton', true);
         if (error) throw error;
+        await removeStoreLogo(supabase, currentLogoUrl);
         currentLogoUrl = '';
         if (logoInput) logoInput.value = '';
         paintLogoPreview('');

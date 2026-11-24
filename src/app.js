@@ -237,7 +237,7 @@ function renderHeader(header) {
     { key: 'home', href: '/home.html', label: t('nav.home'), show: true },
     { key: 'shop', href: '/shop/index.html', label: t('nav.shop'), show: true },
     { key: 'categories', href: '/shop/categories.html', label: t('nav.categories'), show: true },
-    { key: 'account', href: '/account/index.html', label: t('nav.account'), show: member },
+    { key: 'account', href: '/account/index.html', label: t('nav.account'), show: member || path.includes('/account') },
   ];
 
   const nav = header.querySelector('#header-nav');

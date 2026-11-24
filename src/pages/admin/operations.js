@@ -153,37 +153,67 @@ async function initBackup() {
       const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ciphertext);
       const backup = JSON.parse(new TextDecoder().decode(decrypted));
 
+      // ตรวจรูปแบบไฟล์ก่อน — ไม่ผ่านก็อย่าเสนอให้กู้คืน
+      if (backup?.format !== 'zenmarket-data-v1') {
+        throw new Error(t('admin.backup_invalid_format'));
+      }
       const tables = backup?.tables || {};
 
-      // ตรวจสอบไฟล์ก่อน แล้วค่อยกู้คืนจริงผ่าน RPC restore_admin_backup
-      if (!window.confirm(t('admin.backup_restore_confirm'))) {
-        errorLog.innerHTML = `
-          <div class="panel" style="padding:var(--space-md)">
-            <div class="font-semibold mb-sm">${t('admin.backup_ok')}</div>
-            <div class="text-sm text-secondary">
-              ${Object.entries(tables).map(([k, v]) => `${escapeHTML(k)}: ${Array.isArray(v) ? v.length : 0}`).join('<br>')}
-            </div>
-            <div class="text-muted text-sm mt-sm">${escapeHTML(backup?.format || '-')} · ${escapeHTML(backup?.created_at ? new Date(backup.created_at).toLocaleString('th-TH') : '-')}</div>
-          </div>
-        `;
-        notify(t('admin.backup_ok'), 'success');
-        return;
-      }
-
-      const { data: restored, error: restoreErr } = await supabase.rpc('restore_admin_backup', {
-        p_backup: backup,
-      });
-      if (restoreErr) throw restoreErr;
-
+      // ขั้นที่ 1: แสดงตัวอย่างสิ่งที่จะถูกกู้คืน พร้อมปุ่มยืนยันชัดเจน
       errorLog.innerHTML = `
         <div class="panel" style="padding:var(--space-md)">
-          <div class="font-semibold mb-sm">${t('admin.backup_restored')}</div>
+          <div class="font-semibold mb-sm">${t('admin.backup_preview')}</div>
           <div class="text-sm text-secondary">
-            ${Object.entries(restored || {}).map(([k, v]) => `${escapeHTML(k)}: ${v}`).join('<br>')}
+            ${Object.entries(tables).map(([k, v]) => `${escapeHTML(k)}: ${Array.isArray(v) ? v.length : 0}`).join('<br>')}
+          </div>
+          <div class="text-muted text-sm mt-sm">${escapeHTML(backup?.format || '-')} · ${escapeHTML(backup?.created_at ? new Date(backup.created_at).toLocaleString('th-TH') : '-')}</div>
+          <p class="text-sm mt-md" style="color:var(--color-warning, #b45309)">${t('admin.backup_restore_warning')}</p>
+          <div class="flex gap-sm mt-md">
+            <button id="backup-restore-confirm-btn" class="btn btn-primary btn-sm">${t('admin.backup_restore_confirm_btn')}</button>
+            <button id="backup-restore-cancel-btn" class="btn btn-ghost btn-sm">${t('common.cancel')}</button>
           </div>
         </div>
       `;
-      notify(t('admin.backup_restored'), 'success');
+      notify(t('admin.backup_ok'), 'success');
+
+      // ขั้นที่ 2: กดยืนยันเท่านั้นจึงเรียก RPC กู้คืนจริง
+      const confirmBtn = document.getElementById('backup-restore-confirm-btn');
+      const cancelBtn = document.getElementById('backup-restore-cancel-btn');
+
+      bindOnce(cancelBtn, 'click', () => {
+        errorLog.innerHTML = '';
+        fileInput.value = '';
+      });
+
+      bindOnce(confirmBtn, 'click', async () => {
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = t('common.loading');
+        try {
+          const { data: restored, error: restoreErr } = await supabase.rpc('restore_admin_backup', {
+            p_backup: backup,
+          });
+          if (restoreErr) throw restoreErr;
+
+          errorLog.innerHTML = `
+            <div class="panel" style="padding:var(--space-md)">
+              <div class="font-semibold mb-sm">${t('admin.backup_restored')}</div>
+              <div class="text-sm text-secondary">
+                ${Object.entries(restored || {}).map(([k, v]) => `${escapeHTML(k)}: ${v}`).join('<br>')}
+              </div>
+            </div>
+          `;
+          notify(t('admin.backup_restored'), 'success');
+          loadStatus();
+          loadAudit();
+        } catch (err) {
+          console.error(err);
+          reportClientError('admin', err?.message || 'DATABASE');
+          errorLog.innerHTML = `<div class="badge badge-error">${escapeHTML(err.message || t('toast.error_generic'))}</div>`;
+          notify(err.message || t('toast.error_generic'), 'error');
+        } finally {
+          fileInput.value = '';
+        }
+      });
     } catch (err) {
       console.error(err);
       reportClientError('admin', err?.message || 'DATABASE');
