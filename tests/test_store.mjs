@@ -2,6 +2,8 @@ import { register } from 'node:module';
 
 register(new URL('./loader.mjs', import.meta.url).href, import.meta.url);
 
+import fs from 'node:fs';
+
 const { loadPage, makeSupabaseMock, wait, makeAssert, el } = await import('./harness.mjs');
 
 const A = makeAssert();
@@ -186,19 +188,23 @@ const PRODUCTS = [
 }
 
 {
+  // The categories page is gone: browsing by category now lives inside the
+  // product list page.
+  A.ok('store: ไม่มีหน้า shop/categories.html', !fs.existsSync('/home/user/WebShop/web/shop/categories.html'));
+
   const supabase = await makeSupabaseMock({
     session: null,
     user: null,
     tableData: { products: PRODUCTS, categories: [] },
   });
   const { document } = await loadPage({
-    htmlPath: '/home/user/WebShop/web/shop/categories.html',
+    htmlPath: '/home/user/WebShop/web/shop/index.html',
     scripts: ['src/pages/storefront/store.js'],
     supabase,
   });
   await wait(250);
   const gate = el(document, 'shop-gate');
-  A.ok('store: หน้าหมวดหมู่กำหนดประตูสมัครสมาชิก', !!gate && !gate.classList.contains('hidden'));
+  A.ok('store: หน้ารายการสินค้ากำหนดประตูสมัครสมาชิก', !!gate && !gate.classList.contains('hidden'));
 }
 
 {
@@ -245,6 +251,43 @@ const PRODUCTS = [
   A.ok('responsive: ประตูสมัครสมาชิกมีสไตล์', /\.guest-gate/.test(base));
   A.ok('responsive: ภาษาไทยไม่ใช้ letter-spacing ติดลบ', /html\[lang=['"]th['"]\]/.test(base));
   A.ok('responsive: ชื่อร้านในแถบหัวเว็บถูกตัดไม่ล้น', /\.header-logo-name[^}]*text-overflow:\s*ellipsis/.test(base));
+}
+
+/* ------------------------------------------------------------------ *
+ * หน้ารายการสินค้า: หมวดหมู่อยู่ในหน้าเดียว กดกรองได้ด้วยชิป
+ * ------------------------------------------------------------------ */
+{
+  const supabase = await makeSupabaseMock({
+    session: MEMBER_SESSION,
+    user: MEMBER,
+    tableData: {
+      products: PRODUCTS,
+      categories: [{ name: 'กาแฟ' }, { name: 'ชา' }],
+    },
+  });
+  const { document } = await loadPage({
+    htmlPath: '/home/user/WebShop/web/shop/index.html',
+    scripts: ['src/pages/storefront/store.js'],
+    supabase,
+  });
+  await wait(300);
+
+  const chips = document.querySelectorAll('.category-chip');
+  A.eq('store: ชิปหมวดหมู่มีทั้งหมด + ทุกหมวด', chips.length, 3);
+  A.eq('store: ชิปแรกคือทั้งหมด', chips[0]?.textContent.trim(), 'ทุกหมวดหมู่');
+  A.ok('store: มีชิปของหมวดหมู่จริง', !!chips[1] && chips[1].textContent.trim() === 'กาแฟ');
+  A.eq('store: แสดงจำนวนหมวดหมู้', document.getElementById('category-count')?.textContent.trim(), 'ทั้งหมด 2 หมวดหมู่');
+  A.ok('store: ไม่มีตัวเลือกหมวดหมู่แบบ dropdown แล้ว', !document.getElementById('category-filter'));
+
+  const before = supabase.calls.select.filter((c) => c.table === 'products').length;
+  chips[1].dispatchEvent(new document.defaultView.Event('click', { bubbles: true }));
+  await wait(200);
+
+  const last = supabase.calls.select.filter((c) => c.table === 'products').slice(-1)[0];
+  const pairs = (last?.filters || []).map((f) => f[0]);
+  A.ok('store: กดชิปแล้ว query กรองด้วยหมวดหมู่', pairs.includes('category'));
+  A.ok('store: เรียก query สินค้าใหม่หลังกดชิป', supabase.calls.select.filter((c) => c.table === 'products').length > before);
+  A.eq('store: ชิปที่เลือกถูกทำเครื่องหมาย', document.querySelector('.category-chip.active')?.textContent.trim(), 'กาแฟ');
 }
 
 process.exit(A.report('store') ? 1 : 0);

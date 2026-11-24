@@ -65,7 +65,7 @@
     },
     {
       "source": "/categories.html",
-      "destination": "/shop/categories.html",
+      "destination": "/shop/index.html",
       "statusCode": 308
     },
     {
@@ -151,6 +151,11 @@
     {
       "source": "/contact.html",
       "destination": "/pages/contact.html",
+      "statusCode": 308
+    },
+    {
+      "source": "/shop/categories.html",
+      "destination": "/shop/index.html",
       "statusCode": 308
     }
   ]

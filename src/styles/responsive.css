@@ -14,9 +14,6 @@
   .product-grid {
     grid-template-columns: repeat(3, 1fr);
   }
-  .cat-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
   .kpi-grid {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -53,7 +50,10 @@
   .admin-mobile-nav summary::-webkit-details-marker {
     display: none;
   }
-  .admin-two-col {
+  .admin-two-col,
+  .admin-grid-2,
+  .admin-grid-3,
+  .admin-grid-side {
     grid-template-columns: 1fr !important;
   }
   .steps-grid {
@@ -72,8 +72,18 @@
   .header-nav {
     gap: var(--space-lg);
   }
-  .contact-strip {
+  .contact-band {
     grid-template-columns: 1fr;
+    gap: var(--space-xl);
+    padding: var(--space-xl);
+  }
+  .shop-categories {
+    padding: var(--space-lg);
+  }
+  .shop-category-bar {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: var(--space-sm);
   }
   .account-grid {
     grid-template-columns: 1fr;
@@ -145,6 +155,18 @@
   .admin-content {
     padding: var(--space-lg) var(--space-md);
   }
+  .admin-head {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+  .admin-page-title {
+    font-size: var(--font-size-xl);
+  }
+  .qr-preview {
+    flex-direction: column;
+    align-items: flex-start;
+  }
   .shop-toolbar {
     flex-direction: column;
     align-items: stretch;
@@ -204,6 +226,12 @@
   .auth-card-wide {
     max-width: 100%;
   }
+  .contact-channels {
+    grid-template-columns: 1fr;
+  }
+  .contact-details > div {
+    grid-template-columns: 84px minmax(0, 1fr);
+  }
 }
 
 @media (max-width: 560px) {
@@ -239,11 +267,22 @@
     grid-template-columns: repeat(2, 1fr);
     gap: var(--space-sm);
   }
-  .cat-grid {
-    grid-template-columns: 1fr;
+  .shop-categories {
+    padding: var(--space-md);
+  }
+  .category-chips {
+    gap: var(--space-xs);
+  }
+  .category-chip {
+    padding: 0.4rem 0.75rem;
+    font-size: var(--font-size-xs);
   }
   .kpi-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-md);
+  }
+  .kpi {
+    padding: var(--space-lg);
   }
   .hero h1 {
     font-size: 2.25rem;

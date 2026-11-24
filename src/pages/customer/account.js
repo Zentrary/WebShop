@@ -305,16 +305,19 @@ async function initAccountPage() {
   document.getElementById('profile-firstname').value = user.first_name || '';
   document.getElementById('profile-lastname').value = user.last_name || '';
   document.getElementById('profile-phone').value = user.phone || '';
+  const ageInput = document.getElementById('profile-age');
+  if (ageInput) ageInput.value = user.age ?? '';
 
   document.getElementById('profile-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     try {
+      const ageValue = ageInput ? ageInput.value.trim() : '';
       const checked = validateProfile({
         first_name: document.getElementById('profile-firstname').value,
         last_name: document.getElementById('profile-lastname').value,
         nickname: user.nickname || '',
         phone: document.getElementById('profile-phone').value,
-        age: user.age ?? null,
+        age: ageValue === '' ? null : Number(ageValue),
         username: document.getElementById('profile-username').value || user.username,
       });
       if (!checked.ok) {
@@ -331,19 +334,36 @@ async function initAccountPage() {
         p_username: checked.value.username,
       });
       if (error) throw error;
+
+      // Keep the session copy in sync so the header and the profile card
+      // immediately show the new name.
+      state.user = {
+        ...user,
+        first_name: checked.value.first_name || '',
+        last_name: checked.value.last_name || '',
+        nickname: checked.value.nickname || '',
+        phone: checked.value.phone || '',
+        age: checked.value.age ?? null,
+        username: checked.value.username || '',
+      };
+      setAudience(state.audience === 'owner' ? 'owner' : 'member', state.user);
+      renderAccountIdentity(state.user);
+
       notify(t('account.profile_saved'), 'success');
     } catch (err) {
       notify(err.message || t('toast.error_generic'), 'error');
     }
   });
 
+  const sections = Array.from(document.querySelectorAll('.account-section'));
   document.querySelectorAll('.side-nav a[data-tab]').forEach((link) => {
     link.addEventListener('click', (e) => {
       e.preventDefault();
       document.querySelectorAll('.side-nav a').forEach((a) => a.classList.remove('active'));
       link.classList.add('active');
-      document.querySelectorAll('.account-section').forEach((s) => s.classList.add('hidden'));
-      document.getElementById(`account-${link.getAttribute('data-tab')}`).classList.remove('hidden');
+      const target = document.getElementById(`account-${link.getAttribute('data-tab')}`);
+      sections.forEach((section) => section.classList.add('hidden'));
+      if (target) target.classList.remove('hidden');
     });
   });
 

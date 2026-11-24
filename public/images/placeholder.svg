@@ -1,6 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
-  <rect width="32" height="32" rx="6" fill="#202020"/>
-  <path d="M6 6h20v20H6z" stroke="#8c8c8c" stroke-width="2"/>
-  <path d="M10 10h12v12H10z" fill="#202020" stroke="#8c8c8c" stroke-width="1"/>
-  <text x="16" y="18" font-family="Prompt, sans-serif" font-size="10" fill="#8c8c8c" text-anchor="middle">ZenMarket</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <rect width="64" height="64" fill="#161618" />
+  <path
+    d="M19 24h26l-2 24.5a4 4 0 0 1-4 3.5H25a4 4 0 0 1-4-3.5L19 24Z"
+    stroke="#3f3f46"
+    stroke-width="2.4"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M26 24v-4a6 6 0 0 1 12 0v4"
+    stroke="#3f3f46"
+    stroke-width="2.4"
+    stroke-linecap="round"
+  />
+  <path d="M27 32h10" stroke="#3f3f46" stroke-width="2.2" stroke-linecap="round" />
 </svg>

@@ -272,7 +272,15 @@ const CART = [{ product_id: 'p1', name: 'กาแฟ', price: 120, quantity: 2 
   const heroCta = document.querySelector('.hero-cta a[href="/shop/index.html"]');
   A.ok('hero: guest ซ่อนปุ่มเลือกซื้อสินค้า', !!heroCta && heroCta.classList.contains('hidden'));
   const heroRegister = document.querySelector('.hero-cta a[href="/auth/register.html"]');
-  A.ok('hero: guest เห็นปุ่มสมัครสมาชิก', !!heroRegister && !heroRegister.classList.contains('hidden'));
+  A.ok('hero: ไม่มีปุ่มสมัครสมาชิกใน hero', !heroRegister);
+  const heroLogin = document.querySelector('.hero-cta a[href="/auth/login.html"]');
+  A.ok('hero: ไม่มีปุ่มเข้าสู่ระบบใน hero', !heroLogin);
+  const langToggle = document.getElementById('lang-toggle');
+  A.ok('header: ปุ่มสลับภาษาอยู่ท้ายแถบหัวเว็บ', !!langToggle && !!langToggle.closest('.site-header'));
+  const footerLang = document.getElementById('footer-lang-toggle');
+  A.ok('header: ท้ายเว็บมีปุ่มสลับภาษา', !!footerLang);
+  const headerLogout = document.querySelector('#user-menu-btn');
+  A.ok('header: ปุ่มออกจากระบบเป็นสีแดง', !headerLogout);
 }
 
 {
@@ -289,13 +297,68 @@ const CART = [{ product_id: 'p1', name: 'กาแฟ', price: 120, quantity: 2 
   await wait(300);
   const nav = document.querySelector('#header-nav');
   A.ok('header: member เห็นลิงก์สินค้า', !!nav.querySelector('a[href="/shop/index.html"]'));
-  A.ok('header: member เห็นลิงก์หมวดหมู่', !!nav.querySelector('a[href="/shop/categories.html"]'));
+  A.ok(
+    'header: member ไม่เห็นลิงก์หมวดหมู่แยก (รวมไว้ในหน้ารายการสินค้า)',
+    !nav.querySelector('a[href="/shop/categories.html"]'),
+  );
   const actions = document.querySelector('#header-actions');
   A.ok('header: member เห็นปุ่มตะกร้า', !!actions.querySelector('a[href="/shop/cart.html"]'));
   const heroCta = document.querySelector('.hero-cta a[href="/shop/index.html"]');
   A.ok('hero: member เห็นปุ่มเลือกซื้อสินค้า', !!heroCta && !heroCta.classList.contains('hidden'));
   const heroRegister = document.querySelector('.hero-cta a[href="/auth/register.html"]');
-  A.ok('hero: member ซ่อนปุ่มสมัครสมาชิก', !!heroRegister && heroRegister.classList.contains('hidden'));
+  A.ok('hero: member ไม่มีปุ่มสมัครสมาชิก', !heroRegister);
+  const headerLogout = document.querySelector('#user-menu-btn');
+  A.ok('header: ปุ่มออกจากระบบใช้สไตล์สีแดง', !!headerLogout && headerLogout.classList.contains('btn-danger'));
+}
+
+/* ------------------------------------------------------------------ *
+ * บัญชีของฉัน: สลับแท็บโปรไฟล์ / คำสั่งซื้อ / ที่อยู่ ต้องไม่ซ้อนกัน
+ * ------------------------------------------------------------------ */
+{
+  const supabase = await makeSupabaseMock({
+    session: MEMBER_SESSION,
+    user: MEMBER,
+    tableData: {
+      profiles: { id: 'member-1', username: 'tester', first_name: 'สมชาย', last_name: 'ใจดี' },
+      store_admin: [],
+      orders: [],
+      customer_addresses: [],
+    },
+  });
+  const { document } = await loadPage({
+    htmlPath: '/home/user/WebShop/web/account/index.html',
+    scripts: ['src/pages/customer/account.js'],
+    supabase,
+  });
+  await wait(300);
+
+  const profile = document.getElementById('account-profile');
+  const orders = document.getElementById('account-orders');
+  const addresses = document.getElementById('account-addresses');
+  A.ok('account: มีคลาส account-section ครบ', !!profile && !!orders && !!addresses);
+  A.ok('account: เริ่มต้นแสดงแท็บโปรไฟล์', !profile.classList.contains('hidden'));
+  A.ok('account: เริ่มต้นซ่อนแท็บคำสั่งซื้อ', orders.classList.contains('hidden'));
+
+  const click = (tab) => {
+    const link = document.querySelector(`.side-nav a[data-tab="${tab}"]`);
+    link.dispatchEvent(new document.defaultView.Event('click', { bubbles: true, cancelable: true }));
+  };
+
+  click('orders');
+  await wait(120);
+  A.ok('account: กดคำสั่งซื้อแล้วซ่อนโปรไฟล์', profile.classList.contains('hidden'));
+  A.ok('account: กดคำสั่งซื้อแล้วแสดงคำสั่งซื้อ', !orders.classList.contains('hidden'));
+  A.ok('account: กดคำสั่งซื้อแล้วที่อยู่ยังซ่อนอยู่', addresses.classList.contains('hidden'));
+
+  click('addresses');
+  await wait(120);
+  A.ok('account: กดที่อยู่แล้วซ่อนคำสั่งซื้อ', orders.classList.contains('hidden'));
+  A.ok('account: กดที่อยู่แล้วแสดงที่อยู่', !addresses.classList.contains('hidden'));
+
+  click('profile');
+  await wait(120);
+  A.ok('account: กดโปรไฟล์แล้วแสดงโปรไฟล์', !profile.classList.contains('hidden'));
+  A.ok('account: กดโปรไฟล์แล้วซ่อนที่อยู่', addresses.classList.contains('hidden'));
 }
 
 process.exit(A.report('customer') ? 1 : 0);

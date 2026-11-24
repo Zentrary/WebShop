@@ -299,4 +299,83 @@ const HTML_FILES = walk(WEB);
   A.ok('css: ฟอร์มสมัครสมาชิกยุบเป็น 1 คอลัมน์บนมือถือ', /\.auth-grid\s*\{\s*grid-template-columns:\s*1fr/.test(responsive));
 }
 
+/* ------------------------------------------------------------------ *
+ * 8. ส่วนติดต่อบนหน้าแรก + ท้ายเว็บ ต้องมาจากค่าที่ตั้งในแอดมิน
+ * ------------------------------------------------------------------ */
+{
+  const STORE = {
+    singleton: true,
+    shop_name: 'ร้านทดสอบ',
+    tagline: 'คำโปรยทดสอบ',
+    contact_email: 'hello@test.shop',
+    contact_phone: '0812345678',
+    contact_address: '123 ถนนสุขุมวิท',
+    line_url: 'https://line.me/R/ti/abc',
+    facebook_url: 'https://facebook.com/shop',
+    instagram_url: 'https://instagram.com/shop',
+    tiktok_url: 'https://tiktok.com/@shop',
+    show_contact: true,
+  };
+
+  const supabase = await makeSupabaseMock({
+    session: null,
+    user: null,
+    rpcResults: { get_storefront: STORE },
+    tableData: { products: [], categories: [], reviews: [] },
+  });
+  const { document } = await loadPage({
+    htmlPath: path.join(WEB, 'home.html'),
+    scripts: ['src/pages/storefront/home.js'],
+    supabase,
+  });
+  await wait(300);
+
+  const band = document.querySelector('[data-contact-band]');
+  A.ok('contact: หน้าแรกมีส่วนติดต่อ', !!band);
+  A.ok('contact: ส่วนติดต่อไม่ถูกซ่อน', !band.classList.contains('hidden'));
+
+  const channels = [...band.querySelectorAll('.contact-channel-name')].map((e) => e.textContent.trim());
+  A.eq('contact: แสดงทุกช่องทางที่ตั้งไว้', channels, ['LINE Official', 'Facebook', 'Instagram', 'TikTok']);
+
+  const details = band.querySelector('[data-contact-details]')?.textContent || '';
+  A.ok('contact: แสดงเบอร์โทรศัพท์', details.includes('0812345678'));
+  A.ok('contact: แสดงอีเมล', details.includes('hello@test.shop'));
+  A.ok('contact: แสดงที่อยู่', details.includes('123 ถนนสุขุมวิท'));
+
+  const footerLinks = document.querySelectorAll('.footer-contact-list a, .footer-contact-list span');
+  A.ok('contact: ท้ายเว็บแสดงช่องทางติดต่อด้วย', footerLinks.length >= 7);
+  const footerText = document.querySelector('.footer-contact-list')?.textContent || '';
+  A.ok('contact: ท้ายเว็บมี TikTok', footerText.includes('TikTok'));
+  A.ok('contact: ท้ายเว็บมี Instagram', footerText.includes('Instagram'));
+
+  A.ok('contact: ท้ายเว็บมีปุ่มสลับภาษา', !!document.getElementById('footer-lang-toggle'));
+  A.ok('contact: ปุ่มสลับภาษายังอยู่ในแถบหัวเว็บ', !!document.getElementById('lang-toggle'));
+}
+
+/* ------------------------------------------------------------------ *
+ * 9. ปิดส่วนติดต่อจากแอดมินได้
+ * ------------------------------------------------------------------ */
+{
+  const supabase = await makeSupabaseMock({
+    session: null,
+    user: null,
+    rpcResults: {
+      get_storefront: {
+        shop_name: 'ร้านทดสอบ',
+        contact_phone: '0812345678',
+        show_contact: false,
+      },
+    },
+    tableData: { products: [], categories: [], reviews: [] },
+  });
+  const { document } = await loadPage({
+    htmlPath: path.join(WEB, 'home.html'),
+    scripts: ['src/pages/storefront/home.js'],
+    supabase,
+  });
+  await wait(300);
+  const band = document.querySelector('[data-contact-band]');
+  A.ok('contact: ปิดสวิตช์แล้วส่วนติดต่อถูกซ่อน', !!band && band.classList.contains('hidden'));
+}
+
 process.exit(A.report('i18n') ? 1 : 0);

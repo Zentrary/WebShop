@@ -24,7 +24,9 @@ export function makeSupabaseMock(opts = {}) {
     const self = {
       _state: state,
       select: (...a) => {
-        calls.select.push({ table, args: a });
+        // `filters` is a live reference so a test can inspect the `.eq()`
+        // calls that were chained onto this query afterwards.
+        calls.select.push({ table, args: a, filters: state.filters });
         state.op = 'select';
         return self;
       },
