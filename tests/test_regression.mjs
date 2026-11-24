@@ -12,7 +12,7 @@ const WEB = path.join(ROOT, 'web');
 const THAI = /[\u0E00-\u0E7F]/;
 
 /* ------------------------------------------------------------------ *
- * 1. หน้า auth: ไม่มีโลโก้ เหลือแต่ข้อความ และเป็นหน้า stand-alone
+ * 1. หน้า auth: ไม่มีโลโก้ เหลือแต่ข้อความ และใช้โครงเดียวกับเว็บไซต์
  * ------------------------------------------------------------------ */
 {
   const supabase = await makeSupabaseMock({
@@ -29,32 +29,31 @@ const THAI = /[\u0E00-\u0E7F]/;
 
   A.ok('auth: ไม่มีคอนเทนเนอร์โลโก้', !document.getElementById('auth-logo'));
   A.ok('auth: ไม่มีคอนเทนเนอร์เครื่องหมายสำรอง', !document.getElementById('auth-mark'));
-  A.ok('auth: ไม่มีรูปภาพโลโก้ในหน้า', document.querySelectorAll('.auth-aside img, .auth-topbar img').length === 0);
-  A.eq('auth: ชื่อร้านแสดงเป็นข้อความ', el(document, 'auth-brand-name')?.textContent.trim(), 'ร้านพรีเมียม');
-  A.ok('auth: มีแถบบนสุด', !!document.querySelector('.auth-topbar'));
-  A.ok('auth: มีแผงแนะนำ', !!document.querySelector('.auth-aside'));
+  A.ok('auth: ไม่มีรูปภาพโลโก้ในหน้า', document.querySelectorAll('.auth-card img').length === 0);
+  A.ok('auth: ใช้ panel ของเว็บไซต์', !!document.querySelector('.panel.auth-card'));
   A.ok('auth: มีหัวข้อฟอร์ม', !!document.querySelector('.auth-title'));
-  A.ok('auth: ไม่มีแถบหัวเว็บของเว็บไซต์', !document.querySelector('.site-header'));
-  A.ok('auth: ไม่มีท้ายเว็บของเว็บไซต์', !document.querySelector('.site-footer'));
+  A.ok('auth: มีแถบหัวเว็บของเว็บไซต์', !!document.querySelector('.site-header'));
+  A.ok('auth: มีท้ายเว็บของเว็บไซต์', !!document.querySelector('.site-footer'));
 
-  const toggle = el(document, 'auth-lang-toggle');
-  A.ok('auth: ปุ่มสลับภาษามี aria-label', !!toggle.getAttribute('aria-label'));
+  const toggle = document.getElementById('lang-toggle');
+  A.ok('auth: ใช้ปุ่มสลับภาษาของเว็บไซต์', !!toggle);
+  A.ok('auth: ปุ่มสลับภาษามี aria-label', !!toggle?.getAttribute('aria-label'));
   toggle.dispatchEvent(new document.defaultView.Event('click', { bubbles: true }));
   await wait(120);
   A.ok('auth: กดสลับภาษาแล้วข้อความเปลี่ยน', !/[฀-๿]/.test(document.querySelector('.auth-title')?.textContent || ''));
-  A.eq('auth: ชื่อร้านยังคงเดิมหลังสลับภาษา', el(document, 'auth-brand-name')?.textContent.trim(), 'ร้านพรีเมียม');
+  A.ok('auth: สลับภาษาแล้วหัวข้อยังอยู่', !!document.querySelector('.auth-title'));
 }
 
 /* ------------------------------------------------------------------ *
- * 1b. หน้า login ผู้ดูแล ใช้เลย์เอาต์เดียวกันและไม่มีโลโก้
+ * 1b. หน้า login ผู้ดูแล ใช้โครงเดียวกับเว็บไซต์และไม่มีโลโก้
  * ------------------------------------------------------------------ */
 {
   const html = fs.readFileSync(path.join(WEB, 'admin/login.html'), 'utf8');
   A.ok('admin-login: ไม่มีตัวอักษร Z', !/>Z</.test(html));
   A.ok('admin-login: ไม่มีรูปโลโก้', !html.includes('id="auth-logo"'));
-  A.ok('admin-login: ใช้เลย์เอาต์ auth-shell', html.includes('auth-shell'));
-  A.ok('admin-login: มีปุ่มสลับภาษา', html.includes('id="auth-lang-toggle"'));
-  A.ok('admin-login: มีชื่อร้านเป็นข้อความ', html.includes('id="auth-brand-name"'));
+  A.ok('admin-login: ใช้ panel ของเว็บไซต์', /class="[^"]*panel[^"]*auth-card/.test(html));
+  A.ok('admin-login: ไม่มีปุ่มสลับภาษาแยกเอง', !html.includes('id="auth-lang-toggle"'));
+  A.ok('admin-login: ไม่มีแถบหัวเว็บแยกเอง', !html.includes('auth-topbar'));
 
   const supabase = await makeSupabaseMock({
     session: null,
@@ -69,8 +68,9 @@ const THAI = /[\u0E00-\u0E7F]/;
   await wait(250);
 
   A.ok('admin-login: พบฟอร์มเข้าสู่ระบบ', !!document.getElementById('admin-login-form'));
-  A.ok('admin-login: ไม่มีแถบหัวเว็บของเว็บไซต์', !document.querySelector('.site-header'));
-  A.eq('admin-login: ชื่อร้านแสดงเป็นข้อความ', el(document, 'auth-brand-name')?.textContent.trim(), 'ร้านผู้ดูแล');
+  A.ok('admin-login: มีแถบหัวเว็บของเว็บไซต์', !!document.querySelector('.site-header'));
+  A.ok('admin-login: มีท้ายเว็บของเว็บไซต์', !!document.querySelector('.site-footer'));
+  A.ok('admin-login: ใช้ปุ่มสลับภาษาของเว็บไซต์', !!document.getElementById('lang-toggle'));
 }
 
 /* ------------------------------------------------------------------ *
@@ -79,7 +79,7 @@ const THAI = /[\u0E00-\u0E7F]/;
 {
   const html = fs.readFileSync(path.join(WEB, 'auth/register.html'), 'utf8');
   A.ok('register: ฟอร์มใช้คลาส auth-grid', /id="register-form"[^>]*class="[^"]*auth-grid/.test(html));
-  A.ok('register: หน้าใช้เลย์เอาต์กว้าง', /auth-shell-wide/.test(html));
+  A.ok('register: หน้าใช้แผงกว้างสองคอลัมน์', /auth-card-wide/.test(html));
   A.ok('register: ปุ่มสมัครสมาชิกกินเต็มแถว', /auth-grid-full[^>]*data-i18n="auth.submit_register"/.test(html));
 
   const base = fs.readFileSync(path.join(ROOT, 'src/styles/base.css'), 'utf8');
@@ -88,7 +88,7 @@ const THAI = /[\u0E00-\u0E7F]/;
     /\.auth-grid\s*\{[^}]*grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/.test(base),
   );
   A.ok('register: มี auth-grid-full ครอบทั้งแถว', /\.auth-grid-full\s*\{[^}]*grid-column:\s*1\s*\/\s*-1/.test(base));
-  A.ok('register: ฟอร์มกว้างพอสำหรับ 2 คอลัมน์', /\.auth-panel-wide \.auth-panel-inner\s*\{[^}]*max-width/.test(base));
+  A.ok('register: ฟอร์มกว้างพอสำหรับ 2 คอลัมน์', /\.auth-card-wide\s*\{[^}]*max-width/.test(base));
 
   const responsive = fs.readFileSync(path.join(ROOT, 'src/styles/responsive.css'), 'utf8');
   A.ok('register: บนมือถือยุบเหลือ 1 คอลัมน์', /\.auth-grid\s*\{[^}]*grid-template-columns:\s*1fr/.test(responsive));
@@ -242,6 +242,60 @@ const THAI = /[\u0E00-\u0E7F]/;
   A.eq('category: "All Categories" เป็นชื่อที่สงวนไว้', validateCategory('All Categories').ok, false);
   A.eq('category: ชื่อทั่วไปใช้ได้', validateCategory('กาแฟ').ok, true);
   A.eq('category: ชื่อทั่วไปภาษาอังกฤษใช้ได้', validateCategory('Coffee').ok, true);
+}
+
+/* ------------------------------------------------------------------ *
+ * 8. หน้าแรก: เลย์เอาต์แบบนิตยสาร (masthead) ไม่ใช่การ์ดกล่องซ้ำ ๆ
+ * ------------------------------------------------------------------ */
+{
+  const html = fs.readFileSync(path.join(WEB, 'home.html'), 'utf8');
+
+  A.ok('home: มีแถบชื่อร้านแบบ masthead', /class="[^"]*hero-masthead/.test(html));
+  A.ok('home: ชื่อร้านใน masthead มี id ที่ถูกต้อง', html.includes('id="hero-shop-name"'));
+  A.ok('home: หัวเรื่อง hero แยกเป็นบรรทัด', html.includes('class="hero-title-line"'));
+  A.ok('home: มีบล็อกข้อมูลร้านแบบแยกส่วน', /class="[^"]*hero-facts/.test(html));
+  A.ok(
+    'home: ข้อมูลร้านแยก label/value ชัดเจน',
+    html.includes('class="stat-label"') && html.includes('class="stat-value"'),
+  );
+  A.ok('home: ไม่มีตัวเลขใหญ่แบบเดิม', !/hero-meta \.stat b/.test(html));
+  A.ok('home: หัวข้อกับคำโปรยของแต่ละส่วนไม่ซ้ำกัน', !html.includes('data-i18n="home.steps_eyebrow">วิธีการสั่งซื้อ'));
+
+  const base = fs.readFileSync(path.join(ROOT, 'src/styles/base.css'), 'utf8');
+  A.ok('home: CSS มี masthead', /\.hero-masthead\s*\{/.test(base));
+  A.ok('home: CSS มีเส้นคั่น masthead', /\.hero-masthead-rule\s*\{/.test(base));
+  A.ok('home: CSS ข้อมูลร้านเป็น 3 คอลัมน์', /\.hero-meta\s*\{[^}]*grid-template-columns:\s*repeat\(3/.test(base));
+  A.ok(
+    'home: ชื่อร้านใน hero ไม่ใช้ eyebrow จึงไม่มีขีดนำหน้า',
+    !/class="[^"]*eyebrow[^"]*"[^>]*id="hero-shop-name"/.test(html) &&
+      !/id="hero-shop-name"[^>]*class="[^"]*eyebrow/.test(html),
+  );
+  A.ok('home: คลาส eyebrow ยังมีขีดนำหน้าเหมือนทั้งเว็บ', /\.eyebrow::before/.test(base));
+
+  const responsive = fs.readFileSync(path.join(ROOT, 'src/styles/responsive.css'), 'utf8');
+  A.ok('home: บนมือถือข้อมูลร้านซ้อนเป็นบรรทัดเดียว', /\.hero-meta \.stat\s*\{[^}]*flex-direction:\s*row/.test(responsive));
+}
+
+/* ------------------------------------------------------------------ *
+ * 9. หน้า auth ใช้ปุ่มสลับภาษาของเว็บไซต์จริง และสลับได้จริง
+ * ------------------------------------------------------------------ */
+{
+  const supabase = await makeSupabaseMock({ session: null, user: null });
+  const { document } = await loadPage({
+    htmlPath: path.join(WEB, 'auth/register.html'),
+    scripts: ['src/pages/customer/account.js'],
+    supabase,
+  });
+  await wait(250);
+
+  const toggle = document.getElementById('lang-toggle');
+  A.ok('auth: ปุ่มสลับภาษาของเว็บไซต์อยู่ในแถบหัวเว็บ', !!toggle && !!toggle.closest('.site-header'));
+  toggle.dispatchEvent(new document.defaultView.Event('click', { bubbles: true }));
+  await wait(120);
+
+  const title = document.querySelector('.auth-title');
+  A.ok('auth: กดสลับภาษาแล้วหัวข้อเปลี่ยนเป็นอังกฤษ', !/[\u0E00-\u0E7F]/.test(title?.textContent || ''));
+  A.eq('auth: หัวข้อภาษาอังกฤษถูกต้อง', title?.textContent.trim(), 'Create an account');
 }
 
 process.exit(A.report('regression') ? 1 : 0);

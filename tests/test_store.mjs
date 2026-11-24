@@ -231,14 +231,17 @@ const PRODUCTS = [
   A.ok('responsive: ปุ่มเมนูแฮมเบอร์เกอร์แสดง', /\.menu-toggle\s*\{[^}]*display:\s*grid/.test(css));
   A.ok('responsive: ตารางเลื่อนแนวนอนได้', /\.table-wrap table\.data\s*\{[^}]*min-width/.test(css));
   A.ok('responsive: ฟอร์มสมัครสมาชิกยุบเป็นคอลัมน์เดียว', /\.auth-grid\s*\{[^}]*grid-template-columns:\s*1fr/.test(css));
-  A.ok('responsive: หน้า auth ซ้อนเป็นคอลัมน์เดียวบนแท็บเล็ต', /\.auth-layout\s*\{[^}]*grid-template-columns:\s*1fr/.test(css));
+  A.ok(
+    'responsive: ฟอร์มสมัครสมาชิกยุบเป็นคอลัมน์เดียวบนแท็บเล็ต',
+    /\.auth-grid\s*\{[^}]*grid-template-columns:\s*1fr/.test(css),
+  );
   A.ok('responsive: รองรับ safe-area', /safe-area-inset/.test(css));
   A.ok('responsive: รองรับ dynamic viewport', /100dvh/.test(css));
 
   const base = fs.readFileSync('/home/user/WebShop/src/styles/base.css', 'utf8');
   A.ok('responsive: ตารางมีขั้นต่ำกันข้อความถูกตัด', /\.table-wrap table\.data\s*\{[^}]*min-width/.test(base));
-  A.ok('responsive: หน้า auth ใช้เลย์เอาต์แบบแยกคอลัมน์', /\.auth-layout\s*\{[^}]*grid-template-columns/.test(base));
-  A.ok('responsive: หน้า auth มีแถบบนสุด', /\.auth-topbar\s*\{/.test(base));
+  A.ok('responsive: หน้า auth ไม่มีเลย์เอาต์แยกเอง', !/\.auth-layout|\.auth-topbar|\.auth-aside/.test(base));
+  A.ok('responsive: ช่องตัวเลขไม่มีปุ่มเลื่อนค่า', /input\[type='number'\]::\-webkit\-outer\-spin\-button/.test(base));
   A.ok('responsive: ประตูสมัครสมาชิกมีสไตล์', /\.guest-gate/.test(base));
   A.ok('responsive: ภาษาไทยไม่ใช้ letter-spacing ติดลบ', /html\[lang=['"]th['"]\]/.test(base));
   A.ok('responsive: ชื่อร้านในแถบหัวเว็บถูกตัดไม่ล้น', /\.header-logo-name[^}]*text-overflow:\s*ellipsis/.test(base));

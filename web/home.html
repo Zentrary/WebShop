@@ -26,37 +26,51 @@
     <main>
       <section class="hero">
         <div class="container">
-          <div class="hero-grid">
-            <div class="reveal">
-              <span class="eyebrow" id="hero-shop-name" data-i18n="home.eyebrow">ร้านค้าออนไลน์</span>
-              <h1><span data-i18n="home.hero_1">ร้านค้าออนไลน์</span><br /><span class="thin" data-i18n="home.hero_2">ด้วยความตั้งใจ</span></h1>
-              <p class="lead" id="hero-tagline" data-i18n="home.hero_lead">คัดสรรสินค้าด้วยความใส่ใจ บรรจุอย่างพิถีพิถัน และจัดส่งถึงมือคุณอย่างรวดเร็ว</p>
-              <div class="hero-cta">
-                <a href="/shop/index.html" class="btn btn-primary btn-lg" data-i18n="home.cta_shop" data-member-only>เลือกซื้อสินค้า</a>
-                <a href="/shop/categories.html" class="btn btn-outline btn-lg" data-i18n="home.cta_categories" data-member-only>ดูหมวดหมู่</a>
-                <a href="/auth/register.html" class="btn btn-primary btn-lg hidden" data-i18n="nav.register" data-guest-only
-                  >สมัครสมาชิกเพื่อเลือกซื้อสินค้า</a
-                >
-                <a href="/auth/login.html" class="btn btn-outline btn-lg hidden" data-i18n="nav.login" data-guest-only>เข้าสู่ระบบ</a>
-              </div>
+          <div class="hero-masthead reveal">
+            <span class="hero-masthead-name" id="hero-shop-name">ร้านค้าออนไลน์</span>
+            <span class="hero-masthead-rule" aria-hidden="true"></span>
+          </div>
+
+          <div class="hero-copy reveal">
+            <h1 class="hero-title">
+              <span class="hero-title-line" data-i18n="home.hero_1">คัดมาเอง</span>
+              <span class="hero-title-line thin" data-i18n="home.hero_2">ส่งให้ถึงมือ</span>
+            </h1>
+            <p class="lead" id="hero-tagline">คัดสรรสินค้าด้วยความใส่ใจ บรรจุอย่างพิถีพิถัน และจัดส่งถึงมือคุณอย่างรวดเร็ว</p>
+            <div class="hero-cta">
+              <a href="/shop/index.html" class="btn btn-primary btn-lg" data-i18n="home.cta_shop" data-member-only>เลือกซื้อสินค้า</a>
+              <a href="/shop/categories.html" class="btn btn-outline btn-lg" data-i18n="home.cta_categories" data-member-only>ดูหมวดหมู่</a>
+              <a href="/auth/register.html" class="btn btn-primary btn-lg hidden" data-i18n="nav.register" data-guest-only
+                >สมัครสมาชิกเพื่อเลือกซื้อสินค้า</a
+              >
+              <a href="/auth/login.html" class="btn btn-outline btn-lg hidden" data-i18n="nav.login" data-guest-only>เข้าสู่ระบบ</a>
             </div>
-            <div class="hero-meta reveal" data-delay="2">
+          </div>
+
+          <div class="hero-facts reveal" data-delay="2">
+            <p class="hero-facts-label" data-i18n="home.hero_facts_title">ข้อมูลร้าน</p>
+            <div class="hero-meta">
               <div class="stat">
-                <b data-i18n="home.stat_payment_value">PromptPay</b><span data-i18n="home.stat_payment">ชำระเงินสะดวก ปลอดภัย</span>
+                <span class="stat-label" data-i18n="home.stat_payment">ชำระเงินสะดวก ปลอดภัย</span>
+                <b class="stat-value" data-i18n="home.stat_payment_value">PromptPay</b>
               </div>
-              <div class="stat"><b data-i18n="home.stat_ship_value">2–5 วัน</b><span data-i18n="home.stat_ship">จัดส่งทั่วประเทศ</span></div>
               <div class="stat">
-                <b data-i18n="home.stat_care_value">ใส่ใจทุกออเดอร์</b><span data-i18n="home.stat_care_desc">เจ้าของร้านดูแลเองทุกขั้นตอน</span>
+                <span class="stat-label" data-i18n="home.stat_ship">จัดส่งทั่วประเทศ</span>
+                <b class="stat-value" data-i18n="home.stat_ship_value">2–5 วัน</b>
+              </div>
+              <div class="stat">
+                <span class="stat-label" data-i18n="home.stat_care_desc">เจ้าของร้านดูแลเองทุกขั้นตอน</span>
+                <b class="stat-value" data-i18n="home.stat_care_value">ใส่ใจทุกออเดอร์</b>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      <section class="container" style="padding-top: var(--space-3xl)">
+      <section class="container section">
         <div class="reveal">
-          <span class="eyebrow" data-i18n="home.steps_eyebrow">วิธีการสั่งซื้อ</span>
-          <h2 style="margin-bottom: var(--space-xl)" data-i18n="home.steps_title">วิธีการสั่งซื้อ</h2>
+          <span class="eyebrow" data-i18n="home.steps_eyebrow">ขั้นตอน</span>
+          <h2 class="section-title" data-i18n="home.steps_title">วิธีการสั่งซื้อ</h2>
         </div>
         <div class="steps-grid reveal" data-delay="1">
           <div class="step">
@@ -77,10 +91,10 @@
         </div>
       </section>
 
-      <section class="container" style="padding-top: var(--space-3xl)">
+      <section class="container section">
         <div class="reveal">
-          <span class="eyebrow" data-i18n="home.reviews_eyebrow">รีวิวจากลูกค้า</span>
-          <h2 style="margin-bottom: var(--space-xl)" data-i18n="home.reviews_title">รีวิวจากลูกค้า</h2>
+          <span class="eyebrow" data-i18n="home.reviews_eyebrow">รีวิว</span>
+          <h2 class="section-title" data-i18n="home.reviews_title">เสียงจากลูกค้าที่ซื้อจริง</h2>
         </div>
         <div class="review-grid" id="home-reviews">
           <div class="review-card reveal">
@@ -101,10 +115,10 @@
         </div>
       </section>
 
-      <section class="container" style="padding-top: var(--space-3xl)">
+      <section class="container section">
         <div class="reveal">
-          <span class="eyebrow" data-i18n="home.faq_eyebrow">คำถามที่พบบ่อย</span>
-          <h2 style="margin-bottom: var(--space-xl)" data-i18n="home.faq_title">คำถามที่พบบ่อย</h2>
+          <span class="eyebrow" data-i18n="home.faq_eyebrow">ถาม-ตอบ</span>
+          <h2 class="section-title" data-i18n="home.faq_title">คำถามที่พบบ่อย</h2>
         </div>
         <div class="reveal" data-delay="1">
           <div class="faq-item">
@@ -137,10 +151,10 @@
         </div>
       </section>
 
-      <section class="container" style="padding-top: var(--space-3xl)">
+      <section class="container section">
         <div class="reveal">
-          <span class="eyebrow" data-i18n="home.contact_eyebrow">ติดต่อเรา</span>
-          <h2 style="margin-bottom: var(--space-xl)" data-i18n="home.contact_title">ติดต่อเรา</h2>
+          <span class="eyebrow" data-i18n="home.contact_eyebrow">ช่องทางติดต่อ</span>
+          <h2 class="section-title" data-i18n="home.contact_title">ติดต่อเรา</h2>
         </div>
         <div class="contact-strip reveal" data-delay="1">
           <a class="contact-cell" href="https://line.me" target="_blank" rel="noopener">

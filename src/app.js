@@ -401,7 +401,6 @@ export async function loadStoreSettings(attempt = 0) {
   }
   setBrandName(state.storeSettings?.shop_name || 'ZenMarket');
   applyBrandAssets(state.storeSettings || {});
-  window.dispatchEvent(new CustomEvent('zenmarket:store-settings', { detail: state.storeSettings }));
   if (document.querySelector('#brand-link')) {
     const header = document.querySelector('.site-header');
     if (header) renderHeader(header);
@@ -484,17 +483,12 @@ async function restoreSession() {
 
 let initPromise = null;
 
-/**
- * @param {{shell?: boolean}} [options] `shell: false` boots the app without the
- *   site header/footer — used by the standalone authentication pages.
- */
-export function initApp(options = {}) {
-  if (!initPromise) initPromise = doInit(options);
+export function initApp() {
+  if (!initPromise) initPromise = doInit();
   return initPromise;
 }
 
-async function doInit(options = {}) {
-  const withShell = options.shell !== false;
+async function doInit() {
   initI18n();
   initCaptcha();
   installGlobalErrorHandlers();
@@ -510,17 +504,15 @@ async function doInit(options = {}) {
 
   applyMemberGating();
 
-  if (withShell && document.body && !document.querySelector('.site-header')) initHeader();
+  if (document.body && !document.querySelector('.site-header')) initHeader();
 
   await loadStoreSettings();
 
-  if (withShell) {
-    if (document.querySelector('#brand-link')) {
-      const header = document.querySelector('.site-header');
-      if (header) renderHeader(header);
-    }
-    if (document.body && !document.querySelector('.site-footer')) initFooter();
+  if (document.querySelector('#brand-link')) {
+    const header = document.querySelector('.site-header');
+    if (header) renderHeader(header);
   }
+  if (document.body && !document.querySelector('.site-footer')) initFooter();
 
   applyMemberGating();
 
