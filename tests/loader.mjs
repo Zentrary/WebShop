@@ -1,8 +1,3 @@
-/**
- * ZenMarket ESM loader hooks
- * แปลง specifier '/src/...' ให้ชี้ไปที่ไฟล์จริงในโปรเจกต์ และ mock '@supabase/supabase-js'
- * ใช้ query ?g=<generation> เพื่อแยก instance ระหว่าง test (สืบทอดจาก parentURL)
- */
 import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';

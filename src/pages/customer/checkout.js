@@ -1,13 +1,16 @@
-/**
- * ZenMarket Customer — ตะกร้า / ชำระเงิน / คำสั่งซื้อ
- * ใช้ RPC create_order + schema จริง (orders.status/total/shipping/address/recipient/phone)
- */
-
 import { initApp, state, updateCartBadge, requireSupabase, renderGuestGate, applyMemberGating } from '/src/app.js';
 import { isSignedIn } from '/src/core/audience.js';
 import { translatePage, t, onLanguageChange } from '/src/core/i18n.js';
 import { notify } from '/src/core/ui.js';
-import { formatTHB, escapeHTML, createPromptPayPayload, createPromptPayQRDataURL, getPrivateImageUrl, buildSlipObjectPath, bindOnce } from '/src/core/lib.js';
+import {
+  formatTHB,
+  escapeHTML,
+  createPromptPayPayload,
+  createPromptPayQRDataURL,
+  getPrivateImageUrl,
+  buildSlipObjectPath,
+  bindOnce,
+} from '/src/core/lib.js';
 import { validateDelivery } from '/src/core/validation.js';
 import { getOrderStatusBadge, getTimelineProgress } from '/src/core/experience.js';
 import { calculateShipping, amountToFreeShipping } from '/src/core/settings.js';
@@ -36,7 +39,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   applyMemberGating();
 
-  // เปลี่ยนภาษาแล้ววาดหน้าใหม่
   onLanguageChange(() => {
     translatePage();
     if (currentRenderer) currentRenderer();
@@ -44,14 +46,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 });
 
-/* ================= ตะกร้า ================= */
 function initCartPage() {
   renderCart();
 
   bindOnce(document.getElementById('cart-items'), 'click', (e) => {
     const removeBtn = e.target.closest('[data-remove-item]');
     if (removeBtn) {
-      state.cart = state.cart.filter(i => i.product_id !== removeBtn.getAttribute('data-remove-item'));
+      state.cart = state.cart.filter((i) => i.product_id !== removeBtn.getAttribute('data-remove-item'));
       localStorage.setItem('zenmarket_cart', JSON.stringify(state.cart));
       updateCartBadge();
       renderCart();
@@ -61,7 +62,7 @@ function initCartPage() {
     if (changeBtn) {
       const pid = changeBtn.getAttribute('data-change-qty');
       const dir = parseInt(changeBtn.getAttribute('data-dir'));
-      const item = state.cart.find(i => i.product_id === pid);
+      const item = state.cart.find((i) => i.product_id === pid);
       if (item) {
         item.quantity = Math.max(1, item.quantity + dir);
         localStorage.setItem('zenmarket_cart', JSON.stringify(state.cart));
@@ -93,7 +94,7 @@ function renderCart() {
   cartContent.classList.remove('hidden');
   cartItemsEl.innerHTML = '';
 
-  state.cart.forEach(item => {
+  state.cart.forEach((item) => {
     const el = document.createElement('div');
     el.className = 'cart-row';
     el.innerHTML = `
@@ -123,14 +124,11 @@ function renderCart() {
   const hint = document.getElementById('cart-shipping-hint');
   if (hint) {
     const remain = amountToFreeShipping(subtotal, state.storeSettings || {});
-    hint.textContent = remain > 0
-      ? t('cart.free_hint', { amount: formatTHB(remain) })
-      : t('cart.free_done');
+    hint.textContent = remain > 0 ? t('cart.free_hint', { amount: formatTHB(remain) }) : t('cart.free_done');
     hint.style.color = remain > 0 ? 'var(--color-accent)' : 'var(--color-success)';
   }
 }
 
-/* ================= ชำระเงิน ================= */
 async function initCheckoutPage() {
   const form = document.getElementById('checkout-form');
   const placeOrderBtn = document.getElementById('place-order-btn');
@@ -140,7 +138,6 @@ async function initCheckoutPage() {
     return;
   }
 
-  // ต้องเข้าสู่ระบบก่อนจึงจะสั่งซื้อได้ (backend บังคับ auth)
   if (!isSignedIn() || !state.user) {
     sessionStorage.setItem('zenmarket_return_path', '/shop/checkout.html');
     const gate = document.getElementById('checkout-gate');
@@ -154,24 +151,26 @@ async function initCheckoutPage() {
   }
 
   const { subtotal, shipping, total } = cartTotals();
-  document.getElementById('checkout-items').innerHTML = state.cart.map(item => `
+  document.getElementById('checkout-items').innerHTML = state.cart
+    .map(
+      (item) => `
     <div class="sum-row"><span>${escapeHTML(item.name)} × ${item.quantity}</span><span>${formatTHB(item.price * item.quantity)}</span></div>
-  `).join('');
+  `,
+    )
+    .join('');
   document.getElementById('checkout-subtotal').textContent = formatTHB(subtotal);
   document.getElementById('checkout-shipping').textContent = shipping === 0 ? t('cart.free') : formatTHB(shipping);
   document.getElementById('checkout-total').textContent = formatTHB(total);
 
-  // ตัวเลือกวิธีชำระเงิน (PromptPay เท่านั้นตาม backend — COD ตัดออก)
   const payOpts = document.querySelectorAll('.pay-opt');
-  payOpts.forEach(opt => {
+  payOpts.forEach((opt) => {
     bindOnce(opt, 'click', () => {
-      payOpts.forEach(o => o.classList.remove('selected'));
+      payOpts.forEach((o) => o.classList.remove('selected'));
       opt.classList.add('selected');
       opt.querySelector('input').checked = true;
     });
   });
 
-  // แสดง QR ทันที
   showQR(total);
 
   bindOnce(placeOrderBtn, 'click', async () => {
@@ -183,7 +182,7 @@ async function initCheckoutPage() {
     placeOrderBtn.textContent = t('checkout.placing');
 
     try {
-      const cart = state.cart.map(i => ({ id: i.product_id, quantity: i.quantity }));
+      const cart = state.cart.map((i) => ({ id: i.product_id, quantity: i.quantity }));
 
       const checked = validateDelivery({
         recipient: document.getElementById('checkout-name').value,
@@ -239,7 +238,6 @@ async function showQR(amount) {
   }
 }
 
-/* ================= รายการคำสั่งซื้อ ================= */
 async function initCustomerOrdersPage() {
   if (!isSignedIn() || !state.user?.id) {
     sessionStorage.setItem('zenmarket_return_path', window.location.pathname + window.location.search);
@@ -264,7 +262,7 @@ async function initCustomerOrdersPage() {
       return;
     }
 
-    orders.forEach(order => {
+    orders.forEach((order) => {
       const badge = getOrderStatusBadge(order.status);
       const tr = document.createElement('tr');
       tr.innerHTML =
@@ -281,7 +279,6 @@ async function initCustomerOrdersPage() {
   }
 }
 
-/* ================= อัปเดตการจัดส่ง (มุมมองลูกค้า) ================= */
 async function loadCustomerShippingUpdates(orderId) {
   const box = document.getElementById('order-shipping-updates');
   if (!box) return;
@@ -318,7 +315,8 @@ async function loadCustomerShippingUpdates(orderId) {
           const img = document.createElement('img');
           img.src = signedUrl;
           img.alt = 'shipping';
-          img.style.cssText = 'width:96px;height:96px;object-fit:cover;border-radius:8px;border:1px solid var(--color-border)';
+          img.style.cssText =
+            'width:96px;height:96px;object-fit:cover;border-radius:8px;border:1px solid var(--color-border)';
           gallery.appendChild(img);
         }
         if (gallery.children.length) wrap.appendChild(gallery);
@@ -332,7 +330,6 @@ async function loadCustomerShippingUpdates(orderId) {
   }
 }
 
-/* ================= รายละเอียดคำสั่งซื้อ ================= */
 async function initCustomerOrderDetailPage() {
   if (!isSignedIn() || !state.user?.id) {
     sessionStorage.setItem('zenmarket_return_path', window.location.pathname + window.location.search);
@@ -347,11 +344,7 @@ async function initCustomerOrderDetailPage() {
   }
 
   try {
-    const { data: order, error } = await state.supabase
-      .from('orders')
-      .select('*')
-      .eq('id', orderId)
-      .single();
+    const { data: order, error } = await state.supabase.from('orders').select('*').eq('id', orderId).single();
 
     if (error || !order) {
       document.getElementById('order-not-found').classList.remove('hidden');
@@ -360,7 +353,9 @@ async function initCustomerOrderDetailPage() {
 
     document.getElementById('order-detail').classList.remove('hidden');
     document.getElementById('order-number').textContent = '#' + order.id.slice(0, 8);
-    document.getElementById('order-date').textContent = order.created_at ? new Date(order.created_at).toLocaleDateString('th-TH') : '-';
+    document.getElementById('order-date').textContent = order.created_at
+      ? new Date(order.created_at).toLocaleDateString('th-TH')
+      : '-';
     const badge = getOrderStatusBadge(order.status);
     const statusEl = document.getElementById('order-status');
     statusEl.textContent = badge.label;
@@ -375,18 +370,22 @@ async function initCustomerOrderDetailPage() {
       document.getElementById('order-tracking-row').classList.remove('hidden');
     }
 
-    // Timeline
     const steps = getTimelineProgress(order.status);
-    document.getElementById('order-timeline').innerHTML = steps.map(step => `
+    document.getElementById('order-timeline').innerHTML = steps
+      .map(
+        (step) => `
       <div class="tl-step ${step.completed ? 'done' : ''}">
         <div class="tl-dot">${step.completed ? '✓' : ''}</div>
         <div class="lbl">${step.label}</div>
       </div>
-    `).join('');
+    `,
+      )
+      .join('');
 
-    // Items
     const items = order.items || [];
-    document.getElementById('order-items-list').innerHTML = items.map(item => `
+    document.getElementById('order-items-list').innerHTML = items
+      .map(
+        (item) => `
       <div class="cart-row">
         <img src="${item.image_url || '/images/placeholder.svg'}" alt="${escapeHTML(item.name || '')}">
         <div>
@@ -396,9 +395,10 @@ async function initCustomerOrderDetailPage() {
         <div></div>
         <div class="font-semibold">${formatTHB(item.price * item.quantity)}</div>
       </div>
-    `).join('');
+    `,
+      )
+      .join('');
 
-    // สลิป
     if (order.slip_path) {
       const slipUrl = await getPrivateImageUrl(state.supabase, 'payment-slips', order.slip_path);
       document.getElementById('receipt-upload').classList.add('hidden');
@@ -407,10 +407,12 @@ async function initCustomerOrderDetailPage() {
       if (slipUrl) {
         preview.src = slipUrl;
       } else {
-        preview.replaceWith(Object.assign(document.createElement('p'), {
-          className: 'text-muted text-sm',
-          textContent: t('order.slip_unavailable'),
-        }));
+        preview.replaceWith(
+          Object.assign(document.createElement('p'), {
+            className: 'text-muted text-sm',
+            textContent: t('order.slip_unavailable'),
+          }),
+        );
       }
     } else {
       bindOnce(document.getElementById('upload-receipt-btn'), 'click', () => {
@@ -440,18 +442,20 @@ async function initCustomerOrderDetailPage() {
       });
     }
 
-    // อัปเดตการจัดส่งจากร้าน
     await loadCustomerShippingUpdates(order.id);
 
-    // ปุ่มการกระทำของลูกค้า (ยกเลิก / ยืนยันได้รับ)
     const actionsBox = document.getElementById('order-actions');
     if (actionsBox) {
       const buttons = [];
       if (order.status === 'pending') {
-        buttons.push(`<button id="order-cancel-btn" class="btn btn-outline btn-sm" data-i18n="order.cancel">${t('order.cancel')}</button>`);
+        buttons.push(
+          `<button id="order-cancel-btn" class="btn btn-outline btn-sm" data-i18n="order.cancel">${t('order.cancel')}</button>`,
+        );
       }
       if (order.status === 'shipped') {
-        buttons.push(`<button id="order-received-btn" class="btn btn-primary btn-sm" data-i18n="order.confirm_received">${t('order.confirm_received')}</button>`);
+        buttons.push(
+          `<button id="order-received-btn" class="btn btn-primary btn-sm" data-i18n="order.confirm_received">${t('order.confirm_received')}</button>`,
+        );
       }
       actionsBox.innerHTML = buttons.join('');
 
@@ -493,13 +497,14 @@ async function initCustomerOrderDetailPage() {
       }
     }
 
-    // ฟอร์มรีวิว (เปิดเมื่อสินค้าส่งถึงมือแล้วเท่านั้น)
     const reviewForm = document.getElementById('review-form');
     const reviewPanel = reviewForm.closest('.panel');
     if (order.status !== 'delivered') {
       reviewPanel.classList.add('hidden');
     } else if (items.length) {
-      reviewForm.innerHTML = items.map(item => `
+      reviewForm.innerHTML = items
+        .map(
+          (item) => `
         <div class="form-group">
           <label class="form-label">${escapeHTML(item.name || '')}</label>
           <div class="flex gap-sm items-center">
@@ -511,7 +516,9 @@ async function initCustomerOrderDetailPage() {
             <button class="btn btn-outline btn-sm" data-review="${item.id}">${t('order.review_send')}</button>
           </div>
         </div>
-      `).join('');
+      `,
+        )
+        .join('');
       bindOnce(reviewForm, 'click', async (e) => {
         const btn = e.target.closest('[data-review]');
         if (!btn) return;

@@ -1,10 +1,10 @@
--- ZenMarket Initial Schema
--- สร้างตาราง, Constraints, Triggers, RLS Policies, Storage Buckets และ RPC ทั้งหมด
 
--- Enable extensions
+
+
+
 create extension if not exists pgcrypto;
 
--- Profiles table (extends auth.users)
+
 create table if not exists public.profiles (
   id uuid references auth.users on delete cascade primary key,
   user_name text unique,
@@ -22,7 +22,7 @@ create table if not exists public.profiles (
   updated_at timestamptz default now()
 );
 
--- Categories table
+
 create table if not exists public.categories (
   id uuid default gen_random_uuid() primary key,
   name text not null,
@@ -34,7 +34,7 @@ create table if not exists public.categories (
   updated_at timestamptz default now()
 );
 
--- Products table
+
 create table if not exists public.products (
   id uuid default gen_random_uuid() primary key,
   category_id uuid references public.categories(id),
@@ -51,7 +51,7 @@ create table if not exists public.products (
   updated_at timestamptz default now()
 );
 
--- Orders table
+
 create table if not exists public.orders (
   id uuid default gen_random_uuid() primary key,
   customer_id uuid references public.profiles(id),
@@ -73,7 +73,7 @@ create table if not exists public.orders (
   updated_at timestamptz default now()
 );
 
--- Reviews table
+
 create table if not exists public.reviews (
   id uuid default gen_random_uuid() primary key,
   product_id uuid references public.products(id) on delete cascade,
@@ -86,7 +86,7 @@ create table if not exists public.reviews (
   updated_at timestamptz default now()
 );
 
--- Store settings table
+
 create table if not exists public.store_settings (
   id uuid default gen_random_uuid() primary key,
   store_name text default 'ZenMarket',
@@ -114,7 +114,7 @@ create table if not exists public.store_settings (
   updated_at timestamptz default now()
 );
 
--- Notifications table (for admin operations)
+
 create table if not exists public.notifications (
   id uuid default gen_random_uuid() primary key,
   title text not null,
@@ -124,7 +124,7 @@ create table if not exists public.notifications (
   created_at timestamptz default now()
 );
 
--- Storage buckets for product images and receipts
+
 insert into storage.buckets (id, name, public)
 values ('product-images', 'product-images', true)
 on conflict (id) do nothing;

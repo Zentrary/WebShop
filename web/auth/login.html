@@ -1,51 +1,76 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="th">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ZenMarket | เข้าสู่ระบบ</title>
-  <link rel="stylesheet" href="/src/styles/base.css">
-  <link rel="stylesheet" href="/src/styles/spaces.css">
-  <link rel="stylesheet" href="/src/styles/responsive.css">
-  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  <script type="module" src="/src/pages/customer/account.js"></script>
-  <noscript><style>.reveal{opacity:1!important;transform:none!important}</style></noscript>
-</head>
-<body>
-  <main class="auth-wrap">
-    <div class="auth-card reveal">
-      <div class="auth-head">
-        <div class="mark">Z</div>
-        <h1 style="font-size:var(--font-size-2xl)" data-i18n="auth.login_title">เข้าสู่ระบบ</h1>
-        <p class="text-sm mt-sm" data-i18n="auth.login_sub">ยินดีต้อนรับกลับสู่ ZenMarket</p>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ZenMarket | เข้าสู่ระบบ</title>
+    <link rel="stylesheet" href="/src/styles/base.css" />
+    <link rel="stylesheet" href="/src/styles/spaces.css" />
+    <link rel="stylesheet" href="/src/styles/responsive.css" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <script type="module" src="/src/pages/customer/account.js"></script>
+  </head>
+  <body>
+    <main class="auth-wrap">
+      <div class="auth-card auth-card-compact reveal">
+        <div class="auth-head">
+          <img class="auth-logo" id="auth-logo" src="/images/placeholder.svg" alt="ZenMarket" hidden />
+          <div class="mark" id="auth-mark">Z</div>
+          <h1 data-i18n="auth.login_title">เข้าสู่ระบบ</h1>
+          <p class="text-sm mt-sm" data-i18n="auth.login_sub">ยินดีต้อนรับกลับสู่ ZenMarket</p>
+        </div>
+
+        <form id="login-form" novalidate>
+          <div class="form-group">
+            <label class="form-label" for="login-identifier" data-i18n="auth.identifier">ชื่อผู้ใช้ หรือ email</label>
+            <input
+              type="text"
+              id="login-identifier"
+              class="form-input"
+              required
+              autocomplete="username"
+              maxlength="254"
+              autocapitalize="none"
+              autocorrect="off"
+              spellcheck="false"
+              placeholder="username หรือ email"
+              data-i18n-placeholder="auth.identifier_ph"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="login-password" data-i18n="auth.password">รหัสผ่าน</label>
+            <input
+              type="password"
+              id="login-password"
+              class="form-input"
+              required
+              autocomplete="current-password"
+              maxlength="128"
+              placeholder="••••••••"
+              data-i18n-placeholder="auth.password2_ph"
+            />
+          </div>
+
+          <div class="flex items-center justify-between mb-md">
+            <label class="form-checkbox">
+              <input type="checkbox" id="remember-me" checked />
+              <span data-i18n="auth.remember">จดจำฉัน</span>
+            </label>
+            <a href="/auth/forgot-password.html" style="font-size: var(--font-size-sm); color: var(--color-accent)" data-i18n="auth.forgot"
+              >ลืมรหัสผ่าน?</a
+            >
+          </div>
+
+          <div id="turnstile-container" class="mb-md" style="display: none"></div>
+
+          <button type="submit" class="btn btn-primary btn-full" data-i18n="auth.submit_login">เข้าสู่ระบบ</button>
+        </form>
+
+        <p class="auth-switch">
+          <span data-i18n="auth.no_account">ยังไม่มีบัญชี?</span> <a href="/auth/register.html" data-i18n="nav.register">สมัครสมาชิก</a>
+        </p>
       </div>
-
-      <form id="login-form" novalidate>
-        <div class="form-group">
-          <label class="form-label" for="login-identifier" data-i18n="auth.identifier">ชื่อผู้ใช้ หรือ email</label>
-          <input type="text" id="login-identifier" class="form-input" required autocomplete="username" placeholder="username หรือ email" data-i18n-placeholder="auth.identifier_ph">
-        </div>
-
-        <div class="form-group">
-          <label class="form-label" for="login-password" data-i18n="auth.password">รหัสผ่าน</label>
-          <input type="password" id="login-password" class="form-input" required autocomplete="current-password" placeholder="••••••••" data-i18n-placeholder="auth.password2_ph">
-        </div>
-
-        <div class="flex items-center justify-between mb-lg">
-          <label class="form-checkbox">
-            <input type="checkbox" id="remember-me" checked>
-            <span data-i18n="auth.remember">จดจำฉัน</span>
-          </label>
-          <a href="/auth/forgot-password.html" style="font-size:var(--font-size-sm);color:var(--color-accent)" data-i18n="auth.forgot">ลืมรหัสผ่าน?</a>
-        </div>
-
-        <div id="turnstile-container" class="mb-md" style="display:none"></div>
-
-        <button type="submit" class="btn btn-primary btn-full btn-lg" data-i18n="auth.submit_login">เข้าสู่ระบบ</button>
-      </form>
-
-      <p class="auth-switch"><span data-i18n="auth.no_account">ยังไม่มีบัญชี?</span> <a href="/auth/register.html" data-i18n="nav.register">สมัครสมาชิก</a></p>
-    </div>
-  </main>
-</body>
+    </main>
+  </body>
 </html>

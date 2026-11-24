@@ -1,15 +1,3 @@
-/**
- * ZenMarket i18n — ระบบแปลภาษา TH / EN
- *
- * กติกา:
- * - `data-i18n="key"`          → แทนที่ข้อความภายใน element (ไม่ลบ element ลูก)
- * - `data-i18n-placeholder`    → แทนที่ placeholder ของ input/textarea
- * - `data-i18n-title`          → แทนที่ title attribute
- * - `data-i18n-aria-label`     → แทนที่ aria-label
- * - `data-i18n-html`           → แทนที่ innerHTML (ใช้กับข้อความที่มี markup)
- * - ข้อความที่สร้างด้วย JS → ใช้ `t('key')` แล้วเรียก `translatePage()` ซ้ำ
- */
-
 import { getPageTitleKey } from './routes.js';
 
 const DICT = {
@@ -26,7 +14,6 @@ const DICT = {
     'nav.favorites': 'รายการโปรด',
     'nav.orders': 'คำสั่งซื้อ',
     'nav.menu': 'เมนู',
-    'nav.brand_sep': '|',
 
     'common.save': 'บันทึก',
     'common.cancel': 'ยกเลิก',
@@ -184,6 +171,7 @@ const DICT = {
     'validation.label_length': 'กรุณากรอกชื่อเรียกที่อยู่ (1-40 ตัวอักษร)',
     'validation.username_invalid': 'ชื่อผู้ใช้ต้องเป็นตัวอักษรอังกฤษ/ตัวเลข/_ ความยาว 3-30 ตัว',
     'validation.name_too_long': 'ชื่อ-นามสกุลยาวเกินกำหนด',
+    'validation.name_required': 'กรุณากรอกชื่อจริงและนามสกุล',
     'validation.age_invalid': 'อายุต้องอยู่ระหว่าง 13-120 ปี',
     'validation.promptpay_invalid': 'เลขพร้อมเพย์ต้องเป็น 10 หลักขึ้นต้นด้วย 0 หรือ 13 หลัก',
     'validation.shop_name_length': 'กรุณากรอกชื่อร้าน (1-80 ตัวอักษร)',
@@ -220,9 +208,17 @@ const DICT = {
     'auth.phone': 'เบอร์โทรศัพท์',
     'auth.phone_ph': '0812345678',
     'auth.password': 'รหัสผ่าน',
-    'auth.password_ph': 'อย่างน้อย 6 ตัวอักษร',
+    'auth.password_ph': 'อย่างน้อย 8 ตัวอักษร',
     'auth.password2': 'ยืนยันรหัสผ่าน',
     'auth.password2_ph': '••••••••',
+    'auth.password_hint': 'อย่างน้อย 8 ตัวอักษร และมีตัวเลขอย่างน้อย 1 ตัว',
+    'auth.password_ok': 'รหัสผ่านนี้ใช้ได้',
+    'auth.first_name': 'ชื่อจริง',
+    'auth.first_name_ph': 'สมชาย',
+    'auth.last_name': 'นามสกุล',
+    'auth.last_name_ph': 'ใจดี',
+    'auth.age': 'อายุ',
+    'auth.age_ph': '20',
     'auth.remember': 'จดจำฉัน',
     'auth.forgot': 'ลืมรหัสผ่าน?',
     'auth.submit_login': 'เข้าสู่ระบบ',
@@ -236,8 +232,10 @@ const DICT = {
     'auth.forgot_submit': 'ส่งลิงก์ตั้งรหัสผ่าน',
     'auth.forgot_sent': 'ส่งอีเมลตั้งรหัสผ่านใหม่แล้ว กรุณาตรวจสอบกล่องจดหมาย',
     'auth.invalid_credentials': 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง',
+    'auth.email_taken': 'อีเมลนี้ถูกใช้สมัครไว้แล้ว ลองเข้าสู่ระบบหรือใช้อีเมลอื่น',
     'auth.password_mismatch': 'รหัสผ่านไม่ตรงกัน',
-    'auth.password_too_short': 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร',
+    'auth.password_too_short': 'รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร',
+    'auth.password_weak': 'รหัสผ่านต้องมีตัวอักษรและตัวเลขผสมกัน',
     'auth.reset_success': 'ตั้งรหัสผ่านใหม่สำเร็จ',
     'auth.username_taken': 'ชื่อผู้ใช้นี้ถูกใช้งานแล้ว',
 
@@ -462,7 +460,8 @@ const DICT = {
     'admin.backup_restored': 'กู้คืนข้อมูลสำเร็จ',
     'admin.backup_restore_confirm': 'ยืนยันการกู้คืนข้อมูลจากไฟล์นี้? ข้อมูลเดิมจะถูกอัปเดตตามไฟล์สำรอง',
     'admin.backup_preview': 'ตัวอย่างข้อมูลที่จะกู้คืน',
-    'admin.backup_restore_warning': 'การกู้คืนจะเขียนทับข้อมูลปัจจุบันของร้าน (สินค้า คำสั่งซื้อ รีวิว ที่อยู่ และข้อมูลร้าน) กรุณากดยืนยันเมื่อแน่ใจแล้ว',
+    'admin.backup_restore_warning':
+      'การกู้คืนจะเขียนทับข้อมูลปัจจุบันของร้าน (สินค้า คำสั่งซื้อ รีวิว ที่อยู่ และข้อมูลร้าน) กรุณากดยืนยันเมื่อแน่ใจแล้ว',
     'admin.backup_restore_confirm_btn': 'ยืนยันกู้คืนข้อมูล',
     'admin.backup_invalid_format': 'รูปแบบไฟล์สำรองไม่ถูกต้อง (ต้องเป็น zenmarket-data-v1)',
     'admin.no_login_attempts': 'ไม่พบความพยายามเข้าสู่ระบบ',
@@ -470,7 +469,8 @@ const DICT = {
 
     'page.about_title': 'เกี่ยวกับร้าน',
     'page.about_sub': 'ร้านค้าออนไลน์ที่ดูแลทุกออเดอร์ด้วยตัวเอง เพื่อให้สินค้าถึงมือคุณในสภาพที่ดีที่สุด',
-    'page.about_p1': 'ZenMarket เริ่มต้นจากความรักในการเลือกสินค้าชิ้นดีๆ ไม่ใช่แค่ขายสินค้า แต่อยากให้คุณได้สินค้าที่ถูกใจ บรรจุภัณฑ์ที่ปลอดภัย และได้รับการดูแลที่อบอุ่นเหมือนคนรู้จัก',
+    'page.about_p1':
+      'ZenMarket เริ่มต้นจากความรักในการเลือกสินค้าชิ้นดีๆ ไม่ใช่แค่ขายสินค้า แต่อยากให้คุณได้สินค้าที่ถูกใจ บรรจุภัณฑ์ที่ปลอดภัย และได้รับการดูแลที่อบอุ่นเหมือนคนรู้จัก',
     'page.about_p2': 'ทุกคำสั่งซื้อผ่านการตรวจสอบและบรรจุด้วยมือ เราจึงมั่นใจว่าสินค้าที่ส่งถึงมือคุณจะตรงตามภาพและคุณภาพที่แสดงไว้',
     'page.about_step1': 'คัดสรร',
     'page.about_step1_desc': 'เลือกสินค้าที่ผ่านการตรวจสอบคุณภาพทุกชิ้นก่อนนำเสนอ',
@@ -489,7 +489,8 @@ const DICT = {
     'page.help_free': 'ส่งฟรีเมื่อช้อปครบ',
     'page.help_note': 'ระยะเวลาจัดส่ง 2–5 วันทำการหลังยืนยันการชำระเงิน สินค้าที่มีสต็อกน้อยอาจใช้เวลานานกว่าปกติ',
     'page.help_return': 'การคืนสินค้า',
-    'page.help_return_text': 'สามารถขอคืนสินค้าภายใน 7 วันหลังได้รับสินค้า หากสินค้าเสียหรือไม่ตรงตามที่สั่ง ทั้งนี้สินค้าต้องอยู่ในสภาพเดิมและยังไม่ถูกใช้',
+    'page.help_return_text':
+      'สามารถขอคืนสินค้าภายใน 7 วันหลังได้รับสินค้า หากสินค้าเสียหรือไม่ตรงตามที่สั่ง ทั้งนี้สินค้าต้องอยู่ในสภาพเดิมและยังไม่ถูกใช้',
     'page.privacy_title': 'นโยบายความเป็นส่วนตัว',
     'page.privacy_sub': 'เราเก็บข้อมูลของคุณเท่าที่จำเป็นเพื่อให้บริการได้อย่างถูกต้อง',
     'page.privacy_collect': 'ข้อมูลที่เราเก็บ',
@@ -529,7 +530,6 @@ const DICT = {
     'nav.favorites': 'Favorites',
     'nav.orders': 'Orders',
     'nav.menu': 'Menu',
-    'nav.brand_sep': '|',
 
     'common.save': 'Save',
     'common.cancel': 'Cancel',
@@ -595,7 +595,8 @@ const DICT = {
     'home.faq_title': 'Frequently asked questions',
     'home.contact_eyebrow': 'Contact',
     'faq.q1': 'Orders are usually delivered within 2–5 business days after payment is confirmed.',
-    'faq.q2': 'You can request a return within 7 days if the item is damaged or not as described, provided it is in its original condition.',
+    'faq.q2':
+      'You can request a return within 7 days if the item is damaged or not as described, provided it is in its original condition.',
     'faq.q3': 'We accept PromptPay payment — scan the QR code on the checkout page.',
     'home.contact_title': 'Get in touch',
     'home.line_desc': 'Chat with us any time',
@@ -687,6 +688,7 @@ const DICT = {
     'validation.label_length': 'Please enter an address label (1-40 characters)',
     'validation.username_invalid': 'Username must be 3-30 characters (a-z, 0-9, _)',
     'validation.name_too_long': 'Name is too long',
+    'validation.name_required': 'Please enter your first and last name',
     'validation.age_invalid': 'Age must be between 13 and 120',
     'validation.promptpay_invalid': 'PromptPay ID must be 10 digits starting with 0, or 13 digits',
     'validation.shop_name_length': 'Please enter a shop name (1-80 characters)',
@@ -723,9 +725,17 @@ const DICT = {
     'auth.phone': 'Phone number',
     'auth.phone_ph': '0812345678',
     'auth.password': 'Password',
-    'auth.password_ph': 'At least 6 characters',
+    'auth.password_ph': 'At least 8 characters',
     'auth.password2': 'Confirm password',
     'auth.password2_ph': '••••••••',
+    'auth.password_hint': 'At least 8 characters and include a number',
+    'auth.password_ok': 'Password looks good',
+    'auth.first_name': 'First name',
+    'auth.first_name_ph': 'Somchai',
+    'auth.last_name': 'Last name',
+    'auth.last_name_ph': 'Jaidee',
+    'auth.age': 'Age',
+    'auth.age_ph': '20',
     'auth.remember': 'Remember me',
     'auth.forgot': 'Forgot password?',
     'auth.submit_login': 'Log in',
@@ -739,8 +749,10 @@ const DICT = {
     'auth.forgot_submit': 'Send reset link',
     'auth.forgot_sent': 'Reset link sent — please check your inbox.',
     'auth.invalid_credentials': 'Incorrect username or password',
+    'auth.email_taken': 'This email is already registered. Try signing in or use another email.',
     'auth.password_mismatch': 'Passwords do not match',
-    'auth.password_too_short': 'Password must be at least 6 characters',
+    'auth.password_too_short': 'Password must be at least 8 characters',
+    'auth.password_weak': 'Password must mix letters and numbers',
     'auth.reset_success': 'Password updated successfully',
     'auth.username_taken': 'That username is already taken',
 
@@ -965,16 +977,20 @@ const DICT = {
     'admin.backup_restored': 'Data restored successfully',
     'admin.backup_restore_confirm': 'Restore data from this file? Existing rows will be updated to match the backup.',
     'admin.backup_preview': 'Backup preview',
-    'admin.backup_restore_warning': 'Restoring overwrites the store\'s current data (products, orders, reviews, addresses and settings). Confirm only when you are sure.',
+    'admin.backup_restore_warning':
+      "Restoring overwrites the store's current data (products, orders, reviews, addresses and settings). Confirm only when you are sure.",
     'admin.backup_restore_confirm_btn': 'Confirm restore',
     'admin.backup_invalid_format': 'Invalid backup format (expected zenmarket-data-v1)',
     'admin.no_login_attempts': 'No login attempts recorded',
     'admin.no_permission': 'This account has no admin access.',
 
     'page.about_title': 'About the shop',
-    'page.about_sub': 'An online store that handles every order by hand, so your products arrive in the best possible condition.',
-    'page.about_p1': 'ZenMarket started out of a love for choosing good products — not just selling them. We want you to receive something you love, packed safely and handled like a friend would.',
-    'page.about_p2': 'Every order is checked and packed by hand, so we are confident that what arrives matches the photos and the quality we promised.',
+    'page.about_sub':
+      'An online store that handles every order by hand, so your products arrive in the best possible condition.',
+    'page.about_p1':
+      'ZenMarket started out of a love for choosing good products — not just selling them. We want you to receive something you love, packed safely and handled like a friend would.',
+    'page.about_p2':
+      'Every order is checked and packed by hand, so we are confident that what arrives matches the photos and the quality we promised.',
     'page.about_step1': 'Select',
     'page.about_step1_desc': 'Every product passes a quality check before it is listed.',
     'page.about_step2': 'Pack',
@@ -984,25 +1000,32 @@ const DICT = {
     'page.contact_title': 'Contact us',
     'page.contact_sub': 'Questions about a product, shipping or anything else? Reach us below.',
     'page.contact_hours': 'Opening hours',
-    'page.contact_hours_note': 'Outside opening hours you can leave us a message on LINE and we will get back to you as soon as possible.',
+    'page.contact_hours_note':
+      'Outside opening hours you can leave us a message on LINE and we will get back to you as soon as possible.',
     'page.help_title': 'Shipping & payment',
     'page.help_sub': 'How ordering, paying and tracking work.',
     'page.help_shipping': 'Shipping fee',
     'page.help_shipping_fee': 'Standard shipping',
     'page.help_free': 'Free shipping over',
-    'page.help_note': 'Delivery takes 2–5 business days after payment is confirmed. Items with low stock may take a little longer.',
+    'page.help_note':
+      'Delivery takes 2–5 business days after payment is confirmed. Items with low stock may take a little longer.',
     'page.help_return': 'Returns',
-    'page.help_return_text': 'You can request a return within 7 days of receiving your order if the item is damaged or not as described. The item must be unused and in its original condition.',
+    'page.help_return_text':
+      'You can request a return within 7 days of receiving your order if the item is damaged or not as described. The item must be unused and in its original condition.',
     'page.privacy_title': 'Privacy policy',
     'page.privacy_sub': 'We collect only what we need to serve you properly.',
     'page.privacy_collect': 'What we collect',
-    'page.privacy_collect_text': 'Username, email, phone number, delivery address and order history — used to contact you, deliver your order and provide after-sales care.',
+    'page.privacy_collect_text':
+      'Username, email, phone number, delivery address and order history — used to contact you, deliver your order and provide after-sales care.',
     'page.privacy_use': 'How we use it',
-    'page.privacy_use_text': 'Your data is never sold or shared with third parties. It is used only to provide the service you asked for.',
+    'page.privacy_use_text':
+      'Your data is never sold or shared with third parties. It is used only to provide the service you asked for.',
     'page.privacy_security': 'How we protect it',
-    'page.privacy_security_text': 'Passwords are hashed with industry-standard algorithms and database connections use TLS encryption.',
+    'page.privacy_security_text':
+      'Passwords are hashed with industry-standard algorithms and database connections use TLS encryption.',
     'page.privacy_rights': 'Your rights',
-    'page.privacy_rights_text': 'You can edit your personal data or request account deletion at any time via the contact page.',
+    'page.privacy_rights_text':
+      'You can edit your personal data or request account deletion at any time via the contact page.',
 
     'toast.order_placed': 'Order placed! Please pay with the PromptPay QR code.',
     'toast.login_success': 'Welcome back',
@@ -1033,9 +1056,6 @@ export function initI18n() {
   return currentLang;
 }
 
-/**
- * ตั้งชื่อแบรนด์ (ใช้ชื่อร้านจากฐานข้อมูล) แล้วอัปเดตแท็บหัวเว็บ
- */
 export function setBrandName(name) {
   if (name) brandName = name;
   applyDocumentTitle();
@@ -1045,18 +1065,12 @@ export function getBrandName() {
   return brandName;
 }
 
-/**
- * แท็บหัวเว็บรูปแบบ "ZenMarket | หน้าปัจจุบัน"
- * @param {string} [override] ชื่อหน้าเฉพาะ (เช่น ชื่อสินค้า)
- */
 export function applyDocumentTitle(override) {
   if (typeof document === 'undefined') return;
   const key = getPageTitleKey(window.location.pathname);
   const pageLabel = override || t(key);
   const brand = brandName || 'ZenMarket';
-  document.title = pageLabel && pageLabel !== key
-    ? `${brand} | ${pageLabel}`
-    : brand;
+  document.title = pageLabel && pageLabel !== key ? `${brand} | ${pageLabel}` : brand;
 }
 
 export function getLanguage() {
@@ -1070,7 +1084,11 @@ export function setLanguage(lang) {
   applyDocumentLang();
   translatePage();
   applyDocumentTitle();
-  listeners.forEach(fn => { try { fn(lang); } catch {} });
+  listeners.forEach((fn) => {
+    try {
+      fn(lang);
+    } catch {}
+  });
   window.dispatchEvent(new CustomEvent('zenmarket:lang-change', { detail: { lang } }));
 }
 
@@ -1082,9 +1100,6 @@ export function onLanguageChange(fn) {
   if (typeof fn === 'function') listeners.push(fn);
 }
 
-/**
- * แปลข้อความด้วย key — รองรับตัวแปร {name}
- */
 export function t(key, vars) {
   const strings = DICT[currentLang] || DICT.th;
   let value = strings[key] ?? DICT.th[key] ?? key;
@@ -1102,9 +1117,6 @@ function applyDocumentLang() {
   }
 }
 
-/**
- * แทนที่ข้อความโดยไม่ลบ element ลูก (เช่น <a><svg/>text</a>)
- */
 function setText(node, str) {
   if (!node) return;
   if (node.tagName === 'INPUT' || node.tagName === 'TEXTAREA') {
@@ -1122,7 +1134,7 @@ function setText(node, str) {
         return;
       }
     }
-    // ไม่มี text node ตรง ๆ → ใส่ข้อความไว้ท้าย ๆ แทนการลบลูก
+
     const span = document.createElement('span');
     span.className = 'i18n-text';
     span.textContent = str;
@@ -1133,33 +1145,30 @@ function setText(node, str) {
   node.textContent = str;
 }
 
-/**
- * แปลทั้งหน้า
- */
 export function translatePage(root = document) {
   const strings = DICT[currentLang] || DICT.th;
 
-  root.querySelectorAll('[data-i18n]').forEach(node => {
+  root.querySelectorAll('[data-i18n]').forEach((node) => {
     const key = node.getAttribute('data-i18n');
     if (key && strings[key]) setText(node, strings[key]);
   });
 
-  root.querySelectorAll('[data-i18n-html]').forEach(node => {
+  root.querySelectorAll('[data-i18n-html]').forEach((node) => {
     const key = node.getAttribute('data-i18n-html');
     if (key && strings[key]) node.innerHTML = strings[key];
   });
 
-  root.querySelectorAll('[data-i18n-placeholder]').forEach(node => {
+  root.querySelectorAll('[data-i18n-placeholder]').forEach((node) => {
     const key = node.getAttribute('data-i18n-placeholder');
     if (key && strings[key]) node.setAttribute('placeholder', strings[key]);
   });
 
-  root.querySelectorAll('[data-i18n-title]').forEach(node => {
+  root.querySelectorAll('[data-i18n-title]').forEach((node) => {
     const key = node.getAttribute('data-i18n-title');
     if (key && strings[key]) node.setAttribute('title', strings[key]);
   });
 
-  root.querySelectorAll('[data-i18n-aria-label]').forEach(node => {
+  root.querySelectorAll('[data-i18n-aria-label]').forEach((node) => {
     const key = node.getAttribute('data-i18n-aria-label');
     if (key && strings[key]) node.setAttribute('aria-label', strings[key]);
   });

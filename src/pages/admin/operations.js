@@ -1,8 +1,3 @@
-/**
- * ZenMarket Admin Operations
- * สำรอง/กู้คืนข้อมูลจริง (RPC get_admin_backup), ศูนย์แจ้งเตือน, บันทึกข้อผิดพลาด, สถานะการคืนสต็อก
- */
-
 import { isOwner, setAudience } from '/src/core/audience.js';
 import { notify } from '/src/core/ui.js';
 import { escapeHTML, bindOnce } from '/src/core/lib.js';
@@ -18,10 +13,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   translatePage();
 
   const { createClient } = await import('@supabase/supabase-js');
-  supabase = createClient(
-    import.meta.env.VITE_SUPABASE_URL,
-    import.meta.env.VITE_SUPABASE_ANON_KEY
-  );
+  supabase = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY);
 
   let allowed = isOwner();
   try {
@@ -61,18 +53,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 });
 
-/* ============ สำรอง / กู้คืน ============ */
 async function deriveKey(password, salt) {
   const encoder = new TextEncoder();
-  const passwordKey = await crypto.subtle.importKey(
-    'raw', encoder.encode(password), 'PBKDF2', false, ['deriveKey']
-  );
+  const passwordKey = await crypto.subtle.importKey('raw', encoder.encode(password), 'PBKDF2', false, ['deriveKey']);
   return crypto.subtle.deriveKey(
     { name: 'PBKDF2', hash: 'SHA-256', salt, iterations: 250000 },
     passwordKey,
     { name: 'AES-GCM', length: 256 },
     false,
-    ['encrypt', 'decrypt']
+    ['encrypt', 'decrypt'],
   );
 }
 
@@ -153,18 +142,18 @@ async function initBackup() {
       const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ciphertext);
       const backup = JSON.parse(new TextDecoder().decode(decrypted));
 
-      // ตรวจรูปแบบไฟล์ก่อน — ไม่ผ่านก็อย่าเสนอให้กู้คืน
       if (backup?.format !== 'zenmarket-data-v1') {
         throw new Error(t('admin.backup_invalid_format'));
       }
       const tables = backup?.tables || {};
 
-      // ขั้นที่ 1: แสดงตัวอย่างสิ่งที่จะถูกกู้คืน พร้อมปุ่มยืนยันชัดเจน
       errorLog.innerHTML = `
         <div class="panel" style="padding:var(--space-md)">
           <div class="font-semibold mb-sm">${t('admin.backup_preview')}</div>
           <div class="text-sm text-secondary">
-            ${Object.entries(tables).map(([k, v]) => `${escapeHTML(k)}: ${Array.isArray(v) ? v.length : 0}`).join('<br>')}
+            ${Object.entries(tables)
+              .map(([k, v]) => `${escapeHTML(k)}: ${Array.isArray(v) ? v.length : 0}`)
+              .join('<br>')}
           </div>
           <div class="text-muted text-sm mt-sm">${escapeHTML(backup?.format || '-')} · ${escapeHTML(backup?.created_at ? new Date(backup.created_at).toLocaleString('th-TH') : '-')}</div>
           <p class="text-sm mt-md" style="color:var(--color-warning, #b45309)">${t('admin.backup_restore_warning')}</p>
@@ -176,7 +165,6 @@ async function initBackup() {
       `;
       notify(t('admin.backup_ok'), 'success');
 
-      // ขั้นที่ 2: กดยืนยันเท่านั้นจึงเรียก RPC กู้คืนจริง
       const confirmBtn = document.getElementById('backup-restore-confirm-btn');
       const cancelBtn = document.getElementById('backup-restore-cancel-btn');
 
@@ -198,7 +186,9 @@ async function initBackup() {
             <div class="panel" style="padding:var(--space-md)">
               <div class="font-semibold mb-sm">${t('admin.backup_restored')}</div>
               <div class="text-sm text-secondary">
-                ${Object.entries(restored || {}).map(([k, v]) => `${escapeHTML(k)}: ${v}`).join('<br>')}
+                ${Object.entries(restored || {})
+                  .map(([k, v]) => `${escapeHTML(k)}: ${v}`)
+                  .join('<br>')}
               </div>
             </div>
           `;
@@ -223,7 +213,6 @@ async function initBackup() {
   });
 }
 
-/* ============ บันทึกการตรวจสอบ (audit) ============ */
 async function loadAudit() {
   const errorsEl = document.getElementById('operations-client-errors');
   const attemptsEl = document.getElementById('operations-login-attempts');
@@ -235,14 +224,19 @@ async function loadAudit() {
       .order('created_at', { ascending: false })
       .limit(20);
     if (errorsEl) {
-      errorsEl.innerHTML = errors && errors.length
-        ? errors.map(e => `
+      errorsEl.innerHTML =
+        errors && errors.length
+          ? errors
+              .map(
+                (e) => `
             <div class="flex justify-between items-center" style="padding:0.5rem 0;border-bottom:1px solid var(--color-border-soft)">
               <span class="text-sm">${escapeHTML(e.area || '-')} · ${escapeHTML(e.code || '-')}</span>
               <span class="text-muted text-xs">${e.created_at ? new Date(e.created_at).toLocaleString('th-TH') : '-'}</span>
             </div>
-          `).join('')
-        : `<p class="text-muted text-sm">${t('admin.no_client_errors')}</p>`;
+          `,
+              )
+              .join('')
+          : `<p class="text-muted text-sm">${t('admin.no_client_errors')}</p>`;
     }
   } catch (err) {
     if (errorsEl) errorsEl.innerHTML = `<p class="text-muted text-sm">${escapeHTML(err.message)}</p>`;
@@ -255,21 +249,25 @@ async function loadAudit() {
       .order('expires', { ascending: false })
       .limit(20);
     if (attemptsEl) {
-      attemptsEl.innerHTML = attempts && attempts.length
-        ? attempts.map(a => `
+      attemptsEl.innerHTML =
+        attempts && attempts.length
+          ? attempts
+              .map(
+                (a) => `
             <div class="flex justify-between items-center" style="padding:0.5rem 0;border-bottom:1px solid var(--color-border-soft)">
               <span class="text-sm">${escapeHTML(a.key || '-')}</span>
               <span class="text-muted text-xs">${a.hits || 0} · ${a.expires ? new Date(a.expires).toLocaleString('th-TH') : '-'}</span>
             </div>
-          `).join('')
-        : `<p class="text-muted text-sm">${t('admin.no_login_attempts')}</p>`;
+          `,
+              )
+              .join('')
+          : `<p class="text-muted text-sm">${t('admin.no_login_attempts')}</p>`;
     }
   } catch (err) {
     if (attemptsEl) attemptsEl.innerHTML = `<p class="text-muted text-sm">${escapeHTML(err.message)}</p>`;
   }
 }
 
-/* ============ สถานะระบบ ============ */
 async function loadStatus() {
   const notificationsEl = document.getElementById('operations-notifications');
   const restockEl = document.getElementById('operations-restock-status');
@@ -281,31 +279,39 @@ async function loadStatus() {
       .order('created_at', { ascending: false })
       .limit(10);
 
-    notificationsEl.innerHTML = notifications && notifications.length
-      ? notifications.map(n => `
+    notificationsEl.innerHTML =
+      notifications && notifications.length
+        ? notifications
+            .map(
+              (n) => `
           <div class="flex justify-between items-center" style="padding:0.5rem 0;border-bottom:1px solid var(--color-border-soft)">
             <span class="text-sm">${escapeHTML(n.kind || t('admin.notifications'))}</span>
             <span class="text-muted text-sm">${n.created_at ? new Date(n.created_at).toLocaleString('th-TH') : '-'}</span>
           </div>
-        `).join('')
-      : `<p class="text-muted text-sm">${t('admin.no_notifications')}</p>`;
+        `,
+            )
+            .join('')
+        : `<p class="text-muted text-sm">${t('admin.no_notifications')}</p>`;
   } catch (err) {
     notificationsEl.innerHTML = `<p class="text-muted text-sm">${escapeHTML(err.message)}</p>`;
   }
 
   try {
-    const { data: status } = await supabase
-      .from('operation_status')
-      .select('*');
+    const { data: status } = await supabase.from('operation_status').select('*');
 
-    restockEl.innerHTML = status && status.length
-      ? status.map(s => `
+    restockEl.innerHTML =
+      status && status.length
+        ? status
+            .map(
+              (s) => `
           <div class="flex justify-between items-center" style="padding:0.5rem 0;border-bottom:1px solid var(--color-border-soft)">
             <span class="text-sm">${escapeHTML(s.name || '-')}</span>
             <span class="text-muted text-sm">${s.last_success ? new Date(s.last_success).toLocaleString('th-TH') : t('admin.no_data')}</span>
           </div>
-        `).join('')
-      : `<p class="text-muted text-sm">${t('admin.no_data')}</p>`;
+        `,
+            )
+            .join('')
+        : `<p class="text-muted text-sm">${t('admin.no_data')}</p>`;
   } catch (err) {
     restockEl.innerHTML = `<p class="text-muted text-sm">${escapeHTML(err.message)}</p>`;
   }

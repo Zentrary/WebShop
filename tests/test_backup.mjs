@@ -8,7 +8,6 @@ const { loadPage, makeSupabaseMock, setVal, fire, wait, makeAssert, el } = await
 const A = makeAssert();
 const ADMIN_SESSION = { user: { id: 'admin-1', email: 'admin@zenmarket.test' } };
 
-/* helper: สร้างไฟล์สำรองจริง (เข้ารหัสแบบเดียวกับ production) */
 async function makeBackupFile(password, payload) {
   const enc = new TextEncoder();
   const salt = new Uint8Array(16).fill(7);
@@ -31,10 +30,10 @@ const VALID_BACKUP = {
   tables: { products: [{ id: 'p1' }, { id: 'p2' }], orders: [{ id: 'o1' }] },
 };
 
-/* ============ 1. ไฟล์ถูกต้อง → ต้องแสดง preview และยังไม่กู้คืน ============ */
 {
   const supabase = await makeSupabaseMock({
-    session: ADMIN_SESSION, user: ADMIN_SESSION.user,
+    session: ADMIN_SESSION,
+    user: ADMIN_SESSION.user,
     tableData: { store_admin: { user_id: 'admin-1' } },
     rpcResults: { restore_admin_backup: { products: 2, orders: 1 } },
   });
@@ -59,7 +58,6 @@ const VALID_BACKUP = {
   A.ok('backup: แสดงจำนวนแถว products', preview.includes('products: 2'));
   A.ok('backup: แสดงจำนวนแถว orders', preview.includes('orders: 1'));
 
-  /* ============ 2. กดยืนยัน → ต้องกู้คืนจริง ============ */
   fire(document, 'backup-restore-confirm-btn', 'click');
   await wait(200);
   const rpc = supabase.calls.rpc.find((r) => r.name === 'restore_admin_backup');
@@ -68,10 +66,10 @@ const VALID_BACKUP = {
   A.eq('backup: ส่งตารางครบ', rpc?.params?.p_backup?.tables?.products?.length, 2);
 }
 
-/* ============ 3. กดยกเลิก → ต้องไม่กู้คืน ============ */
 {
   const supabase = await makeSupabaseMock({
-    session: ADMIN_SESSION, user: ADMIN_SESSION.user,
+    session: ADMIN_SESSION,
+    user: ADMIN_SESSION.user,
     tableData: { store_admin: { user_id: 'admin-1' } },
     rpcResults: { restore_admin_backup: { products: 2 } },
   });
@@ -94,10 +92,10 @@ const VALID_BACKUP = {
   A.eq('backup: ยกเลิกแล้วล้างพรีวิว', el(document, 'operations-error-log').innerHTML, '');
 }
 
-/* ============ 4. ไฟล์ผิดรูปแบบ → ต้องไม่เสนอให้กู้คืน ============ */
 {
   const supabase = await makeSupabaseMock({
-    session: ADMIN_SESSION, user: ADMIN_SESSION.user,
+    session: ADMIN_SESSION,
+    user: ADMIN_SESSION.user,
     tableData: { store_admin: { user_id: 'admin-1' } },
     rpcResults: { restore_admin_backup: { products: 2 } },
   });
@@ -119,10 +117,10 @@ const VALID_BACKUP = {
   A.ok('backup: แสดงข้อความผิดรูปแบบ', el(document, 'operations-error-log').innerHTML.length > 0);
 }
 
-/* ============ 5. ไม่ใส่รหัสผ่าน → ต้องไม่อ่านไฟล์ ============ */
 {
   const supabase = await makeSupabaseMock({
-    session: ADMIN_SESSION, user: ADMIN_SESSION.user,
+    session: ADMIN_SESSION,
+    user: ADMIN_SESSION.user,
     tableData: { store_admin: { user_id: 'admin-1' } },
   });
   const { document } = await loadPage({
@@ -141,12 +139,16 @@ const VALID_BACKUP = {
   A.eq('backup: ไม่ใส่รหัสผ่าน → ไม่กู้คืน', supabase.calls.rpc.filter((r) => r.name === 'restore_admin_backup').length, 0);
 }
 
-/* ============ 6. RPC กู้คืนล้มเหลว → ต้องแสดง error และไม่หายเงียบ ============ */
 {
   const supabase = await makeSupabaseMock({
-    session: ADMIN_SESSION, user: ADMIN_SESSION.user,
+    session: ADMIN_SESSION,
+    user: ADMIN_SESSION.user,
     tableData: { store_admin: { user_id: 'admin-1' } },
-    rpcError: { rpc: 'restore_admin_backup', message: 'permission denied for function restore_admin_backup', code: '42501' },
+    rpcError: {
+      rpc: 'restore_admin_backup',
+      message: 'permission denied for function restore_admin_backup',
+      code: '42501',
+    },
   });
   const { document } = await loadPage({
     htmlPath: '/home/user/WebShop/web/admin/operations.html',

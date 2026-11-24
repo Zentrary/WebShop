@@ -1,93 +1,109 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="th">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ZenMarket | จัดการคำสั่งซื้อ</title>
-  <link rel="stylesheet" href="/src/styles/base.css">
-  <link rel="stylesheet" href="/src/styles/spaces.css">
-  <link rel="stylesheet" href="/src/styles/responsive.css">
-  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  <script type="module" src="/src/pages/admin/index.js"></script>
-  <noscript><style>.reveal{opacity:1!important;transform:none!important}</style></noscript>
-</head>
-<body>
-  <div class="admin-layout">
-    <div class="admin-content">
-      <div id="admin-order-detail" class="hidden">
-        <div class="admin-head">
-          <div>
-            <span class="eyebrow" data-i18n="admin.order_number">Order</span>
-            <h1 style="font-size:var(--font-size-2xl)"><span data-i18n="admin.orders">คำสั่งซื้อ</span> <span id="admin-order-number" class="text-accent"></span></h1>
-            <p class="text-muted text-sm mt-sm"><span data-i18n="common.date">วันที่สั่งซื้อ</span> <span id="admin-order-date"></span></p>
-          </div>
-          <a href="/admin/orders.html" class="btn btn-ghost" data-i18n="admin.back_orders">← กลับรายการ</a>
-        </div>
-
-        <div class="cart-grid">
-          <div class="flex flex-col gap-lg">
-            <div class="panel reveal">
-              <h2 data-i18n="order.items">สินค้าที่สั่งซื้อ</h2>
-              <div id="admin-order-items"></div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ZenMarket | จัดการคำสั่งซื้อ</title>
+    <link rel="stylesheet" href="/src/styles/base.css" />
+    <link rel="stylesheet" href="/src/styles/spaces.css" />
+    <link rel="stylesheet" href="/src/styles/responsive.css" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <script type="module" src="/src/pages/admin/index.js"></script>
+    <noscript
+      ><style>
+        .reveal {
+          opacity: 1 !important;
+          transform: none !important;
+        }
+      </style></noscript
+    >
+  </head>
+  <body>
+    <div class="admin-layout">
+      <div class="admin-content">
+        <div id="admin-order-detail" class="hidden">
+          <div class="admin-head">
+            <div>
+              <span class="eyebrow" data-i18n="admin.order_number">Order</span>
+              <h1 style="font-size: var(--font-size-2xl)">
+                <span data-i18n="admin.orders">คำสั่งซื้อ</span> <span id="admin-order-number" class="text-accent"></span>
+              </h1>
+              <p class="text-muted text-sm mt-sm"><span data-i18n="common.date">วันที่สั่งซื้อ</span> <span id="admin-order-date"></span></p>
             </div>
-
-            <div class="panel reveal" data-delay="1">
-              <h2 data-i18n="admin.order_receipt">สลิปการชำระเงิน</h2>
-              <div id="admin-order-receipt"><p class="text-muted text-sm" data-i18n="admin.order_no_receipt">ไม่พบสลิป</p></div>
-            </div>
-
-            <div class="panel reveal" data-delay="2">
-              <h2 data-i18n="admin.shipping_updates">อัปเดตการจัดส่ง</h2>
-              <form id="admin-shipping-update-form">
-                <div class="form-group">
-                  <label class="form-label" for="admin-shipping-message" data-i18n="admin.shipping_message">ข้อความถึงลูกค้า</label>
-                  <textarea id="admin-shipping-message" class="form-input" rows="3" maxlength="1000" placeholder="เช่น จัดส่งแล้ว คาดถึงวันศุกร์" data-i18n-placeholder="admin.order_message_ph"></textarea>
-                </div>
-                <div class="form-group">
-                  <label class="form-label" for="admin-shipping-images" data-i18n="admin.shipping_images">รูปการจัดส่ง (สูงสุด 4 รูป)</label>
-                  <input type="file" id="admin-shipping-images" class="form-input" accept="image/png,image/jpeg,image/webp" multiple>
-                </div>
-                <button type="submit" class="btn btn-primary" data-i18n="admin.shipping_add">เพิ่มอัปเดตการจัดส่ง</button>
-              </form>
-              <hr class="divider">
-              <div id="admin-shipping-history"></div>
-            </div>
+            <a href="/admin/orders.html" class="btn btn-ghost" data-i18n="admin.back_orders">← กลับรายการ</a>
           </div>
 
-          <aside class="summary reveal" data-delay="1">
-            <h2 data-i18n="admin.order_number">ข้อมูลคำสั่งซื้อ</h2>
-            <div class="sum-row"><span data-i18n="admin.order_customer">ผู้รับ</span><span id="admin-order-customer">-</span></div>
-            <div class="sum-row"><span>วิธีชำระเงิน</span><span id="admin-order-payment">-</span></div>
-            <div class="sum-row"><span data-i18n="common.address">ที่อยู่</span></div>
-            <p class="text-sm" id="admin-order-address">-</p>
-            <div class="sum-row"><span data-i18n="cart.subtotal">ยอดรวมสินค้า</span><span id="admin-order-subtotal">฿0.00</span></div>
-            <div class="sum-row"><span data-i18n="cart.shipping">ค่าจัดส่ง</span><span id="admin-order-shipping">฿0.00</span></div>
-            <div class="sum-row total"><span data-i18n="cart.total">รวมทั้งหมด</span><span id="admin-order-total">฿0.00</span></div>
+          <div class="cart-grid">
+            <div class="flex flex-col gap-lg">
+              <div class="panel reveal">
+                <h2 data-i18n="order.items">สินค้าที่สั่งซื้อ</h2>
+                <div id="admin-order-items"></div>
+              </div>
 
-            <hr class="divider">
+              <div class="panel reveal" data-delay="1">
+                <h2 data-i18n="admin.order_receipt">สลิปการชำระเงิน</h2>
+                <div id="admin-order-receipt"><p class="text-muted text-sm" data-i18n="admin.order_no_receipt">ไม่พบสลิป</p></div>
+              </div>
 
-            <div class="form-group">
-              <label class="form-label" for="admin-order-status" data-i18n="admin.order_status">สถานะคำสั่งซื้อ</label>
-              <select id="admin-order-status" class="form-select">
-                <option value="pending" data-i18n="status.pending">รอยืนยัน</option>
-                <option value="review" data-i18n="status.review">รอตรวจสอบสลิป</option>
-                <option value="paid" data-i18n="status.paid">ชำระเงินแล้ว</option>
-                <option value="shipped" data-i18n="status.shipped">จัดส่งแล้ว</option>
-                <option value="delivered" data-i18n="status.delivered">ส่งถึงมือแล้ว</option>
-                <option value="cancelled" data-i18n="status.cancelled">ยกเลิกแล้ว</option>
-              </select>
+              <div class="panel reveal" data-delay="2">
+                <h2 data-i18n="admin.shipping_updates">อัปเดตการจัดส่ง</h2>
+                <form id="admin-shipping-update-form">
+                  <div class="form-group">
+                    <label class="form-label" for="admin-shipping-message" data-i18n="admin.shipping_message">ข้อความถึงลูกค้า</label>
+                    <textarea
+                      id="admin-shipping-message"
+                      class="form-input"
+                      rows="3"
+                      maxlength="1000"
+                      placeholder="เช่น จัดส่งแล้ว คาดถึงวันศุกร์"
+                      data-i18n-placeholder="admin.order_message_ph"
+                    ></textarea>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" for="admin-shipping-images" data-i18n="admin.shipping_images">รูปการจัดส่ง (สูงสุด 4 รูป)</label>
+                    <input type="file" id="admin-shipping-images" class="form-input" accept="image/png,image/jpeg,image/webp" multiple />
+                  </div>
+                  <button type="submit" class="btn btn-primary" data-i18n="admin.shipping_add">เพิ่มอัปเดตการจัดส่ง</button>
+                </form>
+                <hr class="divider" />
+                <div id="admin-shipping-history"></div>
+              </div>
             </div>
 
-            <div class="form-group">
-              <label class="form-label" for="admin-tracking-number" data-i18n="admin.order_tracking">เลขพัสดุ / รหัสพัสดุ</label>
-              <input type="text" id="admin-tracking-number" class="form-input" placeholder="TH1234567890">
-            </div>
+            <aside class="summary reveal" data-delay="1">
+              <h2 data-i18n="admin.order_number">ข้อมูลคำสั่งซื้อ</h2>
+              <div class="sum-row"><span data-i18n="admin.order_customer">ผู้รับ</span><span id="admin-order-customer">-</span></div>
+              <div class="sum-row"><span>วิธีชำระเงิน</span><span id="admin-order-payment">-</span></div>
+              <div class="sum-row"><span data-i18n="common.address">ที่อยู่</span></div>
+              <p class="text-sm" id="admin-order-address">-</p>
+              <div class="sum-row"><span data-i18n="cart.subtotal">ยอดรวมสินค้า</span><span id="admin-order-subtotal">฿0.00</span></div>
+              <div class="sum-row"><span data-i18n="cart.shipping">ค่าจัดส่ง</span><span id="admin-order-shipping">฿0.00</span></div>
+              <div class="sum-row total"><span data-i18n="cart.total">รวมทั้งหมด</span><span id="admin-order-total">฿0.00</span></div>
 
-            <button id="admin-update-order-btn" class="btn btn-primary btn-full" data-i18n="admin.order_updated">อัปเดตคำสั่งซื้อ</button>
-          </aside>
+              <hr class="divider" />
+
+              <div class="form-group">
+                <label class="form-label" for="admin-order-status" data-i18n="admin.order_status">สถานะคำสั่งซื้อ</label>
+                <select id="admin-order-status" class="form-select">
+                  <option value="pending" data-i18n="status.pending">รอยืนยัน</option>
+                  <option value="review" data-i18n="status.review">รอตรวจสอบสลิป</option>
+                  <option value="paid" data-i18n="status.paid">ชำระเงินแล้ว</option>
+                  <option value="shipped" data-i18n="status.shipped">จัดส่งแล้ว</option>
+                  <option value="delivered" data-i18n="status.delivered">ส่งถึงมือแล้ว</option>
+                  <option value="cancelled" data-i18n="status.cancelled">ยกเลิกแล้ว</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="admin-tracking-number" data-i18n="admin.order_tracking">เลขพัสดุ / รหัสพัสดุ</label>
+                <input type="text" id="admin-tracking-number" class="form-input" placeholder="TH1234567890" />
+              </div>
+
+              <button id="admin-update-order-btn" class="btn btn-primary btn-full" data-i18n="admin.order_updated">อัปเดตคำสั่งซื้อ</button>
+            </aside>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-</body>
+  </body>
 </html>

@@ -1,7 +1,3 @@
-/**
- * ZenMarket DOM harness v2
- * ใช้ Node ESM loader hooks + jsdom เพื่อโหลดหน้า HTML จริงและโมดูลจริง
- */
 import { JSDOM, VirtualConsole } from 'jsdom';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -13,7 +9,6 @@ process.on('unhandledRejection', (r) => {
   console.log('UNHANDLED REJECTION:', r && r.stack ? r.stack : r);
 });
 
-/* ---------- module cache (แยกต่อ test) ---------- */
 export function resetModuleCache() {
   for (const k of Object.keys(globalThis.__MOD_CACHE__ || {})) delete globalThis.__MOD_CACHE__[k];
 }
@@ -28,13 +23,11 @@ async function importFresh(spec) {
   return mod;
 }
 
-/* ---------- Supabase mock ---------- */
 export async function makeSupabaseMock(opts = {}) {
   const { makeSupabaseMock: mk } = await import('./supabase-mock.mjs');
   return mk(opts);
 }
 
-/* ---------- page loader ---------- */
 export async function loadPage({ htmlPath, scripts = [], supabase, globals = {}, url, storage = {} }) {
   if (!url) {
     const rel = path.relative(path.join(ROOT, 'web'), htmlPath).split(path.sep).join('/');
@@ -56,11 +49,16 @@ export async function loadPage({ htmlPath, scripts = [], supabase, globals = {},
   });
   const { window } = dom;
 
-  // ---- browser globals ----
-  window.matchMedia = window.matchMedia || ((q) => ({
-    matches: false, media: q,
-    addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {},
-  }));
+  window.matchMedia =
+    window.matchMedia ||
+    ((q) => ({
+      matches: false,
+      media: q,
+      addListener() {},
+      removeListener() {},
+      addEventListener() {},
+      removeEventListener() {},
+    }));
   window.scrollTo = () => {};
   window.confirm = () => window.__confirmResult !== false;
   window.alert = () => {};
@@ -73,39 +71,55 @@ export async function loadPage({ htmlPath, scripts = [], supabase, globals = {},
   if (!window.crypto) window.crypto = {};
   if (!window.crypto.subtle) {
     window.crypto.subtle = {
-      importKey: async () => ({}), deriveKey: async () => ({}),
-      encrypt: async () => new ArrayBuffer(16), digest: async () => new ArrayBuffer(32),
+      importKey: async () => ({}),
+      deriveKey: async () => ({}),
+      encrypt: async () => new ArrayBuffer(16),
+      digest: async () => new ArrayBuffer(32),
     };
   }
   if (!window.crypto.getRandomValues) {
-    window.crypto.getRandomValues = (arr) => { for (let i = 0; i < arr.length; i++) arr[i] = Math.floor(Math.random() * 256); return arr; };
+    window.crypto.getRandomValues = (arr) => {
+      for (let i = 0; i < arr.length; i++) arr[i] = Math.floor(Math.random() * 256);
+      return arr;
+    };
   }
 
-  // ---- localStorage: ใช้ของจริงของ jsdom (รองรับ origin) ----
   for (const [k, v] of Object.entries(globals)) {
-    try { Object.defineProperty(window, k, { value: v, writable: true, configurable: true }); }
-    catch { window[k] = v; }
+    try {
+      Object.defineProperty(window, k, { value: v, writable: true, configurable: true });
+    } catch {
+      window[k] = v;
+    }
   }
   const nativeLS = window.localStorage;
   for (const [k, v] of Object.entries(storage)) {
-    try { nativeLS.setItem(k, String(v)); } catch { /* ignore */ }
+    try {
+      nativeLS.setItem(k, String(v));
+    } catch {}
   }
   const localStorageStub = {
-    get length() { return nativeLS.length; },
+    get length() {
+      return nativeLS.length;
+    },
     getItem: (k) => nativeLS.getItem(k),
     setItem: (k, v) => nativeLS.setItem(k, String(v)),
     removeItem: (k) => nativeLS.removeItem(k),
     clear: () => nativeLS.clear(),
     key: (i) => nativeLS.key(i),
   };
-  try { Object.defineProperty(window, 'localStorage', { value: nativeLS, writable: true, configurable: true }); } catch { /* ignore */ }
+  try {
+    Object.defineProperty(window, 'localStorage', { value: nativeLS, writable: true, configurable: true });
+  } catch {}
 
-  // ---- wire supabase + env for the loaded modules ----
   globalThis.__SUPABASE_MOCK__ = supabase;
   globalThis.__MOD_GEN__ = (globalThis.__MOD_GEN__ || 0) + 1;
   globalThis.window = window;
   globalThis.document = window.document;
-  const safeSet = (k, v) => { try { Object.defineProperty(globalThis, k, { value: v, writable: true, configurable: true }); } catch { /* ignore */ } };
+  const safeSet = (k, v) => {
+    try {
+      Object.defineProperty(globalThis, k, { value: v, writable: true, configurable: true });
+    } catch {}
+  };
   safeSet('navigator', window.navigator);
   safeSet('location', window.location);
   safeSet('localStorage', window.localStorage);
@@ -121,16 +135,47 @@ export async function loadPage({ htmlPath, scripts = [], supabase, globals = {},
   safeSet('Blob', window.Blob);
   safeSet('File', window.File);
   safeSet('FileReader', window.FileReader);
-  safeSet('IntersectionObserver', class { constructor(cb) { this.cb = cb; } observe() {} unobserve() {} disconnect() {} takeRecords() { return []; } });
-  safeSet('ResizeObserver', class { observe() {} unobserve() {} disconnect() {} });
-  safeSet('MutationObserver', class { observe() {} disconnect() {} takeRecords() { return []; } });
+  safeSet(
+    'IntersectionObserver',
+    class {
+      constructor(cb) {
+        this.cb = cb;
+      }
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+      takeRecords() {
+        return [];
+      }
+    },
+  );
+  safeSet(
+    'ResizeObserver',
+    class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    },
+  );
+  safeSet(
+    'MutationObserver',
+    class {
+      observe() {}
+      disconnect() {}
+      takeRecords() {
+        return [];
+      }
+    },
+  );
   window.IntersectionObserver = globalThis.IntersectionObserver;
   window.ResizeObserver = globalThis.ResizeObserver;
   window.MutationObserver = globalThis.MutationObserver;
   globalThis.__VITE_ENV__ = {
     VITE_SUPABASE_URL: 'https://test.supabase.co',
     VITE_SUPABASE_ANON_KEY: 'anon-key',
-    MODE: 'test', PROD: false, DEV: true,
+    MODE: 'test',
+    PROD: false,
+    DEV: true,
   };
 
   for (const s of scripts) {
@@ -176,7 +221,6 @@ export function wait(ms = 80) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-/* ---------- assertion helpers ---------- */
 export function makeAssert() {
   const state = { pass: 0, fail: 0 };
   const eq = (name, actual, expected) => {
@@ -189,7 +233,10 @@ export function makeAssert() {
   };
   const ok = (name, cond) => {
     if (cond) state.pass++;
-    else { state.fail++; console.log('FAIL:', name); }
+    else {
+      state.fail++;
+      console.log('FAIL:', name);
+    }
   };
   const report = (label = '') => {
     console.log(`\n[${label}] pass=${state.pass} fail=${state.fail}`);

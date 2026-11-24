@@ -1,61 +1,68 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="th">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ZenMarket | แดชบอร์ด</title>
-  <link rel="stylesheet" href="/src/styles/base.css">
-  <link rel="stylesheet" href="/src/styles/spaces.css">
-  <link rel="stylesheet" href="/src/styles/responsive.css">
-  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  <script type="module" src="/src/pages/admin/index.js"></script>
-  <noscript><style>.reveal{opacity:1!important;transform:none!important}</style></noscript>
-</head>
-<body>
-  <div class="admin-layout">
-    <div class="admin-content">
-      <div class="admin-head">
-        <div>
-          <span class="eyebrow" data-i18n="admin.dashboard">Dashboard</span>
-          <h1 style="font-size:var(--font-size-2xl)" data-i18n="admin.dashboard">แดชบอร์ด</h1>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ZenMarket | แดชบอร์ด</title>
+    <link rel="stylesheet" href="/src/styles/base.css" />
+    <link rel="stylesheet" href="/src/styles/spaces.css" />
+    <link rel="stylesheet" href="/src/styles/responsive.css" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <script type="module" src="/src/pages/admin/index.js"></script>
+    <noscript
+      ><style>
+        .reveal {
+          opacity: 1 !important;
+          transform: none !important;
+        }
+      </style></noscript
+    >
+  </head>
+  <body>
+    <div class="admin-layout">
+      <div class="admin-content">
+        <div class="admin-head">
+          <div>
+            <span class="eyebrow" data-i18n="admin.dashboard">Dashboard</span>
+            <h1 style="font-size: var(--font-size-2xl)" data-i18n="admin.dashboard">แดชบอร์ด</h1>
+          </div>
         </div>
-      </div>
 
-      <div class="kpi-grid">
-        <div class="kpi reveal">
-          <div class="k-label" data-i18n="admin.kpi_sales">ยอดขายรวม</div>
-          <div class="k-value accent" id="kpi-sales">—</div>
+        <div class="kpi-grid">
+          <div class="kpi reveal">
+            <div class="k-label" data-i18n="admin.kpi_sales">ยอดขายรวม</div>
+            <div class="k-value accent" id="kpi-sales">—</div>
+          </div>
+          <div class="kpi reveal" data-delay="1">
+            <div class="k-label" data-i18n="admin.kpi_pending">รอตรวจสอบสลิป</div>
+            <div class="k-value" id="kpi-pending">—</div>
+          </div>
+          <div class="kpi reveal" data-delay="2">
+            <div class="k-label" data-i18n="admin.kpi_products">สินค้าในระบบ</div>
+            <div class="k-value" id="kpi-products">—</div>
+          </div>
+          <div class="kpi reveal" data-delay="3">
+            <div class="k-label" data-i18n="admin.kpi_rating">คะแนนรีวิวเฉลี่ย</div>
+            <div class="k-value" id="kpi-rating">—</div>
+          </div>
         </div>
-        <div class="kpi reveal" data-delay="1">
-          <div class="k-label" data-i18n="admin.kpi_pending">รอตรวจสอบสลิป</div>
-          <div class="k-value" id="kpi-pending">—</div>
-        </div>
-        <div class="kpi reveal" data-delay="2">
-          <div class="k-label" data-i18n="admin.kpi_products">สินค้าในระบบ</div>
-          <div class="k-value" id="kpi-products">—</div>
-        </div>
-        <div class="kpi reveal" data-delay="3">
-          <div class="k-label" data-i18n="admin.kpi_rating">คะแนนรีวิวเฉลี่ย</div>
-          <div class="k-value" id="kpi-rating">—</div>
-        </div>
-      </div>
 
-      <div class="panel mb-lg reveal">
-        <h2 data-i18n="admin.chart_title">ยอดขาย 7 วันล่าสุด</h2>
-        <div id="sales-chart" style="min-height:180px"></div>
-      </div>
-
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-lg)" class="admin-two-col">
-        <div class="panel reveal" data-delay="1">
-          <h2 data-i18n="admin.low_stock">สินค้าใกล้หมด</h2>
-          <div id="low-stock-list"></div>
+        <div class="panel mb-lg reveal">
+          <h2 data-i18n="admin.chart_title">ยอดขาย 7 วันล่าสุด</h2>
+          <div id="sales-chart" style="min-height: 180px"></div>
         </div>
-        <div class="panel reveal" data-delay="2">
-          <h2 data-i18n="admin.recent_reviews">รีวิวล่าสุด</h2>
-          <div id="recent-reviews"></div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-lg)" class="admin-two-col">
+          <div class="panel reveal" data-delay="1">
+            <h2 data-i18n="admin.low_stock">สินค้าใกล้หมด</h2>
+            <div id="low-stock-list"></div>
+          </div>
+          <div class="panel reveal" data-delay="2">
+            <h2 data-i18n="admin.recent_reviews">รีวิวล่าสุด</h2>
+            <div id="recent-reviews"></div>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-</body>
+  </body>
 </html>

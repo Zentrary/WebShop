@@ -1,13 +1,3 @@
-/**
- * ZenMarket Storage helpers
- * อัปโหลดรูปไปยัง Supabase Storage ตามนโยบายของแต่ละ bucket
- *
- * - product-images  : รูปสินค้า (public อ่านได้, เขียนได้เฉพาะแอดมิน)
- * - store-assets    : โลโก้ร้าน/ไฟล์แบรนด์ (public อ่านได้, เขียนได้เฉพาะแอดมิน)
- * - payment-slips   : สลิปของลูกค้า (private, เฉพาะเจ้าของ/แอดมิน)
- * - shipping-updates: รูปการจัดส่ง (private, เฉพาะเจ้าของคำสั่งซื้อ/แอดมิน)
- */
-
 export const BUCKETS = {
   productImages: 'product-images',
   storeAssets: 'store-assets',
@@ -15,14 +5,10 @@ export const BUCKETS = {
   shippingUpdates: 'shipping-updates',
 };
 
-const MAX_LOGO_BYTES = 1024 * 1024; // 1 MB
-// ต้องตรงกับ allowed_mime_types ของ bucket store-assets ที่ใช้งานจริง
-// (image/jpeg, image/png, image/webp — ไม่รับ SVG เพื่อกัน XSS ผ่านไฟล์โลโก้)
+const MAX_LOGO_BYTES = 1024 * 1024;
+
 const LOGO_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
 
-/**
- * URL สาธารณะของไฟล์ใน bucket ที่เปิดอ่านได้
- */
 export function publicAssetUrl(bucket, path) {
   if (!path) return '';
   if (/^https?:\/\//i.test(path)) return path;
@@ -38,10 +24,6 @@ function sanitizeFileName(name) {
     .slice(-80);
 }
 
-/**
- * อัปโหลดโลโก้ร้านไปยัง bucket store-assets
- * @returns {Promise<{url:string, path:string}>}
- */
 export async function uploadStoreLogo(supabase, file) {
   if (!file) throw new Error('no-file');
   if (!LOGO_TYPES.includes(file.type)) {
@@ -60,9 +42,6 @@ export async function uploadStoreLogo(supabase, file) {
   return { url: publicAssetUrl(BUCKETS.storeAssets, path), path };
 }
 
-/**
- * ลบไฟล์โลโก้เดิม (เฉพาะไฟล์ใน store-assets)
- */
 export async function removeStoreLogo(supabase, url) {
   if (!url) return;
   const base = (import.meta.env.VITE_SUPABASE_URL || '').replace(/\/$/, '');
@@ -77,9 +56,6 @@ export async function removeStoreLogo(supabase, url) {
   }
 }
 
-/**
- * อัปโหลดรูปสินค้าไปยัง bucket product-images
- */
 export async function uploadProductImage(supabase, file) {
   if (!file) throw new Error('no-file');
   if (!file.type.startsWith('image/')) throw new Error('invalid-type');
@@ -94,10 +70,6 @@ export async function uploadProductImage(supabase, file) {
   return { url: publicAssetUrl(BUCKETS.productImages, path), path };
 }
 
-/**
- * อัปโหลดรูปการจัดส่งไปยัง bucket shipping-updates
- * ข้อกำหนดจาก RPC add_shipping_update: <order_id>/<uuid>.(jpeg|png|webp)
- */
 export async function uploadShippingImage(supabase, orderId, file) {
   if (!file) throw new Error('no-file');
   if (!file.type.startsWith('image/')) throw new Error('invalid-type');
@@ -107,8 +79,9 @@ export async function uploadShippingImage(supabase, orderId, file) {
   const ext = extMap[file.type];
   if (!ext) throw new Error('invalid-type');
 
-  const uuid = (crypto.randomUUID && crypto.randomUUID())
-    || 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+  const uuid =
+    (crypto.randomUUID && crypto.randomUUID()) ||
+    'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
       const r = (Math.random() * 16) | 0;
       const v = c === 'x' ? r : (r & 0x3) | 0x8;
       return v.toString(16);

@@ -1,7 +1,3 @@
-/**
- * Supabase mock factory — ใช้ร่วมกันระหว่าง test ทุกไฟล์
- * เก็บสถานะไว้ใน globalThis เพื่อให้ test อ่านค่า calls ได้
- */
 export function makeSupabaseMock(opts = {}) {
   const calls = { rpc: [], insert: [], update: [], select: [], delete: [], storage: [], auth: [] };
   const cfg = {
@@ -27,12 +23,38 @@ export function makeSupabaseMock(opts = {}) {
     const state = { op: 'select', filters: [], data: null, error: null, table };
     const self = {
       _state: state,
-      select: (...a) => { calls.select.push({ table, args: a }); state.op = 'select'; return self; },
-      insert: (payload) => { calls.insert.push({ table, payload }); state.op = 'insert'; state.data = payload; return self; },
-      update: (payload) => { calls.update.push({ table, payload }); state.op = 'update'; state.data = payload; return self; },
-      delete: () => { calls.delete.push({ table }); state.op = 'delete'; return self; },
-      upsert: (payload) => { calls.update.push({ table, payload }); state.op = 'upsert'; state.data = payload; return self; },
-      eq: (col, val) => { state.filters.push([col, val]); return self; },
+      select: (...a) => {
+        calls.select.push({ table, args: a });
+        state.op = 'select';
+        return self;
+      },
+      insert: (payload) => {
+        calls.insert.push({ table, payload });
+        state.op = 'insert';
+        state.data = payload;
+        return self;
+      },
+      update: (payload) => {
+        calls.update.push({ table, payload });
+        state.op = 'update';
+        state.data = payload;
+        return self;
+      },
+      delete: () => {
+        calls.delete.push({ table });
+        state.op = 'delete';
+        return self;
+      },
+      upsert: (payload) => {
+        calls.update.push({ table, payload });
+        state.op = 'upsert';
+        state.data = payload;
+        return self;
+      },
+      eq: (col, val) => {
+        state.filters.push([col, val]);
+        return self;
+      },
       neq: () => self,
       gte: () => self,
       lte: () => self,
@@ -64,8 +86,14 @@ export function makeSupabaseMock(opts = {}) {
       return { data: r ?? null, error: null };
     },
     auth: {
-      getSession: async () => { calls.auth.push({ m: 'getSession' }); return { data: { session: cfg.session }, error: null }; },
-      getUser: async () => { calls.auth.push({ m: 'getUser' }); return { data: { user: cfg.user }, error: null }; },
+      getSession: async () => {
+        calls.auth.push({ m: 'getSession' });
+        return { data: { session: cfg.session }, error: null };
+      },
+      getUser: async () => {
+        calls.auth.push({ m: 'getUser' });
+        return { data: { user: cfg.user }, error: null };
+      },
       onAuthStateChange: () => ({ data: { subscription: { unsubscribe() {} } } }),
       signInWithPassword: async () => ({ data: null, error: null }),
       signUp: async () => ({ data: null, error: null }),
@@ -79,7 +107,10 @@ export function makeSupabaseMock(opts = {}) {
           return { data: { path: p }, error: null };
         },
         getPublicUrl: (p) => ({ data: { publicUrl: `https://cdn.test/${bucket}/${p}` } }),
-        remove: async (paths) => { calls.storage.push({ bucket, m: 'remove', paths }); return { data: null, error: null }; },
+        remove: async (paths) => {
+          calls.storage.push({ bucket, m: 'remove', paths });
+          return { data: null, error: null };
+        },
         list: async () => ({ data: [], error: null }),
       }),
     },

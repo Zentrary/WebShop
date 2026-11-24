@@ -10,14 +10,14 @@ const A = makeAssert();
 const ADMIN_TABLE = { store_admin: { user_id: 'admin-1' } };
 const ADMIN_SESSION = { user: { id: 'admin-1', email: 'admin@zenmarket.test' } };
 
-/* ============ 1. shipping fee = 0 ต้องถูกต้อง ============ */
 {
   const supabase = await makeSupabaseMock({
     tableData: {
       ...ADMIN_TABLE,
       store_settings: { shop_name: 'ZenMarket', tagline: 't', shipping_fee: 50, free_shipping_threshold: 1000 },
     },
-    session: ADMIN_SESSION, user: ADMIN_SESSION.user,
+    session: ADMIN_SESSION,
+    user: ADMIN_SESSION.user,
   });
   const { document, logs } = await loadPage({
     htmlPath: '/home/user/WebShop/web/admin/settings.html',
@@ -39,11 +39,14 @@ const ADMIN_SESSION = { user: { id: 'admin-1', email: 'admin@zenmarket.test' } }
   A.eq('settings: threshold คงเดิม', upd?.payload?.free_shipping_threshold, 1000);
 }
 
-/* ============ 2. threshold = 0 ต้องถูกปฏิเสธ (ไม่กลายเป็น 300) ============ */
 {
   const supabase = await makeSupabaseMock({
-    tableData: { ...ADMIN_TABLE, store_settings: { shop_name: 'ZenMarket', shipping_fee: 50, free_shipping_threshold: 1000 } },
-    session: ADMIN_SESSION, user: ADMIN_SESSION.user,
+    tableData: {
+      ...ADMIN_TABLE,
+      store_settings: { shop_name: 'ZenMarket', shipping_fee: 50, free_shipping_threshold: 1000 },
+    },
+    session: ADMIN_SESSION,
+    user: ADMIN_SESSION.user,
   });
   const { document } = await loadPage({
     htmlPath: '/home/user/WebShop/web/admin/settings.html',
@@ -55,14 +58,21 @@ const ADMIN_SESSION = { user: { id: 'admin-1', email: 'admin@zenmarket.test' } }
   setVal(document, 'setting-free-shipping-threshold', '0');
   submit(document, 'admin-settings-form');
   await wait();
-  A.eq('settings: threshold 0 ถูกปฏิเสธ (ไม่ save)', supabase.calls.update.filter((u) => u.table === 'store_settings').length, 0);
+  A.eq(
+    'settings: threshold 0 ถูกปฏิเสธ (ไม่ save)',
+    supabase.calls.update.filter((u) => u.table === 'store_settings').length,
+    0,
+  );
 }
 
-/* ============ 3. ค่าว่าง ต้องถูกปฏิเสธ ============ */
 {
   const supabase = await makeSupabaseMock({
-    tableData: { ...ADMIN_TABLE, store_settings: { shop_name: 'ZenMarket', shipping_fee: 50, free_shipping_threshold: 1000 } },
-    session: ADMIN_SESSION, user: ADMIN_SESSION.user,
+    tableData: {
+      ...ADMIN_TABLE,
+      store_settings: { shop_name: 'ZenMarket', shipping_fee: 50, free_shipping_threshold: 1000 },
+    },
+    session: ADMIN_SESSION,
+    user: ADMIN_SESSION.user,
   });
   const { document } = await loadPage({
     htmlPath: '/home/user/WebShop/web/admin/settings.html',
@@ -77,11 +87,14 @@ const ADMIN_SESSION = { user: { id: 'admin-1', email: 'admin@zenmarket.test' } }
   A.eq('settings: ค่าว่างถูกปฏิเสธ', supabase.calls.update.filter((u) => u.table === 'store_settings').length, 0);
 }
 
-/* ============ 4. threshold = 1 ต้องผ่าน ============ */
 {
   const supabase = await makeSupabaseMock({
-    tableData: { ...ADMIN_TABLE, store_settings: { shop_name: 'ZenMarket', shipping_fee: 50, free_shipping_threshold: 1000 } },
-    session: ADMIN_SESSION, user: ADMIN_SESSION.user,
+    tableData: {
+      ...ADMIN_TABLE,
+      store_settings: { shop_name: 'ZenMarket', shipping_fee: 50, free_shipping_threshold: 1000 },
+    },
+    session: ADMIN_SESSION,
+    user: ADMIN_SESSION.user,
   });
   const { document } = await loadPage({
     htmlPath: '/home/user/WebShop/web/admin/settings.html',
@@ -97,11 +110,11 @@ const ADMIN_SESSION = { user: { id: 'admin-1', email: 'admin@zenmarket.test' } }
   A.eq('settings: threshold 1 ผ่าน', upd?.payload?.free_shipping_threshold, 1);
 }
 
-/* ============ 5. PromptPay 13 หลักผ่าน ============ */
 {
   const supabase = await makeSupabaseMock({
     tableData: { ...ADMIN_TABLE, store_settings: { promptpay_id: '0812345678', recipient_name: 'ร้าน' } },
-    session: ADMIN_SESSION, user: ADMIN_SESSION.user,
+    session: ADMIN_SESSION,
+    user: ADMIN_SESSION.user,
   });
   const { document } = await loadPage({
     htmlPath: '/home/user/WebShop/web/admin/payments.html',
@@ -115,11 +128,11 @@ const ADMIN_SESSION = { user: { id: 'admin-1', email: 'admin@zenmarket.test' } }
   A.eq('payments: promptpay 13 หลักผ่าน', upd?.payload?.promptpay_id, '1234567890123');
 }
 
-/* ============ 6. PromptPay 11 หลักถูกปฏิเสธ ============ */
 {
   const supabase = await makeSupabaseMock({
     tableData: { ...ADMIN_TABLE, store_settings: { promptpay_id: '0812345678', recipient_name: 'ร้าน' } },
-    session: ADMIN_SESSION, user: ADMIN_SESSION.user,
+    session: ADMIN_SESSION,
+    user: ADMIN_SESSION.user,
   });
   const { document } = await loadPage({
     htmlPath: '/home/user/WebShop/web/admin/payments.html',
@@ -129,7 +142,11 @@ const ADMIN_SESSION = { user: { id: 'admin-1', email: 'admin@zenmarket.test' } }
   setVal(document, 'payment-promptpay-id', '08123456789');
   submit(document, 'admin-payments-form');
   await wait();
-  A.eq('payments: promptpay 11 หลักถูกปฏิเสธ', supabase.calls.update.filter((u) => u.table === 'store_settings').length, 0);
+  A.eq(
+    'payments: promptpay 11 หลักถูกปฏิเสธ',
+    supabase.calls.update.filter((u) => u.table === 'store_settings').length,
+    0,
+  );
 }
 
 process.exit(A.report('admin') ? 1 : 0);

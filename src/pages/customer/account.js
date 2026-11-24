@@ -1,16 +1,16 @@
-/**
- * ZenMarket Customer Account
- * เข้าสู่ระบบ / สมัคร / ลืมรหัสผ่าน / ตั้งรหัสผ่าน / โปรไฟล์ / ที่อยู่ / รายการโปรด
- * Login: ใช้ RPC login_email แปลง username → email แล้ว signInWithPassword
- */
-
 import { initApp, state, requireSupabase } from '/src/app.js';
 import { setAudience, isSignedIn } from '/src/core/audience.js';
 import { translatePage, t, onLanguageChange } from '/src/core/i18n.js';
 import { notify } from '/src/core/ui.js';
 import { initCaptcha, hasCaptcha, renderTurnstile } from '/src/core/captcha.js';
-import { formatTHB, escapeHTML, safeImage } from '/src/core/lib.js';
-import { validateAddress, validateProfile, normalizeThaiPhone, USERNAME_PATTERN } from '/src/core/validation.js';
+import { formatTHB, escapeHTML, safeImage, safeReturnPath } from '/src/core/lib.js';
+import {
+  validateAddress,
+  validateProfile,
+  normalizeThaiPhone,
+  USERNAME_PATTERN,
+  passwordStrength,
+} from '/src/core/validation.js';
 import { getStockStatusText, getStockStatusClass } from '/src/core/customer.js';
 import { loadFavoriteProducts, toggleFavorite, isFavorite, canUseFavorites } from '/src/core/favorites.js';
 
@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   await initApp();
   translatePage();
   initCaptcha();
+  applyAuthLogo();
 
   if (!requireSupabase()) return;
 
@@ -38,7 +39,40 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 });
 
-/* ================= เข้าสู่ระบบ ================= */
+function bindPasswordStrength(inputId, hintId) {
+  const input = document.getElementById(inputId);
+  const hint = document.getElementById(hintId);
+  if (!input) return;
+  const baseText = hint ? hint.textContent : '';
+  input.addEventListener('input', () => {
+    const value = input.value;
+    if (!hint) return;
+    if (!value) {
+      hint.textContent = baseText;
+      hint.className = 'auth-hint';
+      input.setAttribute('aria-invalid', 'false');
+      return;
+    }
+    const result = passwordStrength(value);
+    hint.textContent = result.ok ? t('auth.password_ok') : t(result.errorKey);
+    hint.className = result.ok ? 'auth-hint auth-hint-ok' : 'auth-hint auth-hint-bad';
+    input.setAttribute('aria-invalid', result.ok ? 'false' : 'true');
+  });
+}
+
+function applyAuthLogo() {
+  const raw = state.storeSettings?.logo_url;
+  const logo = raw ? safeImage(raw) : '';
+  const img = document.getElementById('auth-logo');
+  const mark = document.getElementById('auth-mark');
+  if (!img || !mark) return;
+  if (logo && !logo.includes('placeholder')) {
+    img.src = logo;
+    img.hidden = false;
+    mark.hidden = true;
+  }
+}
+
 function initLoginPage() {
   const form = document.getElementById('login-form');
   const turnstileContainer = document.getElementById('turnstile-container');
@@ -60,7 +94,6 @@ function initLoginPage() {
     btn.textContent = t('common.loading');
 
     try {
-      // จำกัดความพยายามเข้าสู่ระบบ (สูงสุด 15 ครั้ง / 15 นาที ต่อ 1 bucket)
       const bucketKey = `login:${identifier.toLowerCase()}`;
       const { data: allowed, error: allowErr } = await state.supabase.rpc('login_allow', { bucket_key: bucketKey });
       if (allowErr) console.warn('[ZenMarket] login_allow failed', allowErr);
@@ -71,10 +104,11 @@ function initLoginPage() {
         return;
       }
 
-      // แปลง username → email ผ่าน RPC
       let email = identifier;
       if (!identifier.includes('@')) {
-        const { data: resolved, error: rpcErr } = await state.supabase.rpc('login_email', { login_name: identifier.toLowerCase() });
+        const { data: resolved, error: rpcErr } = await state.supabase.rpc('login_email', {
+          login_name: identifier.toLowerCase(),
+        });
         if (rpcErr || !resolved) throw new Error(t('auth.invalid_credentials'));
         email = resolved;
       }
@@ -82,12 +116,7 @@ function initLoginPage() {
       const { data, error } = await state.supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
 
-      // โหลดโปรไฟล์
-      const { data: profile } = await state.supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', data.user.id)
-        .single();
+      const { data: profile } = await state.supabase.from('profiles').select('*').eq('id', data.user.id).single();
 
       const user = {
         id: data.user.id,
@@ -104,28 +133,32 @@ function initLoginPage() {
       state.audience = 'member';
 
       notify(t('toast.login_success'), 'success');
-      const returnPath = sessionStorage.getItem('zenmarket_return_path') || '/account/index.html';
+      const returnPath = safeReturnPath(sessionStorage.getItem('zenmarket_return_path'), '/account/index.html');
       sessionStorage.removeItem('zenmarket_return_path');
       window.location.href = returnPath;
     } catch (err) {
-      console.error(err);
-      notify(err.message || t('toast.error_generic'), 'error');
+      console.error('[ZenMarket] login failed');
+      document.getElementById('login-password').value = '';
+      notify(t('auth.invalid_credentials'), 'error');
       btn.disabled = false;
       btn.textContent = t('auth.submit_login');
     }
   });
 }
 
-/* ================= สมัครสมาชิก ================= */
 function initRegisterPage() {
   const form = document.getElementById('register-form');
   if (!form) return;
+  bindPasswordStrength('register-password', 'register-password-hint');
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const username = document.getElementById('register-username').value.trim().toLowerCase();
     const email = document.getElementById('register-email').value.trim();
     const phone = document.getElementById('register-phone').value.trim();
+    const firstName = document.getElementById('register-first-name').value.trim();
+    const lastName = document.getElementById('register-last-name').value.trim();
+    const age = document.getElementById('register-age').value.trim();
     const password = document.getElementById('register-password').value;
     const confirmPassword = document.getElementById('register-confirm-password').value;
 
@@ -139,12 +172,28 @@ function initRegisterPage() {
       return;
     }
 
+    const profile = validateProfile(
+      {
+        username,
+        first_name: firstName,
+        last_name: lastName,
+        age: age === '' ? null : Number(age),
+        phone: normalizedPhone,
+      },
+      { requireNames: true },
+    );
+    if (!profile.ok) {
+      notify(t(profile.errorKey), 'error');
+      return;
+    }
+
     if (password !== confirmPassword) {
       notify(t('auth.password_mismatch'), 'error');
       return;
     }
-    if (password.length < 6) {
-      notify(t('auth.password_too_short'), 'error');
+    const strength = passwordStrength(password);
+    if (!strength.ok) {
+      notify(t(strength.errorKey), 'error');
       return;
     }
 
@@ -160,36 +209,39 @@ function initRegisterPage() {
           data: {
             username,
             phone: normalizedPhone,
+            first_name: profile.value.first_name,
+            last_name: profile.value.last_name,
+            age: profile.value.age,
           },
         },
       });
       if (error) throw error;
 
-      // trigger handle_signup() สร้างแถวใน profiles ให้แล้ว
-      // อัปเดตซ้ำผ่าน RPC (SECURITY DEFINER) เพื่อกันข้อมูลไม่ครบ
       if (data.user) {
         await state.supabase.rpc('save_profile', {
-          p_first_name: null,
-          p_last_name: null,
+          p_first_name: profile.value.first_name,
+          p_last_name: profile.value.last_name,
           p_nickname: null,
           p_phone: normalizedPhone,
-          p_age: null,
+          p_age: profile.value.age,
           p_username: username,
         });
       }
 
       notify(t('toast.register_success'), 'success');
-      setTimeout(() => { window.location.href = '/auth/login.html'; }, 700);
+      setTimeout(() => {
+        window.location.href = '/auth/login.html';
+      }, 700);
     } catch (err) {
-      console.error(err);
-      notify(err.message || t('toast.error_generic'), 'error');
+      console.error('[ZenMarket] registration failed');
+      const message = /already registered/i.test(err?.message || '') ? t('auth.email_taken') : t('toast.error_generic');
+      notify(message, 'error');
       btn.disabled = false;
       btn.textContent = t('auth.submit_register');
     }
   });
 }
 
-/* ================= ลืมรหัสผ่าน ================= */
 function initForgotPasswordPage() {
   const form = document.getElementById('forgot-password-form');
   if (!form) return;
@@ -220,10 +272,10 @@ function initForgotPasswordPage() {
   });
 }
 
-/* ================= ตั้งรหัสผ่านใหม่ ================= */
 function initResetPasswordPage() {
   const form = document.getElementById('reset-password-form');
   if (!form) return;
+  bindPasswordStrength('reset-password', 'reset-password-hint');
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -234,19 +286,25 @@ function initResetPasswordPage() {
       notify(t('auth.password_mismatch'), 'error');
       return;
     }
+    const strength = passwordStrength(password);
+    if (!strength.ok) {
+      notify(t(strength.errorKey), 'error');
+      return;
+    }
 
     try {
       const { error } = await state.supabase.auth.updateUser({ password });
       if (error) throw error;
       notify(t('auth.reset_success'), 'success');
-      setTimeout(() => { window.location.href = '/auth/login.html'; }, 700);
+      setTimeout(() => {
+        window.location.href = '/auth/login.html';
+      }, 700);
     } catch (err) {
       notify(err.message || t('toast.error_generic'), 'error');
     }
   });
 }
 
-/* ================= บัญชีของฉัน ================= */
 async function initAccountPage() {
   if (!isSignedIn() || !state.user) {
     sessionStorage.setItem('zenmarket_return_path', window.location.pathname + window.location.search);
@@ -255,7 +313,8 @@ async function initAccountPage() {
   }
 
   const user = state.user;
-  const displayName = [user.first_name, user.last_name].filter(Boolean).join(' ') || user.username || user.email || t('common.user');
+  const displayName =
+    [user.first_name, user.last_name].filter(Boolean).join(' ') || user.username || user.email || t('common.user');
   document.getElementById('account-name').textContent = displayName;
   document.getElementById('account-email').textContent = user.email || '';
   document.getElementById('account-avatar').textContent = (displayName[0] || 'ผ').toUpperCase();
@@ -296,13 +355,12 @@ async function initAccountPage() {
     }
   });
 
-  // Sidebar tabs
-  document.querySelectorAll('.side-nav a[data-tab]').forEach(link => {
+  document.querySelectorAll('.side-nav a[data-tab]').forEach((link) => {
     link.addEventListener('click', (e) => {
       e.preventDefault();
-      document.querySelectorAll('.side-nav a').forEach(a => a.classList.remove('active'));
+      document.querySelectorAll('.side-nav a').forEach((a) => a.classList.remove('active'));
       link.classList.add('active');
-      document.querySelectorAll('.account-section').forEach(s => s.classList.add('hidden'));
+      document.querySelectorAll('.account-section').forEach((s) => s.classList.add('hidden'));
       document.getElementById(`account-${link.getAttribute('data-tab')}`).classList.remove('hidden');
     });
   });
@@ -317,7 +375,6 @@ async function initAccountPage() {
   });
 }
 
-/* ---------- คำสั่งซื้อล่าสุด ---------- */
 async function loadRecentOrders(user) {
   const list = document.getElementById('customer-orders-list');
   if (!list) return;
@@ -329,12 +386,16 @@ async function loadRecentOrders(user) {
       .order('created_at', { ascending: false })
       .limit(5);
     if (orders && orders.length) {
-      list.innerHTML = orders.map(o => `
+      list.innerHTML = orders
+        .map(
+          (o) => `
         <a href="/account/order.html?id=${o.id}" class="flex justify-between items-center" style="padding:0.75rem 0;border-bottom:1px solid var(--color-border-soft)">
           <span class="font-semibold">#${o.id.slice(0, 8)} <span class="text-muted" style="font-weight:400">${o.created_at ? new Date(o.created_at).toLocaleDateString('th-TH') : ''}</span></span>
           <span class="text-accent font-semibold">${formatTHB(o.total)}</span>
         </a>
-      `).join('');
+      `,
+        )
+        .join('');
     } else {
       list.innerHTML = `<p class="text-muted text-sm">${t('account.no_orders')}</p>`;
     }
@@ -343,7 +404,6 @@ async function loadRecentOrders(user) {
   }
 }
 
-/* ---------- สมุดที่อยู่ ---------- */
 async function loadAddresses(user) {
   const list = document.getElementById('addresses-list');
   if (!list) return;
@@ -362,7 +422,9 @@ async function loadAddresses(user) {
       return;
     }
 
-    list.innerHTML = addresses.map(a => `
+    list.innerHTML = addresses
+      .map(
+        (a) => `
       <div class="panel" style="padding:1rem;margin-bottom:0.75rem">
         <div class="flex justify-between items-center">
           <div class="font-semibold">${escapeHTML(a.label || t('account.address_label'))}</div>
@@ -375,17 +437,19 @@ async function loadAddresses(user) {
           <button class="btn btn-danger btn-sm" data-del-address="${a.id}">${t('common.delete')}</button>
         </div>
       </div>
-    `).join('');
+    `,
+      )
+      .join('');
 
-    list.querySelectorAll('[data-edit-address]').forEach(btn => {
+    list.querySelectorAll('[data-edit-address]').forEach((btn) => {
       btn.addEventListener('click', () => {
-        const target = addresses.find(x => x.id === btn.getAttribute('data-edit-address'));
+        const target = addresses.find((x) => x.id === btn.getAttribute('data-edit-address'));
         if (!target) return;
         openAddressForm(target);
       });
     });
 
-    list.querySelectorAll('[data-del-address]').forEach(btn => {
+    list.querySelectorAll('[data-del-address]').forEach((btn) => {
       btn.addEventListener('click', async () => {
         if (!window.confirm(t('account.delete_address_confirm'))) return;
         try {
@@ -404,9 +468,6 @@ async function loadAddresses(user) {
   }
 }
 
-/**
- * ฟอร์มเพิ่ม/แก้ไขที่อยู่
- */
 function openAddressForm(address = null) {
   const form = document.getElementById('address-form');
   if (!form) return;
@@ -479,7 +540,6 @@ function initAddressForm(user) {
   }
 }
 
-/* ================= รายการโปรด ================= */
 async function initFavoritesPage() {
   if (!isSignedIn() || !state.user) {
     sessionStorage.setItem('zenmarket_return_path', window.location.pathname + window.location.search);
@@ -504,7 +564,7 @@ async function initFavoritesPage() {
       }
 
       grid.innerHTML = '';
-      products.forEach(product => {
+      products.forEach((product) => {
         const card = document.createElement('article');
         card.className = 'card product-card reveal';
         const image = product.image_url ? safeImage(product.image_url) : '/images/placeholder.svg';

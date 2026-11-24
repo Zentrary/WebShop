@@ -1,44 +1,51 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="th">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ZenMarket | รีวิว</title>
-  <link rel="stylesheet" href="/src/styles/base.css">
-  <link rel="stylesheet" href="/src/styles/spaces.css">
-  <link rel="stylesheet" href="/src/styles/responsive.css">
-  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  <script type="module" src="/src/pages/admin/index.js"></script>
-  <noscript><style>.reveal{opacity:1!important;transform:none!important}</style></noscript>
-</head>
-<body>
-  <div class="admin-layout">
-    <div class="admin-content">
-      <div class="admin-head">
-        <div>
-          <span class="eyebrow" data-i18n="admin.reviews">Reviews</span>
-          <h1 style="font-size:var(--font-size-2xl)" data-i18n="admin.reviews">รีวิว</h1>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ZenMarket | รีวิว</title>
+    <link rel="stylesheet" href="/src/styles/base.css" />
+    <link rel="stylesheet" href="/src/styles/spaces.css" />
+    <link rel="stylesheet" href="/src/styles/responsive.css" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <script type="module" src="/src/pages/admin/index.js"></script>
+    <noscript
+      ><style>
+        .reveal {
+          opacity: 1 !important;
+          transform: none !important;
+        }
+      </style></noscript
+    >
+  </head>
+  <body>
+    <div class="admin-layout">
+      <div class="admin-content">
+        <div class="admin-head">
+          <div>
+            <span class="eyebrow" data-i18n="admin.reviews">Reviews</span>
+            <h1 style="font-size: var(--font-size-2xl)" data-i18n="admin.reviews">รีวิว</h1>
+          </div>
         </div>
-      </div>
 
-      <div class="table-wrap reveal">
-        <table class="data">
-          <thead>
-            <tr>
-              <th data-i18n="admin.reviewer">ผู้รีวิว</th>
-              <th data-i18n="admin.product">สินค้า</th>
-              <th style="text-align:center" data-i18n="admin.rating">คะแนน</th>
-              <th data-i18n="admin.comment">ความคิดเห็น</th>
-              <th data-i18n="common.date">วันที่</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody id="admin-reviews-list"></tbody>
-        </table>
-      </div>
+        <div class="table-wrap reveal">
+          <table class="data">
+            <thead>
+              <tr>
+                <th data-i18n="admin.reviewer">ผู้รีวิว</th>
+                <th data-i18n="admin.product">สินค้า</th>
+                <th style="text-align: center" data-i18n="admin.rating">คะแนน</th>
+                <th data-i18n="admin.comment">ความคิดเห็น</th>
+                <th data-i18n="common.date">วันที่</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="admin-reviews-list"></tbody>
+          </table>
+        </div>
 
-      <div id="admin-reviews-pagination" class="pagination"></div>
+        <div id="admin-reviews-pagination" class="pagination"></div>
+      </div>
     </div>
-  </div>
-</body>
+  </body>
 </html>
