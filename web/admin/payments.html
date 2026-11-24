@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>การชำระเงิน — ZenMarket Admin</title>
+  <title>ZenMarket | การชำระเงิน</title>
   <link rel="stylesheet" href="/src/styles/base.css">
   <link rel="stylesheet" href="/src/styles/spaces.css">
   <link rel="stylesheet" href="/src/styles/responsive.css">
@@ -16,37 +16,37 @@
     <div class="admin-content">
       <div class="admin-head">
         <div>
-          <span class="eyebrow">Payments</span>
-          <h1 style="font-size:var(--font-size-2xl)">การชำระเงิน</h1>
+          <span class="eyebrow" data-i18n="admin.payments">Payments</span>
+          <h1 style="font-size:var(--font-size-2xl)" data-i18n="admin.payments">การชำระเงิน</h1>
         </div>
       </div>
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-lg)" class="admin-two-col">
         <form id="admin-payments-form" class="panel reveal">
-          <h2>บัญชีรับเงิน</h2>
+          <h2 data-i18n="admin.payments_account">บัญชีรับเงิน</h2>
           <div class="form-group">
-            <label class="form-label" for="payment-promptpay-id">PromptPay ID</label>
-            <input type="tel" id="payment-promptpay-id" class="form-input" pattern="[0-9]{10}" placeholder="0812345678">
-            <div class="form-hint">เบอร์มือถือ 10 หลัก หรือเลขบัตรประชาชน 13 หลัก</div>
+            <label class="form-label" for="payment-promptpay-id" data-i18n="admin.payments_promptpay_id">PromptPay ID</label>
+            <input type="tel" id="payment-promptpay-id" class="form-input" pattern="(0[0-9]{9}|[0-9]{13})" maxlength="13" inputmode="numeric" title="เบอร์มือถือ 10 หลัก หรือเลขพร้อมเพย์ 13 หลัก" placeholder="0812345678">
+            <div class="form-hint" data-i18n="admin.payments_hint">เบอร์มือถือ 10 หลัก หรือเลขบัตรประชาชน 13 หลัก</div>
           </div>
           <div class="form-group">
-            <label class="form-label" for="payment-promptpay-name">ชื่อผู้รับเงิน</label>
+            <label class="form-label" for="payment-promptpay-name" data-i18n="admin.payments_recipient">ชื่อผู้รับเงิน</label>
             <input type="text" id="payment-promptpay-name" class="form-input" placeholder="ชื่อ-นามสกุล ผู้รับเงิน">
           </div>
-          <button type="submit" class="btn btn-primary">บันทึกการตั้งค่า</button>
+          <button type="submit" class="btn btn-primary" data-i18n="common.save">บันทึกการตั้งค่า</button>
         </form>
 
         <div class="panel reveal" data-delay="1">
-          <h2>ทดสอบสร้าง QR พร้อมเพย์</h2>
+          <h2 data-i18n="admin.payments_test">ทดสอบสร้าง QR พร้อมเพย์</h2>
           <div class="form-group">
-            <label class="form-label" for="test-qr-amount">ยอดเงิน</label>
+            <label class="form-label" for="test-qr-amount" data-i18n="admin.payments_amount">ยอดเงิน</label>
             <input type="number" id="test-qr-amount" class="form-input" min="0" step="1" value="100">
           </div>
           <div class="form-group">
-            <label class="form-label" for="test-qr-reference">เลขอ้างอิง</label>
+            <label class="form-label" for="test-qr-reference" data-i18n="admin.payments_reference">เลขอ้างอิง</label>
             <input type="text" id="test-qr-reference" class="form-input" value="TEST">
           </div>
-          <button type="button" id="test-generate-qr-btn" class="btn btn-outline">สร้าง QR</button>
+          <button type="button" id="test-generate-qr-btn" class="btn btn-outline" data-i18n="admin.payments_generate">สร้าง QR</button>
 
           <div id="test-qr-result" class="hidden mt-lg" style="text-align:center">
             <div id="test-qr-image"></div>

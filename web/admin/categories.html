@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>หมวดหมู่ — ZenMarket Admin</title>
+  <title>ZenMarket | หมวดหมู่</title>
   <link rel="stylesheet" href="/src/styles/base.css">
   <link rel="stylesheet" href="/src/styles/spaces.css">
   <link rel="stylesheet" href="/src/styles/responsive.css">
@@ -16,24 +16,24 @@
     <div class="admin-content">
       <div class="admin-head">
         <div>
-          <span class="eyebrow">Categories</span>
-          <h1 style="font-size:var(--font-size-2xl)">หมวดหมู่</h1>
+          <span class="eyebrow" data-i18n="admin.categories">Categories</span>
+          <h1 style="font-size:var(--font-size-2xl)" data-i18n="admin.categories">หมวดหมู่</h1>
         </div>
       </div>
 
       <div style="display:grid;grid-template-columns:1fr 320px;gap:var(--space-lg)" class="admin-two-col">
         <div class="panel reveal">
-          <h2>หมวดหมู่ทั้งหมด</h2>
+          <h2 data-i18n="admin.all_categories">หมวดหมู่ทั้งหมด</h2>
           <div id="admin-categories-list"></div>
         </div>
 
         <form id="admin-category-form" class="panel reveal" data-delay="1">
-          <h2>เพิ่มหมวดหมู่</h2>
+          <h2 data-i18n="admin.add_category">เพิ่มหมวดหมู่</h2>
           <div class="form-group">
-            <label class="form-label" for="admin-category-name">ชื่อหมวดหมู่</label>
+            <label class="form-label" for="admin-category-name" data-i18n="admin.product_category">ชื่อหมวดหมู่</label>
             <input type="text" id="admin-category-name" class="form-input" required placeholder="เช่น เครื่องสำอาง">
           </div>
-          <button type="submit" class="btn btn-primary btn-full">เพิ่มหมวดหมู่</button>
+          <button type="submit" class="btn btn-primary btn-full" data-i18n="admin.add_category">เพิ่มหมวดหมู่</button>
         </form>
       </div>
     </div>

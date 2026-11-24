@@ -55,6 +55,12 @@
   .toast-stack { left: var(--space-md); right: var(--space-md); }
 }
 
+/* บนอุปกรณ์สัมผัสไม่มี hover → ต้องแสดงปุ่มกดตลอด */
+@media (hover: none), (pointer: coarse) {
+  .product-card .quick-add { transform: translateY(0); opacity: 1; }
+  .product-card .favorite-btn { opacity: 1; transform: translateY(0); }
+}
+
 @media print {
   .site-header, .site-footer, .no-print { display: none !important; }
   body { background: white; color: black; }

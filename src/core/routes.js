@@ -1,3 +1,8 @@
+/**
+ * ZenMarket Routes
+ * แผนที่ URL → ไฟล์ และชื่อหน้าสำหรับแสดงบนแท็บหัวเว็บ
+ */
+
 export const ROUTE_MAP = {
   '/': '/home.html',
   '/home.html': '/home.html',
@@ -25,6 +30,10 @@ export const ROUTE_MAP = {
   '/auth/register.html': '/auth/register.html',
   '/auth/reset-password': '/auth/reset-password.html',
   '/auth/reset-password.html': '/auth/reset-password.html',
+  '/auth/forgot-password': '/auth/forgot-password.html',
+  '/auth/forgot-password.html': '/auth/forgot-password.html',
+  '/auth/forgot-password': '/auth/forgot-password.html',
+  '/auth/forgot-password.html': '/auth/forgot-password.html',
   '/pages/about': '/pages/about.html',
   '/pages/about.html': '/pages/about.html',
   '/pages/contact': '/pages/contact.html',
@@ -56,14 +65,86 @@ export const ROUTE_MAP = {
   '/admin/operations.html': '/admin/operations.html',
 };
 
+/**
+ * ชื่อหน้า (i18n key) สำหรับแท็บหัวเว็บ "ZenMarket | <ชื่อหน้า>"
+ */
+export const PAGE_TITLE_KEYS = [
+  ['/admin/dashboard', 'admin.page_dashboard'],
+  ['/admin/orders', 'admin.page_orders'],
+  ['/admin/order', 'admin.page_orders'],
+  ['/admin/products', 'admin.page_products'],
+  ['/admin/categories', 'admin.page_categories'],
+  ['/admin/reviews', 'admin.page_reviews'],
+  ['/admin/settings', 'admin.page_settings'],
+  ['/admin/payments', 'admin.page_payments'],
+  ['/admin/operations', 'admin.page_operations'],
+  ['/admin/login', 'admin.page_login'],
+  ['/shop/categories', 'nav.categories'],
+  ['/shop/product', 'shop.eyebrow'],
+  ['/shop/cart', 'nav.cart'],
+  ['/shop/checkout', 'checkout.title'],
+  ['/account/orders', 'nav.orders'],
+  ['/account/order', 'nav.orders'],
+  ['/account/favorites', 'nav.favorites'],
+  ['/account/index', 'nav.account'],
+  ['/auth/login', 'nav.login'],
+  ['/auth/register', 'nav.register'],
+  ['/auth/reset-password', 'auth.reset_title'],
+  ['/auth/forgot-password', 'auth.forgot_title'],
+  ['/auth/login', 'nav.login'],
+  ['/auth/register', 'nav.register'],
+  ['/pages/about', 'page.about_title'],
+  ['/pages/contact', 'page.contact_title'],
+  ['/pages/help', 'page.help_title'],
+  ['/pages/privacy', 'page.privacy_title'],
+  ['/shop/index', 'nav.shop'],
+  ['/home', 'nav.home'],
+];
+
 export const MEMBERSHIP_ROUTES = [
   '/account/index.html',
   '/account/orders.html',
   '/account/order.html',
   '/account/favorites.html',
-  '/shop/cart.html',
-  '/shop/checkout.html',
 ];
+
+/**
+ * ชื่อหน้าแบบตรงกันเป๊ะ (ไม่มี .html)
+ */
+export const EXACT_TITLE_KEYS = {
+  '/': 'nav.home',
+  '/home': 'nav.home',
+  '/shop': 'nav.shop',
+  '/shop/index': 'nav.shop',
+  '/shop/categories': 'nav.categories',
+  '/shop/product': 'shop.eyebrow',
+  '/shop/cart': 'nav.cart',
+  '/shop/checkout': 'checkout.title',
+  '/account': 'nav.account',
+  '/account/index': 'nav.account',
+  '/account/orders': 'nav.orders',
+  '/account/order': 'nav.orders',
+  '/account/favorites': 'nav.favorites',
+  '/auth/login': 'nav.login',
+  '/auth/register': 'nav.register',
+  '/auth/reset-password': 'auth.reset_title',
+  '/auth/forgot-password': 'auth.forgot_title',
+  '/pages/about': 'page.about_title',
+  '/pages/contact': 'page.contact_title',
+  '/pages/help': 'page.help_title',
+  '/pages/privacy': 'page.privacy_title',
+  '/admin': 'admin.page_dashboard',
+  '/admin/dashboard': 'admin.page_dashboard',
+  '/admin/orders': 'admin.page_orders',
+  '/admin/order': 'admin.page_orders',
+  '/admin/products': 'admin.page_products',
+  '/admin/categories': 'admin.page_categories',
+  '/admin/reviews': 'admin.page_reviews',
+  '/admin/settings': 'admin.page_settings',
+  '/admin/payments': 'admin.page_payments',
+  '/admin/operations': 'admin.page_operations',
+  '/admin/login': 'admin.page_login',
+};
 
 export const ADMIN_ROUTES = [
   '/admin/dashboard.html',
@@ -96,4 +177,29 @@ export function needsMembership(path) {
 
 export function needsAdmin(path) {
   return ADMIN_ROUTES.includes(path);
+}
+
+/**
+ * หา i18n key ของชื่อหน้าจาก path ปัจจุบัน
+ */
+export function getPageTitleKey(pathname = window.location.pathname) {
+  const raw = pathname || '/';
+  const path = raw.replace(/\.html$/, '').replace(/\/$/, '') || '/';
+
+  // 1) ตรงกันทุกประการ (เช่น /shop, /account)
+  if (EXACT_TITLE_KEYS[path]) return EXACT_TITLE_KEYS[path];
+
+  // 2) ตรงกันแบบขึ้นต้น (เช่น /shop/product.html)
+  for (const [prefix, key] of PAGE_TITLE_KEYS) {
+    if (path === prefix || path.startsWith(prefix + '/')) return key;
+  }
+
+  return 'nav.home';
+}
+
+/**
+ * หน้าที่ต้องเข้าสู่ระบบก่อน (member-only)
+ */
+export function isMemberOnlyPage(pathname = window.location.pathname) {
+  return needsMembership(pathname.replace(/\/$/, '') || '/');
 }

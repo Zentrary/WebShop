@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>การดำเนินงาน — ZenMarket Admin</title>
+  <title>ZenMarket | การดำเนินงาน</title>
   <link rel="stylesheet" href="/src/styles/base.css">
   <link rel="stylesheet" href="/src/styles/spaces.css">
   <link rel="stylesheet" href="/src/styles/responsive.css">
@@ -16,33 +16,41 @@
     <div class="admin-content">
       <div class="admin-head">
         <div>
-          <span class="eyebrow">Operations</span>
-          <h1 style="font-size:var(--font-size-2xl)">การดำเนินงาน</h1>
+          <span class="eyebrow" data-i18n="admin.operations">Operations</span>
+          <h1 style="font-size:var(--font-size-2xl)" data-i18n="admin.operations">การดำเนินงาน</h1>
         </div>
       </div>
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-lg)" class="admin-two-col">
         <div class="panel reveal">
-          <h2>สำรองและกู้คืนข้อมูล</h2>
-          <p class="text-sm mb-md">ดาวน์โหลดข้อมูลร้านทั้งหมด (สินค้า คำสั่งซื้อ รีวิว) เข้ารหัสด้วยรหัสผ่านของคุณ</p>
+          <h2 data-i18n="admin.backup_title">สำรองและกู้คืนข้อมูล</h2>
+          <p class="text-sm mb-md" data-i18n="admin.backup_desc">ดาวน์โหลดข้อมูลร้านทั้งหมด (สินค้า คำสั่งซื้อ รีวิว) เข้ารหัสด้วยรหัสผ่านของคุณ</p>
           <div class="form-group">
-            <label class="form-label" for="backup-password">รหัสผ่านสำหรับเข้ารหัส</label>
+            <label class="form-label" for="backup-password" data-i18n="admin.backup_password">รหัสผ่านสำหรับเข้ารหัส</label>
             <input type="password" id="backup-password" class="form-input" placeholder="••••••••">
           </div>
           <div class="flex gap-sm" style="flex-wrap:wrap">
-            <button id="backup-download-btn" class="btn btn-primary">ดาวน์โหลดข้อมูล</button>
-            <button id="backup-upload-btn" class="btn btn-outline">กู้คืนจากไฟล์</button>
+            <button id="backup-download-btn" class="btn btn-primary" data-i18n="admin.backup_download">ดาวน์โหลดข้อมูล</button>
+            <button id="backup-upload-btn" class="btn btn-outline" data-i18n="admin.backup_restore">กู้คืนจากไฟล์</button>
           </div>
           <input type="file" id="backup-file-input" accept=".zenbackup,application/json" class="hidden">
           <div id="operations-error-log" class="mt-lg"></div>
         </div>
 
         <div class="panel reveal" data-delay="1">
-          <h2>สถานะระบบ</h2>
+          <h2 data-i18n="admin.status_title">สถานะระบบ</h2>
           <div id="operations-notifications"></div>
           <hr class="divider">
-          <h2 style="font-size:var(--font-size-base)">สถานะการคืนสต็อก</h2>
+          <h2 style="font-size:var(--font-size-base)" data-i18n="admin.restock_status">สถานะการคืนสต็อก</h2>
           <div id="operations-restock-status"></div>
+        </div>
+
+        <div class="panel reveal" data-delay="2">
+          <h2 data-i18n="admin.client_errors">ข้อผิดพลาดจากผู้ใช้</h2>
+          <div id="operations-client-errors"></div>
+          <hr class="divider">
+          <h2 style="font-size:var(--font-size-base)" data-i18n="admin.login_attempts">ความพยายามเข้าสู่ระบบ</h2>
+          <div id="operations-login-attempts"></div>
         </div>
       </div>
     </div>

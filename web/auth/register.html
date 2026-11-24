@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>สมัครสมาชิก — ZenMarket</title>
+  <title>ZenMarket | สมัครสมาชิก</title>
   <link rel="stylesheet" href="/src/styles/base.css">
   <link rel="stylesheet" href="/src/styles/spaces.css">
   <link rel="stylesheet" href="/src/styles/responsive.css">
@@ -16,40 +16,40 @@
     <div class="auth-card reveal">
       <div class="auth-head">
         <div class="mark">Z</div>
-        <h1 style="font-size:var(--font-size-2xl)">สมัครสมาชิก</h1>
-        <p class="text-sm mt-sm">สร้างบัญชีเพื่อสั่งซื้อและติดตามคำสั่งซื้อ</p>
+        <h1 style="font-size:var(--font-size-2xl)" data-i18n="auth.register_title">สมัครสมาชิก</h1>
+        <p class="text-sm mt-sm" data-i18n="auth.register_sub">สร้างบัญชีเพื่อสั่งซื้อและติดตามคำสั่งซื้อ</p>
       </div>
 
       <form id="register-form" novalidate>
         <div class="form-group">
-          <label class="form-label" for="register-username">ชื่อผู้ใช้</label>
-          <input type="text" id="register-username" class="form-input" required autocomplete="username" placeholder="ตัวอักษรอังกฤษ ตัวเลข _">
+          <label class="form-label" for="register-username" data-i18n="auth.username">ชื่อผู้ใช้</label>
+          <input type="text" id="register-username" class="form-input" required autocomplete="username" placeholder="ตัวอักษรอังกฤษ ตัวเลข _" data-i18n-placeholder="auth.username_ph">
         </div>
 
         <div class="form-group">
-          <label class="form-label" for="register-email">อีเมล</label>
-          <input type="email" id="register-email" class="form-input" required autocomplete="email" placeholder="you@example.com">
+          <label class="form-label" for="register-email" data-i18n="auth.email">อีเมล</label>
+          <input type="email" id="register-email" class="form-input" required autocomplete="email" placeholder="you@example.com" data-i18n-placeholder="auth.email_ph">
         </div>
 
         <div class="form-group">
-          <label class="form-label" for="register-phone">เบอร์โทรศัพท์</label>
-          <input type="tel" id="register-phone" class="form-input" required pattern="[0-9]{9,10}" placeholder="0812345678">
+          <label class="form-label" for="register-phone" data-i18n="auth.phone">เบอร์โทรศัพท์</label>
+          <input type="tel" id="register-phone" class="form-input" required pattern="0?[0-9]{9}" maxlength="10" inputmode="numeric" title="0 ตามด้วยตัวเลข 9 หลัก" placeholder="0812345678" data-i18n-placeholder="auth.phone_ph">
         </div>
 
         <div class="form-group">
-          <label class="form-label" for="register-password">รหัสผ่าน</label>
-          <input type="password" id="register-password" class="form-input" required minlength="6" autocomplete="new-password" placeholder="อย่างน้อย 6 ตัวอักษร">
+          <label class="form-label" for="register-password" data-i18n="auth.password">รหัสผ่าน</label>
+          <input type="password" id="register-password" class="form-input" required minlength="6" autocomplete="new-password" placeholder="อย่างน้อย 6 ตัวอักษร" data-i18n-placeholder="auth.password_ph">
         </div>
 
         <div class="form-group">
-          <label class="form-label" for="register-confirm-password">ยืนยันรหัสผ่าน</label>
-          <input type="password" id="register-confirm-password" class="form-input" required minlength="6" autocomplete="new-password" placeholder="••••••••">
+          <label class="form-label" for="register-confirm-password" data-i18n="auth.password2">ยืนยันรหัสผ่าน</label>
+          <input type="password" id="register-confirm-password" class="form-input" required minlength="6" autocomplete="new-password" placeholder="••••••••" data-i18n-placeholder="auth.password2_ph">
         </div>
 
-        <button type="submit" class="btn btn-primary btn-full btn-lg">สมัครสมาชิก</button>
+        <button type="submit" class="btn btn-primary btn-full btn-lg" data-i18n="auth.submit_register">สมัครสมาชิก</button>
       </form>
 
-      <p class="auth-switch">มีบัญชีอยู่แล้ว? <a href="/auth/login.html">เข้าสู่ระบบ</a></p>
+      <p class="auth-switch"><span data-i18n="auth.have_account">มีบัญชีอยู่แล้ว?</span> <a href="/auth/login.html" data-i18n="nav.login">เข้าสู่ระบบ</a></p>
     </div>
   </main>
 </body>

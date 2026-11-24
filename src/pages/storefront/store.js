@@ -6,38 +6,18 @@
 import { initApp, state, addToCart, updateCartBadge, requireSupabase } from '/src/app.js';
 import { translatePage } from '/src/core/i18n.js';
 import { notify } from '/src/core/ui.js';
-import { formatTHB, safeImage, escapeHTML } from '/src/core/lib.js';
+import { formatTHB, safeImage, escapeHTML, bindOnce } from '/src/core/lib.js';
 import { getStockStatusText, getStockStatusClass } from '/src/core/customer.js';
 import { observeReveals } from '/src/core/reveal.js';
+import { loadFavorites, toggleFavorite, isFavorite, canUseFavorites } from '/src/core/favorites.js';
+import { t, applyDocumentTitle, onLanguageChange } from '/src/core/i18n.js';
 
 let currentProduct = null;
 let currentPage = 1;
 const PRODUCTS_PER_PAGE = 12;
 const productCache = new Map();
 
-// ปุ่ม "หยิบใส่ตะกร้า" ในการ์ดสินค้า (ส่งผ่าน event กลางจาก app.js)
-window.addEventListener('zenmarket:add-to-cart', async (e) => {
-  const productId = e.detail?.productId;
-  if (!productId) return;
-
-  let product = productCache.get(productId);
-  if (!product) {
-    const { data } = await state.supabase.from('products').select('*').eq('id', productId).maybeSingle();
-    product = data;
-    if (product) productCache.set(productId, product);
-  }
-  if (!product) {
-    notify('ไม่พบสินค้า', 'error');
-    return;
-  }
-  if (!product.active || product.stock <= 0) {
-    notify('สินค้านี้หมดชั่วคราว', 'warning');
-    return;
-  }
-  addToCart(product, 1);
-  updateCartBadge();
-  notify(`เพิ่ม "${product.name}" ลงในตะกร้าแล้ว`, 'success');
-});
+let currentRenderer = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
   await initApp();
@@ -45,15 +25,25 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if (!requireSupabase()) return;
 
+  await loadFavorites();
+
   const path = window.location.pathname;
 
   if (path.includes('/shop/index.html') || path === '/shop') {
-    initStorePage();
+    currentRenderer = initStorePage;
   } else if (path.includes('/shop/categories.html')) {
-    initCategoriesPage();
+    currentRenderer = initCategoriesPage;
   } else if (path.includes('/shop/product.html')) {
-    initProductPage();
+    currentRenderer = initProductPage;
   }
+
+  if (currentRenderer) await currentRenderer();
+
+  // เปลี่ยนภาษาแล้ววาดหน้าใหม่ทั้งหมด
+  onLanguageChange(() => {
+    translatePage();
+    if (currentRenderer) currentRenderer();
+  });
 });
 
 function productImages(product) {
@@ -62,6 +52,8 @@ function productImages(product) {
   if (product.image_url) urls.unshift(product.image_url);
   return [...new Set(urls)];
 }
+
+const HEART_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1L12 21.2l7.7-7.8 1.1-1a5.5 5.5 0 0 0 0-7.8Z"/></svg>';
 
 function createProductCard(product) {
   const card = document.createElement('article');
@@ -72,10 +64,14 @@ function createProductCard(product) {
   const stockClass = getStockStatusClass(product.stock);
   productCache.set(product.id, product);
 
+  const favActive = isFavorite(product.id);
   card.innerHTML = `
     <div class="thumb">
       <img src="${firstImage}" alt="${escapeHTML(product.name)}" loading="lazy">
-      <button class="btn btn-primary btn-sm quick-add" data-add-to-cart="${product.id}">หยิบใส่ตะกร้า</button>
+      <button class="favorite-btn ${favActive ? 'active' : ''}" data-favorite="${product.id}"
+        title="${t(favActive ? 'product.favorite_remove' : 'product.favorite_add')}"
+        aria-label="${t(favActive ? 'product.favorite_remove' : 'product.favorite_add')}">${HEART_SVG}</button>
+      <button class="btn btn-primary btn-sm quick-add" data-add-to-cart="${product.id}">${t('product.add_to_cart')}</button>
     </div>
     <div class="body">
       <span class="cat">${escapeHTML(product.category || '')}</span>
@@ -89,10 +85,34 @@ function createProductCard(product) {
 
   card.addEventListener('click', (e) => {
     if (e.target.closest('[data-add-to-cart]')) return;
+    const favBtn = e.target.closest('[data-favorite]');
+    if (favBtn) {
+      e.preventDefault();
+      e.stopPropagation();
+      handleFavoriteClick(favBtn, product.id);
+      return;
+    }
     window.location.href = `/shop/product.html?id=${product.id}`;
   });
 
   return card;
+}
+
+/**
+ * กดหัวใจ: ต้องเข้าสู่ระบบก่อน (guest จะถูกพาไปหน้า login)
+ */
+async function handleFavoriteClick(button, productId) {
+  if (!canUseFavorites()) {
+    notify(t('toast.login_required'), 'warning');
+    sessionStorage.setItem('zenmarket_return_path', window.location.pathname + window.location.search);
+    setTimeout(() => { window.location.href = '/auth/login.html'; }, 900);
+    return;
+  }
+  const result = await toggleFavorite(productId);
+  if (result === null) return;
+  button.classList.toggle('active', result);
+  button.title = t(result ? 'product.favorite_remove' : 'product.favorite_add');
+  button.setAttribute('aria-label', button.title);
 }
 
 function observeRevealsLocal(container) {
@@ -121,7 +141,7 @@ async function initStorePage() {
       .from('categories')
       .select('name')
       .order('name');
-    categorySelect.innerHTML = '<option value="">ทุกหมวดหมู่</option>';
+    categorySelect.innerHTML = `<option value="">${t('shop.filter_all')}</option>`;
     categories?.forEach(cat => {
       const opt = document.createElement('option');
       opt.value = cat.name;
@@ -138,7 +158,7 @@ async function initStorePage() {
   await loadProducts(grid, countEl, searchInput.value, categorySelect.value || null);
 
   let debounce;
-  searchInput.addEventListener('input', () => {
+  bindOnce(searchInput, 'input', () => {
     clearTimeout(debounce);
     debounce = setTimeout(() => {
       currentPage = 1;
@@ -146,7 +166,7 @@ async function initStorePage() {
     }, 300);
   });
 
-  categorySelect.addEventListener('change', () => {
+  bindOnce(categorySelect, 'change', () => {
     currentPage = 1;
     loadProducts(grid, countEl, searchInput.value, categorySelect.value || null);
   });
@@ -173,13 +193,14 @@ async function loadProducts(grid, countEl, search = '', category = null) {
     return;
   }
 
-  countEl.textContent = `พบสินค้า ${count || 0} รายการ`;
+  countEl.textContent = t('shop.count', { n: count || 0 });
   grid.innerHTML = '';
 
   if (!products || products.length === 0) {
     grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-      <p>ไม่พบสินค้าที่ตรงกับเงื่อนไข</p>
+      <p>${t('shop.empty')}</p>
+      <p class="text-muted text-sm">${t('shop.empty_hint')}</p>
     </div>`;
     renderPagination(document.getElementById('pagination'), 0);
     return;
@@ -230,8 +251,8 @@ async function initCategoriesPage() {
       a.innerHTML = `
         <span class="idx">${String(idx + 1).padStart(2, '0')}</span>
         <h3>${escapeHTML(cat.name)}</h3>
-        <p>ดูสินค้าในหมวดหมู่นี้</p>
-        <span class="go">ดูสินค้า
+        <p>${t('shop.cat_view')}</p>
+        <span class="go">${t('shop.cat_view')}
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
         </span>
       `;
@@ -277,7 +298,7 @@ async function initProductPage() {
     }
 
     currentProduct = product;
-    document.title = `${product.name} - ZenMarket`;
+    applyDocumentTitle(`${product.name}`);
 
     document.getElementById('product-title').textContent = product.name;
     document.getElementById('product-price').textContent = formatTHB(product.price);
@@ -285,7 +306,7 @@ async function initProductPage() {
     document.getElementById('product-stock').innerHTML = `
       <span class="${getStockStatusClass(product.stock)} font-medium">${getStockStatusText(product.stock)}</span>
     `;
-    document.getElementById('product-description').textContent = product.description || 'ไม่มีรายละเอียดสินค้า';
+    document.getElementById('product-description').textContent = product.description || t('product.no_description');
 
     const images = productImages(product);
     const mainImg = document.getElementById('main-product-img');
@@ -308,21 +329,44 @@ async function initProductPage() {
     }
 
     const qtyInput = document.getElementById('qty-input');
-    document.getElementById('qty-decrease').addEventListener('click', () => {
+    bindOnce(document.getElementById('qty-decrease'), 'click', () => {
       qtyInput.value = Math.max(1, (parseInt(qtyInput.value) || 1) - 1);
     });
-    document.getElementById('qty-increase').addEventListener('click', () => {
+    bindOnce(document.getElementById('qty-increase'), 'click', () => {
       qtyInput.value = Math.min(product.stock, (parseInt(qtyInput.value) || 1) + 1);
     });
 
-    document.getElementById('add-to-cart-btn').addEventListener('click', () => {
+    bindOnce(document.getElementById('add-to-cart-btn'), 'click', () => {
       const qty = parseInt(qtyInput.value) || 1;
       addToCart(product, qty);
       updateCartBadge();
-      notify(`เพิ่ม "${product.name}" ลงในตะกร้าแล้ว`, 'success');
+      notify(t('product.added_to_cart', { name: product.name }), 'success');
     });
 
-    document.getElementById('buy-now-btn').addEventListener('click', () => {
+    // ปุ่มหัวใจ (รายการโปรด)
+    const favBtn = document.getElementById('product-favorite-btn');
+    const favLabel = document.getElementById('product-favorite-label');
+    const paintFavorite = (active) => {
+      if (!favBtn) return;
+      favBtn.classList.toggle('active', active);
+      favBtn.style.color = active ? '#dc2626' : '';
+      if (favLabel) favLabel.textContent = t(active ? 'product.favorite_remove' : 'product.favorite_add');
+    };
+    paintFavorite(isFavorite(product.id));
+    if (favBtn) {
+      favBtn.addEventListener('click', async () => {
+        if (!canUseFavorites()) {
+          notify(t('toast.login_required'), 'warning');
+          sessionStorage.setItem('zenmarket_return_path', window.location.pathname + window.location.search);
+          setTimeout(() => { window.location.href = '/auth/login.html'; }, 900);
+          return;
+        }
+        const result = await toggleFavorite(product.id);
+        if (result !== null) paintFavorite(result);
+      });
+    }
+
+    bindOnce(document.getElementById('buy-now-btn'), 'click', () => {
       const qty = parseInt(qtyInput.value) || 1;
       addToCart(product, qty);
       updateCartBadge();
@@ -339,7 +383,7 @@ async function initProductPage() {
     const reviewsList = document.getElementById('reviews-list');
     reviewsList.innerHTML = '';
     if (!reviews || reviews.length === 0) {
-      reviewsList.innerHTML = '<p class="text-muted text-sm">ยังไม่มีรีวิวสำหรับสินค้านี้</p>';
+      reviewsList.innerHTML = `<p class="text-muted text-sm">${t('product.no_reviews')}</p>`;
     } else {
       reviews.forEach(review => {
         const el = document.createElement('div');
@@ -347,7 +391,7 @@ async function initProductPage() {
         el.innerHTML = `
           <div class="stars">${'★'.repeat(review.rating)}${'☆'.repeat(5 - review.rating)}</div>
           <blockquote>“${escapeHTML(review.comment || '')}”</blockquote>
-          <div class="who">— ${escapeHTML(review.reviewer_name || 'ลูกค้า')}</div>
+          <div class="who">— ${escapeHTML(review.reviewer_name || t('common.customer'))}</div>
         `;
         reviewsList.appendChild(el);
       });

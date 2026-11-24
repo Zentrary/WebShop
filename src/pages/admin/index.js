@@ -5,14 +5,22 @@
 
 import { isOwner, setAudience } from '/src/core/audience.js';
 import { notify } from '/src/core/ui.js';
-import { formatTHB, escapeHTML, createPromptPayPayload, createPromptPayQRDataURL, getPrivateImageUrl } from '/src/core/lib.js';
+import { formatTHB, escapeHTML, createPromptPayPayload, createPromptPayQRDataURL, getPrivateImageUrl, bindOnce } from '/src/core/lib.js';
 import { validateSocialUrl, getOrderStatusBadge } from '/src/core/experience.js';
 import { initReveal } from '/src/core/reveal.js';
 import { initAdminLayout } from '/src/pages/admin/layout.js';
+import { initI18n, t, translatePage, onLanguageChange } from '/src/core/i18n.js';
+import { uploadStoreLogo, removeStoreLogo, uploadShippingImage, uploadProductImage, publicAssetUrl, BUCKETS, LOGO_ACCEPT } from '/src/core/storage.js';
+import { reportClientError } from '/src/core/errors.js';
+import { mergeStoreSettings } from '/src/core/settings.js';
+import { validateStoreSettings, validateProduct, validateCategory, validatePromptPay } from '/src/core/validation.js';
 
 let supabase;
 
 document.addEventListener('DOMContentLoaded', async () => {
+  initI18n();
+  translatePage();
+
   const { createClient } = await import('@supabase/supabase-js');
   supabase = createClient(
     import.meta.env.VITE_SUPABASE_URL,
@@ -56,17 +64,34 @@ document.addEventListener('DOMContentLoaded', async () => {
     ['/admin/orders.html', '/admin/orders.html'],
   ];
   const active = layoutMap.find(([key]) => path.includes(key))?.[1];
-  initAdminLayout(active);
+
+  // โหลดข้อมูลร้าน (ชื่อร้าน/โลโก้) เพื่อแสดงในแถบด้านข้าง
+  let storeSettings = {};
+  try {
+    const { data: s } = await supabase.from('store_settings').select('*').eq('singleton', true).maybeSingle();
+    storeSettings = mergeStoreSettings(s);
+  } catch {}
+
+  initAdminLayout(active, storeSettings);
   initReveal();
 
-  if (path.includes('/admin/dashboard.html')) initDashboard();
-  else if (path.includes('/admin/products.html')) initProducts();
-  else if (path.includes('/admin/categories.html')) initCategories();
-  else if (path.includes('/admin/reviews.html')) initReviews();
-  else if (path.includes('/admin/settings.html')) initSettings();
-  else if (path.includes('/admin/payments.html')) initPayments();
-  else if (path.includes('/admin/order.html')) initAdminOrderDetail();
-  else if (path.includes('/admin/orders.html')) initAdminOrders();
+  let renderer = null;
+  if (path.includes('/admin/dashboard.html')) renderer = initDashboard;
+  else if (path.includes('/admin/products.html')) renderer = initProducts;
+  else if (path.includes('/admin/categories.html')) renderer = initCategories;
+  else if (path.includes('/admin/reviews.html')) renderer = initReviews;
+  else if (path.includes('/admin/settings.html')) renderer = initSettings;
+  else if (path.includes('/admin/payments.html')) renderer = initPayments;
+  else if (path.includes('/admin/order.html')) renderer = initAdminOrderDetail;
+  else if (path.includes('/admin/orders.html')) renderer = initAdminOrders;
+
+  if (renderer) await renderer();
+
+  // เปลี่ยนภาษาแล้ววาดหน้าใหม่
+  onLanguageChange(() => {
+    translatePage();
+    if (renderer) renderer();
+  });
 });
 
 /* ================= แดชบอร์ด ================= */
@@ -104,7 +129,7 @@ async function initDashboard() {
       lowStockList.innerHTML = products.map(p => `
         <div class="flex justify-between items-center text-sm" style="padding:0.5rem 0;border-bottom:1px solid var(--color-border-soft)">
           <span>${escapeHTML(p.name)}</span>
-          <span class="${p.stock <= 3 ? 'text-warning' : 'text-muted'} font-bold">${p.stock} ชิ้น</span>
+          <span class="${p.stock <= 3 ? 'text-warning' : 'text-muted'} font-bold">${p.stock} ${t('common.pieces')}</span>
         </div>
       `).join('');
     }
@@ -118,11 +143,11 @@ async function initDashboard() {
           <div class="stars" style="font-size:12px">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</div>
           <div class="text-sm">${escapeHTML(r.comment || '')} <span class="text-muted">— ${escapeHTML(r.reviewer_name || '')}</span></div>
         </div>
-      `).join('') || '<p class="text-muted text-sm">ยังไม่มีรีวิว</p>';
+      `).join('') || `<p class="text-muted text-sm">${t('admin.no_reviews')}</p>`;
     }
   } catch (err) {
     console.error(err);
-    notify('โหลดข้อมูลแดชบอร์ดไม่สำเร็จ', 'error');
+    notify(t('admin.system_error'), 'error');
   }
 }
 
@@ -140,7 +165,7 @@ async function initProducts() {
       .from('products')
       .select('*')
       .order('created_at', { ascending: false });
-    if (error) { notify('โหลดสินค้าไม่สำเร็จ', 'error'); return; }
+    if (error) { notify(t('admin.system_error'), 'error'); return; }
 
     tbody.innerHTML = '';
     products?.forEach(p => {
@@ -151,17 +176,17 @@ async function initProducts() {
         `<td>${escapeHTML(p.category || '-')}</td>` +
         `<td class="num">${formatTHB(p.price)}</td>` +
         `<td style="text-align:center">${p.stock}</td>` +
-        `<td><span class="badge badge-${p.active ? 'success' : 'error'}">${p.active ? 'ใช้งาน' : 'ซ่อน'}</span></td>` +
-        `<td><button class="btn btn-outline btn-sm" data-edit="${p.id}">แก้ไข</button> ` +
-        `<button class="btn btn-outline btn-sm" data-toggle="${p.id}">${p.active ? 'ซ่อน' : 'แสดง'}</button> ` +
-        `<button class="btn btn-danger btn-sm" data-del="${p.id}">ลบ</button></td>`;
+        `<td><span class="badge badge-${p.active ? 'success' : 'error'}">${p.active ? t('admin.active') : t('admin.hidden')}</span></td>` +
+        `<td><button class="btn btn-outline btn-sm" data-edit="${p.id}">${t('common.edit')}</button> ` +
+        `<button class="btn btn-outline btn-sm" data-toggle="${p.id}">${p.active ? t('admin.hide') : t('admin.show')}</button> ` +
+        `<button class="btn btn-danger btn-sm" data-del="${p.id}">${t('common.delete')}</button></td>`;
       tbody.appendChild(tr);
     });
   }
 
   loadProducts();
 
-  tbody.addEventListener('click', async (e) => {
+  bindOnce(tbody, 'click', async (e) => {
     const edit = e.target.closest('[data-edit]');
     const toggle = e.target.closest('[data-toggle]');
     const del = e.target.closest('[data-del]');
@@ -170,7 +195,7 @@ async function initProducts() {
       const { data: p } = await supabase.from('products').select('*').eq('id', edit.getAttribute('data-edit')).single();
       if (!p) return;
       editingId = p.id;
-      formTitle.textContent = 'แก้ไขสินค้า';
+      formTitle.textContent = t('admin.edit_product');
       form.classList.remove('hidden');
       form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       document.getElementById('product-name').value = p.name || '';
@@ -192,18 +217,18 @@ async function initProducts() {
     }
 
     if (del) {
-      if (confirm('ยืนยันการลบสินค้า?')) {
+      if (confirm(t('admin.delete_confirm'))) {
         await supabase.from('products').delete().eq('id', del.getAttribute('data-del'));
-        notify('ลบสินค้าสำเร็จ', 'success');
+        notify(t('toast.deleted'), 'success');
         loadProducts();
       }
     }
   });
 
   if (addBtn) {
-    addBtn.addEventListener('click', () => {
+    bindOnce(addBtn, 'click', () => {
       editingId = null;
-      formTitle.textContent = 'เพิ่มสินค้าใหม่';
+      formTitle.textContent = t('admin.new_product');
       form.classList.remove('hidden');
       form.reset();
       document.getElementById('product-active').checked = true;
@@ -211,20 +236,54 @@ async function initProducts() {
     });
   }
 
+  // อัปโหลดรูปสินค้าเข้า bucket product-images
+  const imageUploadBtn = document.getElementById('product-image-upload-btn');
+  const imageFileInput = document.getElementById('product-image-file');
+  const imageStatus = document.getElementById('product-image-status');
+  const imageUrlInput = document.getElementById('product-image');
+
+  if (imageUploadBtn && imageFileInput) {
+    bindOnce(imageUploadBtn, 'click', () => imageFileInput.click());
+    bindOnce(imageFileInput, 'change', async () => {
+      const file = imageFileInput.files?.[0];
+      if (!file) return;
+      imageUploadBtn.disabled = true;
+      if (imageStatus) imageStatus.textContent = t('common.loading');
+      try {
+        const { url } = await uploadProductImage(supabase, file);
+        if (imageUrlInput) imageUrlInput.value = url;
+        if (imageStatus) imageStatus.textContent = t('admin.product_upload_done');
+      } catch (err) {
+        console.error(err);
+        if (imageStatus) imageStatus.textContent = t('toast.error_generic');
+        notify(err.message || t('toast.error_generic'), 'error');
+      } finally {
+        imageUploadBtn.disabled = false;
+        imageFileInput.value = '';
+      }
+    });
+  }
+
   if (form) {
-    form.addEventListener('submit', async (e) => {
+    bindOnce(form, 'submit', async (e) => {
       e.preventDefault();
-      const payload = {
-        name: document.getElementById('product-name').value.trim(),
-        sku: document.getElementById('product-sku').value.trim() || null,
-        category: document.getElementById('product-category').value.trim() || null,
-        price: parseFloat(document.getElementById('product-price').value) || 0,
-        stock: parseInt(document.getElementById('product-stock').value) || 0,
-        image_url: document.getElementById('product-image').value.trim() || null,
-        description: document.getElementById('product-description').value.trim() || null,
+      const checked = validateProduct({
+        name: document.getElementById('product-name').value,
+        sku: document.getElementById('product-sku').value,
+        category: document.getElementById('product-category').value,
+        price: document.getElementById('product-price').value,
+        stock: document.getElementById('product-stock').value,
+        image_url: document.getElementById('product-image').value,
+        description: document.getElementById('product-description').value,
         active: document.getElementById('product-active').checked,
+      });
+      if (!checked.ok) { notify(t(checked.errorKey), 'error'); return; }
+
+      const payload = {
+        ...checked.value,
+        category: checked.value.category?.trim() || null,
       };
-      if (!payload.name) { notify('กรุณากรอกชื่อสินค้า', 'error'); return; }
+      if (!payload.name) { notify(t('admin.product_name_required'), 'error'); return; }
 
       let error;
       if (editingId) {
@@ -233,9 +292,9 @@ async function initProducts() {
         payload.image_urls = payload.image_url ? [payload.image_url] : [];
         ({ error } = await supabase.from('products').insert(payload));
       }
-      if (error) { notify(error.message || 'เกิดข้อผิดพลาดในการบันทึก', 'error'); return; }
+      if (error) { notify(error.message || t('toast.error_generic'), 'error'); return; }
 
-      notify(editingId ? 'แก้ไขสินค้าสำเร็จ' : 'เพิ่มสินค้าสำเร็จ', 'success');
+      notify(editingId ? t('admin.product_saved') : t('admin.product_added'), 'success');
       editingId = null;
       form.classList.add('hidden');
       form.reset();
@@ -244,7 +303,7 @@ async function initProducts() {
 
     const cancelBtn = document.getElementById('admin-product-cancel');
     if (cancelBtn) {
-      cancelBtn.addEventListener('click', () => {
+      bindOnce(cancelBtn, 'click', () => {
         editingId = null;
         form.classList.add('hidden');
       });
@@ -252,7 +311,7 @@ async function initProducts() {
   }
 
   if (searchInput) {
-    searchInput.addEventListener('input', () => {
+    bindOnce(searchInput, 'input', () => {
       const term = searchInput.value.toLowerCase();
       tbody.querySelectorAll('tr').forEach(row => {
         row.style.display = row.textContent.toLowerCase().includes(term) ? '' : 'none';
@@ -275,29 +334,30 @@ async function initCategories() {
       item.style.cssText = 'padding:0.75rem 0;border-bottom:1px solid var(--color-border-soft)';
       item.innerHTML =
         `<span class="font-semibold" style="color:var(--color-text)">${escapeHTML(cat.name)}</span>` +
-        `<button class="btn btn-danger btn-sm" data-del="${escapeHTML(cat.name)}">ลบ</button>`;
+        `<button class="btn btn-danger btn-sm" data-del="${escapeHTML(cat.name)}">${t('common.delete')}</button>`;
       list.appendChild(item);
     });
   }
 
   loadCategories();
 
-  list.addEventListener('click', async (e) => {
+  bindOnce(list, 'click', async (e) => {
     const btn = e.target.closest('[data-del]');
-    if (btn && confirm('ยืนยันการลบหมวดหมู่?')) {
+    if (btn && confirm(t('admin.delete_confirm'))) {
       await supabase.from('categories').delete().eq('name', btn.getAttribute('data-del'));
       loadCategories();
     }
   });
 
   if (form) {
-    form.addEventListener('submit', async (e) => {
+    bindOnce(form, 'submit', async (e) => {
       e.preventDefault();
-      const name = document.getElementById('admin-category-name').value.trim();
-      if (!name) return;
+      const checked = validateCategory(document.getElementById('admin-category-name').value);
+      if (!checked.ok) { notify(t(checked.errorKey), 'error'); return; }
+      const name = checked.value;
       const { error } = await supabase.from('categories').insert({ name });
-      if (error) notify(error.message || 'เกิดข้อผิดพลาด', 'error');
-      else { notify('เพิ่มหมวดหมู่สำเร็จ', 'success'); form.reset(); loadCategories(); }
+      if (error) notify(error.message || t('toast.error_generic'), 'error');
+      else { notify(t('admin.category_added'), 'success'); form.reset(); loadCategories(); }
     });
   }
 }
@@ -310,24 +370,24 @@ async function initReviews() {
     .from('product_reviews')
     .select('*')
     .order('created_at', { ascending: false });
-  if (error) { notify('โหลดรีวิวไม่สำเร็จ', 'error'); return; }
+  if (error) { notify(t('admin.system_error'), 'error'); return; }
 
   tbody.innerHTML = '';
   reviews?.forEach(r => {
     const tr = document.createElement('tr');
     tr.innerHTML =
-      `<td>${escapeHTML(r.reviewer_name || 'ลูกค้า')}</td>` +
-      `<td>${escapeHTML(r.product_name || 'สินค้า')}</td>` +
+      `<td>${escapeHTML(r.reviewer_name || t('common.customer'))}</td>` +
+      `<td>${escapeHTML(r.product_name || t('admin.product'))}</td>` +
       `<td style="text-align:center"><span class="stars" style="font-size:12px">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</span></td>` +
       `<td>${escapeHTML(r.comment || '-')}</td>` +
       `<td>${r.created_at ? new Date(r.created_at).toLocaleDateString('th-TH') : '-'}</td>` +
-      `<td><button class="btn btn-danger btn-sm" data-del="${r.id}">ลบ</button></td>`;
+      `<td><button class="btn btn-danger btn-sm" data-del="${r.id}">${t('common.delete')}</button></td>`;
     tbody.appendChild(tr);
   });
 
-  tbody.addEventListener('click', async (e) => {
+  bindOnce(tbody, 'click', async (e) => {
     const btn = e.target.closest('[data-del]');
-    if (btn && confirm('ยืนยันการลบรีวิว?')) {
+    if (btn && confirm(t('admin.delete_confirm'))) {
       await supabase.from('product_reviews').delete().eq('id', btn.getAttribute('data-del'));
       initReviews();
     }
@@ -337,6 +397,23 @@ async function initReviews() {
 /* ================= ตั้งค่า ================= */
 async function initSettings() {
   const form = document.getElementById('admin-settings-form');
+  const logoInput = document.getElementById('setting-store-logo');
+  const logoFileInput = document.getElementById('setting-logo-file');
+  const logoUploadBtn = document.getElementById('setting-logo-upload-btn');
+  const logoRemoveBtn = document.getElementById('setting-logo-remove-btn');
+  const logoPreview = document.getElementById('setting-logo-preview');
+
+  let currentLogoUrl = '';
+
+  const paintLogoPreview = (url) => {
+    if (!logoPreview) return;
+    if (url && !url.includes('placeholder')) {
+      logoPreview.innerHTML = `<img src="${url}" alt="logo" style="width:100%;height:100%;object-fit:contain">`;
+    } else {
+      logoPreview.innerHTML = `<span class="text-muted text-xs">${t('admin.logo_preview')}</span>`;
+    }
+  };
+
   try {
     const { data: s } = await supabase.from('store_settings').select('*').eq('singleton', true).single();
     if (s) {
@@ -353,11 +430,60 @@ async function initSettings() {
       set('setting-free-shipping-threshold', s.free_shipping_threshold);
       set('setting-about', s.about_text);
       set('setting-shipping-note', s.shipping_note);
+      currentLogoUrl = s.logo_url || '';
     }
   } catch (err) { console.error(err); }
 
+  paintLogoPreview(currentLogoUrl);
+
+  // อัปโหลดโลโก้
+  if (logoUploadBtn && logoFileInput) {
+    bindOnce(logoUploadBtn, 'click', () => logoFileInput.click());
+    bindOnce(logoFileInput, 'change', async () => {
+      const file = logoFileInput.files?.[0];
+      if (!file) return;
+      try {
+        const { url } = await uploadStoreLogo(supabase, file);
+        if (logoInput) logoInput.value = url;
+        currentLogoUrl = url;
+        paintLogoPreview(url);
+        // บันทึกทันทีให้ผู้ใช้เห็นผล
+        const { error } = await supabase.from('store_settings').update({ logo_url: url }).eq('singleton', true);
+        if (error) throw error;
+        notify(t('admin.logo_updated'), 'success');
+      } catch (err) {
+        console.error(err);
+        const code = err?.message || 'upload-failed';
+        notify(code === 'invalid-type' ? t('admin.logo_invalid_type')
+          : code === 'too-large' ? t('admin.logo_too_large')
+          : t('toast.error_generic'), 'error');
+      } finally {
+        logoFileInput.value = '';
+      }
+    });
+  }
+
+  // ลบโลโก้
+  if (logoRemoveBtn) {
+    bindOnce(logoRemoveBtn, 'click', async () => {
+      if (!currentLogoUrl) return;
+      try {
+        // อัปเดตฐานข้อมูลก่อน → ถ้าล้มเหลวไฟล์โลโก้เดิมยังไม่ถูกลบ
+        const { error } = await supabase.from('store_settings').update({ logo_url: '' }).eq('singleton', true);
+        if (error) throw error;
+        await removeStoreLogo(supabase, currentLogoUrl);
+        currentLogoUrl = '';
+        if (logoInput) logoInput.value = '';
+        paintLogoPreview('');
+        notify(t('toast.deleted'), 'success');
+      } catch (err) {
+        notify(err.message || t('toast.error_generic'), 'error');
+      }
+    });
+  }
+
   if (form) {
-    form.addEventListener('submit', async (e) => {
+    bindOnce(form, 'submit', async (e) => {
       e.preventDefault();
       const get = (id) => document.getElementById(id)?.value || '';
       const payload = {
@@ -366,17 +492,25 @@ async function initSettings() {
         tagline: get('setting-store-description'),
         contact_email: get('setting-contact-email'),
         contact_phone: get('setting-contact-phone'),
-        line_url: validateSocialUrl(get('setting-contact-line')),
-        facebook_url: validateSocialUrl(get('setting-contact-facebook')),
-        instagram_url: validateSocialUrl(get('setting-contact-instagram')),
-        shipping_fee: parseFloat(get('setting-shipping-fee')) || 50,
-        free_shipping_threshold: parseFloat(get('setting-free-shipping-threshold')) || 300,
+        line_url: validateSocialUrl(get('setting-contact-line'), 'line'),
+        facebook_url: validateSocialUrl(get('setting-contact-facebook'), 'facebook'),
+        instagram_url: validateSocialUrl(get('setting-contact-instagram'), 'instagram'),
+        // ส่งค่าดิบให้ validator ตรวจ (ค่า 0 ที่ถูกต้องต้องไม่ถูกแทนด้วยค่าเริ่มต้น)
+        shipping_fee: get('setting-shipping-fee').trim(),
+        free_shipping_threshold: get('setting-free-shipping-threshold').trim(),
         about_text: get('setting-about'),
         shipping_note: get('setting-shipping-note'),
       };
-      const { error } = await supabase.from('store_settings').update(payload).eq('singleton', true);
-      if (error) notify(error.message || 'เกิดข้อผิดพลาดในการบันทึก', 'error');
-      else notify('บันทึกการตั้งค่าสำเร็จ', 'success');
+
+      const checked = validateStoreSettings(payload);
+      if (!checked.ok) {
+        notify(t(checked.errorKey), 'error');
+        return;
+      }
+
+      const { error } = await supabase.from('store_settings').update(checked.value).eq('singleton', true);
+      if (error) notify(error.message || t('toast.error_generic'), 'error');
+      else notify(t('admin.settings_saved'), 'success');
     });
   }
 }
@@ -395,31 +529,37 @@ async function initPayments() {
   } catch (err) { console.error(err); }
 
   if (form) {
-    form.addEventListener('submit', async (e) => {
+    bindOnce(form, 'submit', async (e) => {
       e.preventDefault();
+      const promptpayId = document.getElementById('payment-promptpay-id').value.trim();
+      const checked = validatePromptPay(promptpayId);
+      if (!checked.ok) {
+        notify(t(checked.errorKey), 'error');
+        return;
+      }
       const { error } = await supabase.from('store_settings').update({
-        promptpay_id: document.getElementById('payment-promptpay-id').value.trim(),
+        promptpay_id: checked.value,
         recipient_name: document.getElementById('payment-promptpay-name').value.trim(),
       }).eq('singleton', true);
-      if (error) notify(error.message || 'เกิดข้อผิดพลาด', 'error');
-      else notify('บันทึกการตั้งค่าการชำระเงินสำเร็จ', 'success');
+      if (error) notify(error.message || t('toast.error_generic'), 'error');
+      else notify(t('admin.payments_saved'), 'success');
     });
   }
 
   if (generateBtn) {
-    generateBtn.addEventListener('click', async () => {
+    bindOnce(generateBtn, 'click', async () => {
       const amount = parseFloat(document.getElementById('test-qr-amount').value) || 0;
       const reference = document.getElementById('test-qr-reference').value || 'TEST';
       try {
         const { data: s } = await supabase.from('store_settings').select('promptpay_id').eq('singleton', true).single();
-        if (!s?.promptpay_id) { notify('กรุณาตั้งค่า PromptPay ID ก่อน', 'error'); return; }
+        if (!s?.promptpay_id) { notify(t('admin.payments_missing_id'), 'error'); return; }
         const payload = createPromptPayPayload(s.promptpay_id, amount, reference);
         const qrDataURL = await createPromptPayQRDataURL(payload);
         document.getElementById('test-qr-image').innerHTML = `<img src="${qrDataURL}" alt="QR PromptPay" style="width:220px;height:220px">`;
         document.getElementById('test-qr-payload').textContent = payload;
         document.getElementById('test-qr-result').classList.remove('hidden');
       } catch (err) {
-        notify(err.message || 'เกิดข้อผิดพลาดในการสร้าง QR Code', 'error');
+        notify(err.message || t('toast.error_generic'), 'error');
       }
     });
   }
@@ -432,14 +572,14 @@ async function initAdminOrderDetail() {
 
   try {
     const { data: order, error } = await supabase.from('orders').select('*').eq('id', orderId).single();
-    if (error || !order) { notify('ไม่พบคำสั่งซื้อ', 'error'); return; }
+    if (error || !order) { notify(t('order.not_found'), 'error'); return; }
 
     document.getElementById('admin-order-detail').classList.remove('hidden');
     document.getElementById('admin-order-number').textContent = '#' + order.id.slice(0, 8);
     document.getElementById('admin-order-customer').textContent = order.recipient || '-';
     document.getElementById('admin-order-date').textContent = order.created_at ? new Date(order.created_at).toLocaleDateString('th-TH') : '-';
     document.getElementById('admin-order-status').value = order.status || 'pending';
-    document.getElementById('admin-order-payment').textContent = 'พร้อมเพย์ (PromptPay)';
+    document.getElementById('admin-order-payment').textContent = t('checkout.promptpay');
     document.getElementById('admin-order-address').textContent = order.address || '-';
     document.getElementById('admin-order-subtotal').textContent = formatTHB(order.subtotal);
     document.getElementById('admin-order-shipping').textContent = formatTHB(order.shipping);
@@ -460,10 +600,54 @@ async function initAdminOrderDetail() {
       const slipUrl = await getPrivateImageUrl(supabase, 'payment-slips', order.slip_path);
       document.getElementById('admin-order-receipt').innerHTML = slipUrl
         ? `<img src="${slipUrl}" alt="สลิป" style="max-width:100%;border-radius:8px">`
-        : '<p class="text-muted text-sm">ไม่สามารถเปิดสลิปได้</p>';
+        : `<p class="text-muted text-sm">${t('order.slip_unavailable')}</p>`;
     }
 
-    document.getElementById('admin-update-order-btn').addEventListener('click', async () => {
+    // ---- อัปเดตการจัดส่ง (ส่งข้อความ + รูปให้ลูกค้า) ----
+    const shippingForm = document.getElementById('admin-shipping-update-form');
+    if (shippingForm) {
+      bindOnce(shippingForm, 'submit', async (e) => {
+        e.preventDefault();
+        const messageInput = document.getElementById('admin-shipping-message');
+        const filesInput = document.getElementById('admin-shipping-images');
+        const message = (messageInput?.value || '').trim();
+        const files = Array.from(filesInput?.files || []);
+
+        if (!message && files.length === 0) {
+          notify(t('admin.shipping_empty'), 'warning');
+          return;
+        }
+        if (files.length > 4) {
+          notify(t('admin.shipping_too_many'), 'warning');
+          return;
+        }
+
+        try {
+          const paths = [];
+          for (const file of files) {
+            const { path } = await uploadShippingImage(supabase, order.id, file);
+            paths.push(path);
+          }
+          const { error } = await supabase.rpc('add_shipping_update', {
+            p_order_id: order.id,
+            p_message: message || null,
+            p_images: paths,
+          });
+          if (error) throw error;
+          notify(t('admin.shipping_sent'), 'success');
+          shippingForm.reset();
+          await loadShippingHistory(order.id);
+        } catch (err) {
+          console.error(err);
+          reportClientError('admin', err?.message || 'DATABASE');
+          notify(err.message || t('toast.error_generic'), 'error');
+        }
+      });
+    }
+
+    await loadShippingHistory(order.id);
+
+    bindOnce(document.getElementById('admin-update-order-btn'), 'click', async () => {
       const newStatus = document.getElementById('admin-order-status').value;
       const trackingNumber = document.getElementById('admin-tracking-number').value.trim();
       try {
@@ -473,14 +657,40 @@ async function initAdminOrderDetail() {
           tracking_number: trackingNumber || null,
         });
         if (error) throw error;
-        notify('อัปเดตคำสั่งซื้อสำเร็จ', 'success');
+        notify(t('admin.order_updated'), 'success');
         setTimeout(() => location.reload(), 700);
       } catch (err) {
-        notify(err.message || 'เกิดข้อผิดพลาดในการอัปเดต', 'error');
+        notify(err.message || t('toast.error_generic'), 'error');
       }
     });
   } catch (err) {
     console.error(err);
+  }
+}
+
+/* ================= ประวัติการจัดส่ง (แอดมิน) ================= */
+async function loadShippingHistory(orderId) {
+  const box = document.getElementById('admin-shipping-history');
+  if (!box) return;
+  try {
+    const { data, error } = await supabase
+      .from('order_shipping_updates')
+      .select('*')
+      .eq('order_id', orderId)
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    if (!data || data.length === 0) {
+      box.innerHTML = `<p class="text-muted text-sm">${t('order.no_updates')}</p>`;
+      return;
+    }
+    box.innerHTML = data.map(u => `
+      <div style="padding:0.75rem 0;border-bottom:1px solid var(--color-border-soft)">
+        <div class="text-sm">${escapeHTML(u.message || '')}</div>
+        <div class="text-muted text-xs">${u.created_at ? new Date(u.created_at).toLocaleString('th-TH') : ''}</div>
+      </div>
+    `).join('');
+  } catch (err) {
+    console.warn('[ZenMarket] load shipping history failed', err);
   }
 }
 
@@ -498,7 +708,7 @@ async function initAdminOrders() {
       .select('*')
       .order('created_at', { ascending: false })
       .limit(200);
-    if (error) { notify('โหลดคำสั่งซื้อไม่สำเร็จ', 'error'); return; }
+    if (error) { notify(t('admin.system_error'), 'error'); return; }
 
     const filtered = currentFilter === 'all'
       ? (orders || [])
@@ -506,7 +716,7 @@ async function initAdminOrders() {
 
     tbody.innerHTML = '';
     if (filtered.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem" class="text-muted">ไม่มีคำสั่งซื้อในสถานะนี้</td></tr>';
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:2rem" class="text-muted">${t('admin.no_orders_in_status')}</td></tr>`;
       return;
     }
 
@@ -519,7 +729,7 @@ async function initAdminOrders() {
         `<td>${order.created_at ? new Date(order.created_at).toLocaleDateString('th-TH') : '-'}</td>` +
         `<td class="num">${formatTHB(order.total)}</td>` +
         `<td><span class="badge badge-${badge.variant}">${badge.label}</span></td>` +
-        `<td><a href="/admin/order.html?id=${order.id}" class="btn btn-outline btn-sm">จัดการ</a></td>`;
+        `<td><a href="/admin/order.html?id=${order.id}" class="btn btn-outline btn-sm">${t('common.view')}</a></td>`;
       tbody.appendChild(tr);
     });
   }
@@ -527,7 +737,7 @@ async function initAdminOrders() {
   loadOrders();
 
   filterButtons.forEach(btn => {
-    btn.addEventListener('click', () => {
+    bindOnce(btn, 'click', () => {
       filterButtons.forEach(b => b.classList.remove('btn-primary'));
       filterButtons.forEach(b => b.classList.add('btn-outline'));
       btn.classList.remove('btn-outline');

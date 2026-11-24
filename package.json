@@ -5,9 +5,13 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "node tests/run-all.mjs",
+    "test:dom": "node tests/run-all.mjs",
+    "lint:undef": "node scripts/scan-no-undef.mjs"
   },
   "devDependencies": {
+    "jsdom": "^31.0.1",
     "vite": "^6.1.0"
   },
   "dependencies": {

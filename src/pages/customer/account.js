@@ -1,14 +1,18 @@
 /**
- * ZenMarket Customer Account — เข้าสู่ระบบ / สมัคร / ตั้งรหัสผ่าน / โปรไฟล์ / รายการโปรด
+ * ZenMarket Customer Account
+ * เข้าสู่ระบบ / สมัคร / ลืมรหัสผ่าน / ตั้งรหัสผ่าน / โปรไฟล์ / ที่อยู่ / รายการโปรด
  * Login: ใช้ RPC login_email แปลง username → email แล้ว signInWithPassword
  */
 
 import { initApp, state, requireSupabase } from '/src/app.js';
-import { setAudience, isMember } from '/src/core/audience.js';
-import { translatePage } from '/src/core/i18n.js';
+import { setAudience, isSignedIn } from '/src/core/audience.js';
+import { translatePage, t, onLanguageChange } from '/src/core/i18n.js';
 import { notify } from '/src/core/ui.js';
 import { initCaptcha, hasCaptcha, renderTurnstile } from '/src/core/captcha.js';
-import { formatTHB, escapeHTML } from '/src/core/lib.js';
+import { formatTHB, escapeHTML, safeImage } from '/src/core/lib.js';
+import { validateAddress, validateProfile, normalizeThaiPhone, USERNAME_PATTERN } from '/src/core/validation.js';
+import { getStockStatusText, getStockStatusClass } from '/src/core/customer.js';
+import { loadFavoriteProducts, toggleFavorite, isFavorite, canUseFavorites } from '/src/core/favorites.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   await initApp();
@@ -23,6 +27,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     initLoginPage();
   } else if (path.includes('/auth/register.html')) {
     initRegisterPage();
+  } else if (path.includes('/auth/forgot-password.html')) {
+    initForgotPasswordPage();
   } else if (path.includes('/auth/reset-password.html')) {
     initResetPasswordPage();
   } else if (path.includes('/account/index.html')) {
@@ -36,9 +42,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 function initLoginPage() {
   const form = document.getElementById('login-form');
   const turnstileContainer = document.getElementById('turnstile-container');
+  if (!form) return;
 
   if (hasCaptcha()) {
-    turnstileContainer.style.display = 'block';
+    if (turnstileContainer) turnstileContainer.style.display = 'block';
     renderTurnstile('turnstile-container', (token) => {
       form.dataset.turnstileToken = token;
     });
@@ -50,14 +57,25 @@ function initLoginPage() {
     const password = document.getElementById('login-password').value;
     const btn = form.querySelector('button[type="submit"]');
     btn.disabled = true;
-    btn.textContent = 'กำลังเข้าสู่ระบบ...';
+    btn.textContent = t('common.loading');
 
     try {
+      // จำกัดความพยายามเข้าสู่ระบบ (สูงสุด 15 ครั้ง / 15 นาที ต่อ 1 bucket)
+      const bucketKey = `login:${identifier.toLowerCase()}`;
+      const { data: allowed, error: allowErr } = await state.supabase.rpc('login_allow', { bucket_key: bucketKey });
+      if (allowErr) console.warn('[ZenMarket] login_allow failed', allowErr);
+      if (allowed === false) {
+        notify(t('toast.too_many_login'), 'error');
+        btn.disabled = false;
+        btn.textContent = t('auth.submit_login');
+        return;
+      }
+
       // แปลง username → email ผ่าน RPC
       let email = identifier;
       if (!identifier.includes('@')) {
         const { data: resolved, error: rpcErr } = await state.supabase.rpc('login_email', { login_name: identifier.toLowerCase() });
-        if (rpcErr || !resolved) throw new Error('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
+        if (rpcErr || !resolved) throw new Error(t('auth.invalid_credentials'));
         email = resolved;
       }
 
@@ -77,21 +95,23 @@ function initLoginPage() {
         username: profile?.username || '',
         first_name: profile?.first_name || '',
         last_name: profile?.last_name || '',
+        nickname: profile?.nickname || '',
         phone: profile?.phone || '',
+        age: profile?.age ?? null,
       };
       setAudience('member', user);
       state.user = user;
       state.audience = 'member';
 
-      notify('เข้าสู่ระบบสำเร็จ', 'success');
+      notify(t('toast.login_success'), 'success');
       const returnPath = sessionStorage.getItem('zenmarket_return_path') || '/account/index.html';
       sessionStorage.removeItem('zenmarket_return_path');
       window.location.href = returnPath;
     } catch (err) {
       console.error(err);
-      notify(err.message || 'เกิดข้อผิดพลาดในการเข้าสู่ระบบ', 'error');
+      notify(err.message || t('toast.error_generic'), 'error');
       btn.disabled = false;
-      btn.textContent = 'เข้าสู่ระบบ';
+      btn.textContent = t('auth.submit_login');
     }
   });
 }
@@ -99,27 +119,38 @@ function initLoginPage() {
 /* ================= สมัครสมาชิก ================= */
 function initRegisterPage() {
   const form = document.getElementById('register-form');
+  if (!form) return;
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const username = document.getElementById('register-username').value.trim();
+    const username = document.getElementById('register-username').value.trim().toLowerCase();
     const email = document.getElementById('register-email').value.trim();
     const phone = document.getElementById('register-phone').value.trim();
     const password = document.getElementById('register-password').value;
     const confirmPassword = document.getElementById('register-confirm-password').value;
 
+    if (!USERNAME_PATTERN.test(username)) {
+      notify(t('validation.username_invalid'), 'error');
+      return;
+    }
+    const normalizedPhone = normalizeThaiPhone(phone);
+    if (!normalizedPhone) {
+      notify(t('validation.phone_invalid'), 'error');
+      return;
+    }
+
     if (password !== confirmPassword) {
-      notify('รหัสผ่านไม่ตรงกัน', 'error');
+      notify(t('auth.password_mismatch'), 'error');
       return;
     }
     if (password.length < 6) {
-      notify('รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร', 'error');
+      notify(t('auth.password_too_short'), 'error');
       return;
     }
 
     const btn = form.querySelector('button[type="submit"]');
     btn.disabled = true;
-    btn.textContent = 'กำลังสมัคร...';
+    btn.textContent = t('common.loading');
 
     try {
       const { data, error } = await state.supabase.auth.signUp({
@@ -127,8 +158,8 @@ function initRegisterPage() {
         password,
         options: {
           data: {
-            username: username.toLowerCase(),
-            phone: phone || null,
+            username,
+            phone: normalizedPhone,
           },
         },
       });
@@ -141,19 +172,50 @@ function initRegisterPage() {
           p_first_name: null,
           p_last_name: null,
           p_nickname: null,
-          p_phone: phone || null,
+          p_phone: normalizedPhone,
           p_age: null,
-          p_username: username.toLowerCase(),
+          p_username: username,
         });
       }
 
-      notify('สมัครสมาชิกสำเร็จ! กรุณาเข้าสู่ระบบ', 'success');
-      window.location.href = '/auth/login.html';
+      notify(t('toast.register_success'), 'success');
+      setTimeout(() => { window.location.href = '/auth/login.html'; }, 700);
     } catch (err) {
       console.error(err);
-      notify(err.message || 'เกิดข้อผิดพลาดในการสมัครสมาชิก', 'error');
+      notify(err.message || t('toast.error_generic'), 'error');
       btn.disabled = false;
-      btn.textContent = 'สมัครสมาชิก';
+      btn.textContent = t('auth.submit_register');
+    }
+  });
+}
+
+/* ================= ลืมรหัสผ่าน ================= */
+function initForgotPasswordPage() {
+  const form = document.getElementById('forgot-password-form');
+  if (!form) return;
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('forgot-email').value.trim();
+    if (!email) return;
+
+    const btn = form.querySelector('button[type="submit"]');
+    btn.disabled = true;
+    btn.textContent = t('common.loading');
+
+    try {
+      const { error } = await state.supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/reset-password.html`,
+      });
+      if (error) throw error;
+      notify(t('auth.forgot_sent'), 'success');
+      form.reset();
+    } catch (err) {
+      console.error(err);
+      notify(err.message || t('toast.error_generic'), 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = t('auth.forgot_submit');
     }
   });
 }
@@ -161,6 +223,7 @@ function initRegisterPage() {
 /* ================= ตั้งรหัสผ่านใหม่ ================= */
 function initResetPasswordPage() {
   const form = document.getElementById('reset-password-form');
+  if (!form) return;
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -168,30 +231,31 @@ function initResetPasswordPage() {
     const confirmPassword = document.getElementById('reset-confirm-password').value;
 
     if (password !== confirmPassword) {
-      notify('รหัสผ่านไม่ตรงกัน', 'error');
+      notify(t('auth.password_mismatch'), 'error');
       return;
     }
 
     try {
       const { error } = await state.supabase.auth.updateUser({ password });
       if (error) throw error;
-      notify('ตั้งรหัสผ่านใหม่สำเร็จ', 'success');
-      window.location.href = '/auth/login.html';
+      notify(t('auth.reset_success'), 'success');
+      setTimeout(() => { window.location.href = '/auth/login.html'; }, 700);
     } catch (err) {
-      notify(err.message || 'เกิดข้อผิดพลาด', 'error');
+      notify(err.message || t('toast.error_generic'), 'error');
     }
   });
 }
 
 /* ================= บัญชีของฉัน ================= */
 async function initAccountPage() {
-  if (!isMember() || !state.user) {
+  if (!isSignedIn() || !state.user) {
+    sessionStorage.setItem('zenmarket_return_path', window.location.pathname + window.location.search);
     window.location.href = '/auth/login.html';
     return;
   }
 
   const user = state.user;
-  const displayName = [user.first_name, user.last_name].filter(Boolean).join(' ') || user.username || user.email || 'ผู้ใช้งาน';
+  const displayName = [user.first_name, user.last_name].filter(Boolean).join(' ') || user.username || user.email || t('common.user');
   document.getElementById('account-name').textContent = displayName;
   document.getElementById('account-email').textContent = user.email || '';
   document.getElementById('account-avatar').textContent = (displayName[0] || 'ผ').toUpperCase();
@@ -204,18 +268,31 @@ async function initAccountPage() {
   document.getElementById('profile-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     try {
+      const checked = validateProfile({
+        first_name: document.getElementById('profile-firstname').value,
+        last_name: document.getElementById('profile-lastname').value,
+        nickname: user.nickname || '',
+        phone: document.getElementById('profile-phone').value,
+        age: user.age ?? null,
+        username: document.getElementById('profile-username').value || user.username,
+      });
+      if (!checked.ok) {
+        notify(t(checked.errorKey), 'error');
+        return;
+      }
+
       const { error } = await state.supabase.rpc('save_profile', {
-        p_first_name: document.getElementById('profile-firstname').value.trim(),
-        p_last_name: document.getElementById('profile-lastname').value.trim(),
-        p_nickname: null,
-        p_phone: document.getElementById('profile-phone').value.trim(),
-        p_age: null,
-        p_username: document.getElementById('profile-username').value.trim().toLowerCase() || user.username,
+        p_first_name: checked.value.first_name,
+        p_last_name: checked.value.last_name,
+        p_nickname: checked.value.nickname,
+        p_phone: checked.value.phone,
+        p_age: checked.value.age,
+        p_username: checked.value.username,
       });
       if (error) throw error;
-      notify('อัปเดตโปรไฟล์สำเร็จ', 'success');
+      notify(t('account.profile_saved'), 'success');
     } catch (err) {
-      notify(err.message || 'เกิดข้อผิดพลาดในการอัปเดต', 'error');
+      notify(err.message || t('toast.error_generic'), 'error');
     }
   });
 
@@ -230,14 +307,27 @@ async function initAccountPage() {
     });
   });
 
-  // โหลดคำสั่งซื้อล่าสุดในแท็บ
+  await loadRecentOrders(user);
+  initAddressForm(user);
+  await loadAddresses(user);
+
+  onLanguageChange(() => {
+    loadRecentOrders(user);
+    loadAddresses(user);
+  });
+}
+
+/* ---------- คำสั่งซื้อล่าสุด ---------- */
+async function loadRecentOrders(user) {
+  const list = document.getElementById('customer-orders-list');
+  if (!list) return;
   try {
     const { data: orders } = await state.supabase
       .from('orders')
       .select('*')
+      .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(5);
-    const list = document.getElementById('customer-orders-list');
     if (orders && orders.length) {
       list.innerHTML = orders.map(o => `
         <a href="/account/order.html?id=${o.id}" class="flex justify-between items-center" style="padding:0.75rem 0;border-bottom:1px solid var(--color-border-soft)">
@@ -246,37 +336,222 @@ async function initAccountPage() {
         </a>
       `).join('');
     } else {
-      list.innerHTML = '<p class="text-muted text-sm">ยังไม่มีคำสั่งซื้อ</p>';
+      list.innerHTML = `<p class="text-muted text-sm">${t('account.no_orders')}</p>`;
     }
-  } catch {}
+  } catch (err) {
+    console.warn('[ZenMarket] load recent orders failed', err);
+  }
+}
 
-  // ที่อยู่
+/* ---------- สมุดที่อยู่ ---------- */
+async function loadAddresses(user) {
+  const list = document.getElementById('addresses-list');
+  if (!list) return;
+
   try {
-    const { data: addresses } = await state.supabase
+    const { data: addresses, error } = await state.supabase
       .from('customer_addresses')
       .select('*')
-      .eq('user_id', user.id);
-    const list = document.getElementById('addresses-list');
-    if (addresses && addresses.length) {
-      list.innerHTML = addresses.map(a => `
-        <div class="panel" style="padding:1rem;margin-bottom:0.75rem">
-          <div class="font-semibold">${escapeHTML(a.label || 'ที่อยู่')}</div>
-          <div class="text-secondary text-sm">${escapeHTML(a.recipient || '')} ${escapeHTML(a.phone || '')}</div>
-          <div class="text-secondary text-sm">${escapeHTML(a.address || '')}</div>
-        </div>
-      `).join('');
-    } else {
-      list.innerHTML = '<p class="text-muted text-sm">ยังไม่มีที่อยู่ที่บันทึก</p>';
+      .eq('user_id', user.id)
+      .order('is_default', { ascending: false })
+      .order('created_at', { ascending: true });
+    if (error) throw error;
+
+    if (!addresses || addresses.length === 0) {
+      list.innerHTML = `<p class="text-muted text-sm">${t('account.no_address')}</p>`;
+      return;
     }
-  } catch {}
+
+    list.innerHTML = addresses.map(a => `
+      <div class="panel" style="padding:1rem;margin-bottom:0.75rem">
+        <div class="flex justify-between items-center">
+          <div class="font-semibold">${escapeHTML(a.label || t('account.address_label'))}</div>
+          ${a.is_default ? `<span class="badge badge-success">${t('account.default_badge')}</span>` : ''}
+        </div>
+        <div class="text-secondary text-sm">${escapeHTML(a.recipient || '')} ${escapeHTML(a.phone || '')}</div>
+        <div class="text-secondary text-sm">${escapeHTML(a.address || '')}</div>
+        <div class="flex gap-sm mt-sm" style="flex-wrap:wrap">
+          <button class="btn btn-outline btn-sm" data-edit-address="${a.id}">${t('common.edit')}</button>
+          <button class="btn btn-danger btn-sm" data-del-address="${a.id}">${t('common.delete')}</button>
+        </div>
+      </div>
+    `).join('');
+
+    list.querySelectorAll('[data-edit-address]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const target = addresses.find(x => x.id === btn.getAttribute('data-edit-address'));
+        if (!target) return;
+        openAddressForm(target);
+      });
+    });
+
+    list.querySelectorAll('[data-del-address]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!window.confirm(t('account.delete_address_confirm'))) return;
+        try {
+          const { error } = await state.supabase.rpc('delete_address', { p_id: btn.getAttribute('data-del-address') });
+          if (error) throw error;
+          notify(t('account.address_deleted'), 'success');
+          loadAddresses(user);
+        } catch (err) {
+          notify(err.message || t('toast.error_generic'), 'error');
+        }
+      });
+    });
+  } catch (err) {
+    console.warn('[ZenMarket] load addresses failed', err);
+    list.innerHTML = `<p class="text-muted text-sm">${t('toast.error_generic')}</p>`;
+  }
+}
+
+/**
+ * ฟอร์มเพิ่ม/แก้ไขที่อยู่
+ */
+function openAddressForm(address = null) {
+  const form = document.getElementById('address-form');
+  if (!form) return;
+  const labelInput = document.getElementById('address-label');
+  const recipientInput = document.getElementById('address-recipient');
+  const phoneInput = document.getElementById('address-phone');
+  const addressInput = document.getElementById('address-address');
+  const defaultInput = document.getElementById('address-default');
+  const title = document.getElementById('address-form-title');
+
+  form.dataset.addressId = address?.id || '';
+  if (title) title.textContent = address ? t('account.edit_address') : t('account.add_address');
+  labelInput.value = address?.label || '';
+  recipientInput.value = address?.recipient || '';
+  phoneInput.value = address?.phone || '';
+  addressInput.value = address?.address || '';
+  defaultInput.checked = !!address?.is_default;
+
+  form.classList.remove('hidden');
+  form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function initAddressForm(user) {
+  const form = document.getElementById('address-form');
+  if (!form) return;
+
+  const addBtn = document.getElementById('address-add-btn');
+  if (addBtn) {
+    addBtn.addEventListener('click', () => openAddressForm(null));
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    try {
+      const checked = validateAddress({
+        label: document.getElementById('address-label').value,
+        recipient: document.getElementById('address-recipient').value,
+        phone: document.getElementById('address-phone').value,
+        address: document.getElementById('address-address').value,
+      });
+      if (!checked.ok) {
+        notify(t(checked.errorKey), 'error');
+        return;
+      }
+
+      const { error } = await state.supabase.rpc('save_address', {
+        p_id: form.dataset.addressId || null,
+        p_label: checked.value.label,
+        p_recipient: checked.value.recipient,
+        p_phone: checked.value.phone,
+        p_address: checked.value.address,
+        p_default: document.getElementById('address-default').checked,
+      });
+      if (error) throw error;
+      notify(t('account.address_saved'), 'success');
+      form.classList.add('hidden');
+      form.reset();
+      loadAddresses(user);
+    } catch (err) {
+      notify(err.message || t('toast.error_generic'), 'error');
+    }
+  });
+
+  const cancelBtn = document.getElementById('address-cancel-btn');
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', () => {
+      form.classList.add('hidden');
+      form.reset();
+    });
+  }
 }
 
 /* ================= รายการโปรด ================= */
 async function initFavoritesPage() {
-  if (!isMember() || !state.user) {
+  if (!isSignedIn() || !state.user) {
+    sessionStorage.setItem('zenmarket_return_path', window.location.pathname + window.location.search);
     window.location.href = '/auth/login.html';
     return;
   }
+
   const grid = document.getElementById('favorites-grid');
-  grid.innerHTML = '<p class="text-muted">รายการโปรดจะแสดงที่นี่เมื่อคุณกดหัวใจที่สินค้า</p>';
+  if (!grid) return;
+
+  async function render() {
+    grid.innerHTML = '<div class="skeleton" style="height:220px"></div>';
+    try {
+      const products = await loadFavoriteProducts();
+      if (!products.length) {
+        grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1L12 21.2l7.7-7.8 1.1-1a5.5 5.5 0 0 0 0-7.8Z"/></svg>
+          <p>${t('account.favorites_empty')}</p>
+          <a href="/shop/index.html" class="btn btn-primary mt-md">${t('home.cta_shop')}</a>
+        </div>`;
+        return;
+      }
+
+      grid.innerHTML = '';
+      products.forEach(product => {
+        const card = document.createElement('article');
+        card.className = 'card product-card reveal';
+        const image = product.image_url ? safeImage(product.image_url) : '/images/placeholder.svg';
+        const favActive = isFavorite(product.id);
+        card.innerHTML = `
+          <div class="thumb">
+            <img src="${image}" alt="${escapeHTML(product.name)}" loading="lazy">
+            <button class="favorite-btn ${favActive ? 'active' : ''}" data-favorite="${product.id}" title="${t(favActive ? 'product.favorite_remove' : 'product.favorite_add')}">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1L12 21.2l7.7-7.8 1.1-1a5.5 5.5 0 0 0 0-7.8Z"/></svg>
+            </button>
+            <button class="btn btn-primary btn-sm quick-add" data-add-to-cart="${product.id}">${t('product.add_to_cart')}</button>
+          </div>
+          <div class="body">
+            <span class="cat">${escapeHTML(product.category || '')}</span>
+            <h3 class="name">${escapeHTML(product.name)}</h3>
+            <div class="foot">
+              <span class="price">${formatTHB(product.price)}</span>
+              <span class="stock-tag ${getStockStatusClass(product.stock)}">${getStockStatusText(product.stock)}</span>
+            </div>
+          </div>
+        `;
+        card.addEventListener('click', async (e) => {
+          if (e.target.closest('[data-add-to-cart]')) return;
+          const favBtn = e.target.closest('[data-favorite]');
+          if (favBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            const result = await toggleFavorite(product.id);
+            if (result === null) return;
+            if (!result) {
+              card.remove();
+              if (!grid.querySelector('.product-card')) render();
+            } else {
+              favBtn.classList.add('active');
+            }
+            return;
+          }
+          window.location.href = `/shop/product.html?id=${product.id}`;
+        });
+        grid.appendChild(card);
+      });
+    } catch (err) {
+      console.error(err);
+      grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><p>${t('toast.error_generic')}</p></div>`;
+    }
+  }
+
+  await render();
+  onLanguageChange(() => render());
 }

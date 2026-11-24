@@ -10,6 +10,19 @@ export function formatTHB(amount) {
   }).format(amount);
 }
 
+/**
+ * ผูก event โดยไม่ให้ซ้ำ (ใช้เมื่อ re-render หน้าหลังเปลี่ยนภาษา)
+ */
+export function bindOnce(el, event, handler) {
+  if (!el || typeof handler !== 'function') return;
+  if (!el.__zenHandlers) el.__zenHandlers = {};
+  if (el.__zenHandlers[event]) {
+    el.removeEventListener(event, el.__zenHandlers[event]);
+  }
+  el.__zenHandlers[event] = handler;
+  el.addEventListener(event, handler);
+}
+
 export function escapeHTML(str) {
   if (str == null) return '';
   const div = document.createElement('div');

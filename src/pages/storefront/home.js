@@ -4,7 +4,7 @@
  */
 
 import { initApp, state, requireSupabase } from '/src/app.js';
-import { translatePage } from '/src/core/i18n.js';
+import { translatePage, t } from '/src/core/i18n.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   await initApp();
@@ -47,7 +47,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         <div class="review-card reveal">
           <div class="stars">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</div>
           <blockquote>“${escapeHtml(r.comment || '')}”</blockquote>
-          <div class="who">— ${escapeHtml(r.reviewer_name || 'ลูกค้า')}</div>
+          <div class="who">— ${escapeHtml(r.reviewer_name || t('common.customer'))}</div>
         </div>
       `).join('');
       const io = new IntersectionObserver((entries) => {
