@@ -492,7 +492,11 @@ async function restoreSession() {
     }
 
     const userId = session.user.id;
-    const { data: profile } = await state.supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
+    const { data: profile } = await state.supabase
+      .from('profiles')
+      .select('id, username, first_name, last_name, nickname, phone, age')
+      .eq('id', userId)
+      .maybeSingle();
 
     const { data: adminRow } = await state.supabase
       .from('store_admin')
