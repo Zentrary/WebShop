@@ -556,4 +556,74 @@ const THAI = /[\u0E00-\u0E7F]/;
   );
 }
 
+/* ------------------------------------------------------------------ *
+ * ความปลอดภัย: RLS/สิทธิ์เข้าถึงข้อมูลลูกค้า + การเข้าสู่ระบบ
+ * ------------------------------------------------------------------ */
+{
+  const readFile = (rel) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
+  const customer = readFile('src/pages/customer/account.js');
+  const adminLogin = readFile('src/pages/admin/login.js');
+  const app = readFile('src/app.js');
+
+  // 1) ชื่อผู้ใช้ → อีเมล ต้องแนบรหัสผ่านไปให้ DB ตรวจก่อนคืนอีเมล
+  A.ok(
+    'login: ฝั่งลูกค้าส่ง login_password ไปกับ login_email',
+    /rpc\('login_email',\s*\{[^}]*login_password:\s*password/s.test(customer),
+  );
+  A.ok(
+    'login: ฝั่งแอดมินส่ง login_password ไปกับ login_email',
+    /rpc\('login_email',\s*\{[^}]*login_password:\s*password/s.test(adminLogin),
+  );
+  const emailLookups = (src) => {
+    const out = [];
+    let i = src.indexOf("rpc('login_email'");
+    while (i !== -1) {
+      out.push(src.slice(i, i + 240).includes('login_password'));
+      i = src.indexOf("rpc('login_email'", i + 1);
+    }
+    return out;
+  };
+  A.ok(
+    'login: ทุกการเรียก login_email แนบรหัสผ่าน',
+    emailLookups(customer).length > 0 && emailLookups(customer).every(Boolean),
+  );
+  A.ok(
+    'login: ฝั่งแอดมินทุกการเรียก login_email แนบรหัสผ่าน',
+    emailLookups(adminLogin).length > 0 && emailLookups(adminLogin).every(Boolean),
+  );
+
+  // 2) อ่านโปรไฟล์เฉพาะคอลัมน์ที่ใช้ ไม่ดึงทั้งแถว
+  A.ok('profiles: ฟอร์มเข้าสู่ระบบอ่านเฉพาะคอลัมน์ที่ต้องใช้', !/from\('profiles'\)\s*\.select\('\*'\)/.test(customer));
+  A.ok('profiles: การกู้เซสชันอ่านเฉพาะคอลัมน์ที่ต้องใช้', !/from\('profiles'\)\s*\.select\('\*'\)/.test(app));
+
+  // 3) ไฟล์ migration ฝั่งความปลอดภัยต้องอยู่ในรีโป
+  const sec = readFile('supabase/migrations/011_secure_login_lookup.sql');
+  A.ok('security: login_email ตรวจรหัสผ่านด้วย bcrypt', /extensions\.crypt\(login_password/.test(sec));
+  A.ok('security: มีเพดานจำนวนครั้งต่อชื่อผู้ใช้', /login_attempts/.test(sec) && /v_hits > 20/.test(sec));
+  A.ok('security: ถอนสิทธิ์ฟังก์ชันเดิมก่อนให้สิทธิ์ใหม่', /revoke all on function public\.login_email/.test(sec));
+
+  const grants = readFile('supabase/migrations/012_security_hardening.sql');
+  A.ok('security: ปิดสิทธิ์ anon เขียนตารางแคตตาล็อก', /revoke insert, update, delete on[^;]*from anon/.test(grants));
+  A.ok('security: ตัดสิทธิ์ TRUNCATE/REFERENCES/TRIGGER', /revoke truncate, references, trigger/.test(grants));
+  A.ok('security: ปิดทางเรียก create_order_reserved_internal', /create_order_reserved_internal/.test(grants));
+  A.ok(
+    'security: เลิกใช้ login_email แบบ 1 พารามิเตอร์',
+    /drop function if exists public\.login_email\(text\)/.test(grants),
+  );
+
+  // 4) ไม่มีคีย์ลับฝังในโค้ดฝั่งเบราว์เซอร์
+  const bundle = [app, customer, adminLogin, readFile('src/core/storage.js')].join('\n');
+  A.ok('security: ไม่มี service_role key ในโค้ดหน้าเว็บ', !/service_role|SUPABASE_SERVICE_ROLE/i.test(bundle));
+
+  // 5) ส่วนหัวความปลอดภัยของ Vercel ยังครบ
+  const vercel = JSON.parse(readFile('vercel.json'));
+  const headers = JSON.stringify(vercel);
+  A.ok('security: มี CSP', /Content-Security-Policy/.test(headers));
+  A.ok(
+    'security: CSP กันการฝัง iframe และ inline script',
+    /frame-ancestors 'none'/.test(headers) && /script-src 'self'/.test(headers),
+  );
+  A.ok('security: มี X-Frame-Options และ nosniff', /X-Frame-Options/.test(headers) && /nosniff/.test(headers));
+}
+
 process.exit(A.report('regression') ? 1 : 0);

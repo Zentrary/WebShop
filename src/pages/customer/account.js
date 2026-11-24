@@ -94,8 +94,11 @@ function initLoginPage() {
 
       let email = identifier;
       if (!identifier.includes('@')) {
+        // ชื่อผู้ใช้ → อีเมล: ฝั่งฐานข้อมูลตรวจรหัสผ่านก่อน จึงคืนอีเมลเฉพาะเมื่อถูกต้อง
+        // (กันการไล่เก็บอีเมลลูกค้าผ่าน REST API)
         const { data: resolved, error: rpcErr } = await state.supabase.rpc('login_email', {
           login_name: identifier.toLowerCase(),
+          login_password: password,
         });
         if (rpcErr || !resolved) throw new Error(t('auth.invalid_credentials'));
         email = resolved;
@@ -104,7 +107,11 @@ function initLoginPage() {
       const { data, error } = await state.supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
 
-      const { data: profile } = await state.supabase.from('profiles').select('*').eq('id', data.user.id).single();
+      const { data: profile } = await state.supabase
+        .from('profiles')
+        .select('id, username, first_name, last_name, nickname, phone, age')
+        .eq('id', data.user.id)
+        .single();
 
       const user = {
         id: data.user.id,
