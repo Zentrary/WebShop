@@ -129,7 +129,7 @@ export async function reconcileCart(supabase, cartItems) {
   const productIds = [...new Set(cartItems.map(item => item.product_id))];
   const { data: products, error } = await supabase
     .from('products')
-    .select('id, name, price, stock_quantity, is_active')
+    .select('id, name, price, stock, active')
     .in('id', productIds);
 
   if (error) {
@@ -146,13 +146,13 @@ export async function reconcileCart(supabase, cartItems) {
       continue;
     }
 
-    if (!product.is_active) {
+    if (!product.active) {
       errors.push(`สินค้า "${product.name}" ไม่สามารถซื้อได้ในขณะนี้`);
       continue;
     }
 
-    if (product.stock_quantity < item.quantity) {
-      errors.push(`สินค้า "${product.name}" เหลือเพียง ${product.stock_quantity} ชิ้น`);
+    if (product.stock < item.quantity) {
+      errors.push(`สินค้า "${product.name}" เหลือเพียง ${product.stock} ชิ้น`);
       continue;
     }
 
@@ -164,8 +164,8 @@ export async function reconcileCart(supabase, cartItems) {
     validItems.push({
       ...item,
       product_name: product.name,
-      stock_quantity: product.stock_quantity,
-      max_quantity: product.stock_quantity,
+      stock: product.stock,
+      max_quantity: product.stock,
     });
   }
 
@@ -182,4 +182,23 @@ export function calculateCartTotal(items) {
 
 export function calculateCartItemCount(items) {
   return items.reduce((sum, item) => sum + item.quantity, 0);
+}
+
+/**
+ * สร้าง Signed URL สำหรับสลิป/รูปใน bucket ส่วนตัว (payment-slips, shipping-updates)
+ */
+export async function getPrivateImageUrl(supabase, bucket, objectPath, expiresIn = 3600) {
+  if (!objectPath) return '';
+  if (objectPath.startsWith('http')) return objectPath;
+  const { data, error } = await supabase.storage.from(bucket).createSignedUrl(objectPath, expiresIn);
+  if (error) return '';
+  return data?.signedUrl || '';
+}
+
+/**
+ * ชื่อไฟล์สลิปที่ถูกต้องตามนโยบายของ attach_slip: <user_id>/<order_id>/<file>
+ */
+export function buildSlipObjectPath(userId, orderId, fileName) {
+  const safeName = String(fileName).replace(/[^\w.\-]/g, '_');
+  return `${userId}/${orderId}/${Date.now()}_${safeName}`;
 }

@@ -3,44 +3,34 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>คำสั่งซื้อของฉัน - ZenMarket</title>
+  <title>คำสั่งซื้อ — ZenMarket</title>
   <link rel="stylesheet" href="/src/styles/base.css">
   <link rel="stylesheet" href="/src/styles/spaces.css">
   <link rel="stylesheet" href="/src/styles/responsive.css">
-  <link rel="icon" href="/public/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <script type="module" src="/src/pages/customer/checkout.js"></script>
+  <noscript><style>.reveal{opacity:1!important;transform:none!important}</style></noscript>
 </head>
 <body>
-  <main class="container pt-lg pb-xl">
-    <div class="flex justify-between items-center mb-lg">
-      <h1 data-i18n="account.orders">คำสั่งซื้อ</h1>
-      <div class="flex gap-sm">
-        <a href="/account/order.html" class="btn btn-outline">คำสั่งซื้อล่าสุด</a>
-      </div>
+  <main class="container page">
+    <div class="page-head reveal">
+      <span class="eyebrow">Orders</span>
+      <h1 class="page-title">คำสั่งซื้อ</h1>
+      <p class="page-sub">ติดตามสถานะคำสั่งซื้อทั้งหมดของคุณ</p>
     </div>
 
-    <div class="order-filters flex gap-sm mb-lg">
-      <button class="btn btn-outline" data-status="all">ทั้งหมด</button>
-      <button class="btn btn-outline" data-status="pending">รอยืนยัน</button>
-      <button class="btn btn-outline" data-status="paid">ชำระเงินแล้ว</button>
-      <button class="btn btn-outline" data-status="shipping">จัดส่งแล้ว</button>
-      <button class="btn btn-outline" data-status="delivered">ส่งถึงมือแล้ว</button>
-    </div>
-
-    <div id="orders-table-container" class="overflow-auto">
-      <table class="w-full border-collapse">
+    <div class="table-wrap reveal">
+      <table class="data">
         <thead>
-          <tr class="text-left text-secondary text-sm border-b">
-            <th class="pb-sm font-semibold">เลขคำสั่งซื้อ</th>
-            <th class="pb-sm font-semibold">วันที่</th>
-            <th class="pb-sm font-semibold">สถานะ</th>
-            <th class="pb-sm font-semibold text-right">ยอดรวม</th>
-            <th class="pb-sm font-semibold">การดำเนินการ</th>
+          <tr>
+            <th>เลขที่</th>
+            <th>วันที่</th>
+            <th>สถานะ</th>
+            <th class="num">ยอดรวม</th>
+            <th></th>
           </tr>
         </thead>
-        <tbody id="orders-list" class="text-secondary divide-y">
-          <!-- Orders loaded via JavaScript -->
-        </tbody>
+        <tbody id="orders-list"></tbody>
       </table>
     </div>
   </main>

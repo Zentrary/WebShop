@@ -1,5 +1,5 @@
 export function validateLogoUrl(url) {
-  if (!url) return '/public/images/placeholder.svg';
+  if (!url) return '/images/placeholder.svg';
   try {
     const u = new URL(url, window.location.origin);
     if (u.protocol === 'https:' || u.origin === window.location.origin) {
@@ -10,7 +10,7 @@ export function validateLogoUrl(url) {
       return url;
     }
   }
-  return '/public/images/placeholder.svg';
+  return '/images/placeholder.svg';
 }
 
 export function getStockStatus(stockQuantity) {

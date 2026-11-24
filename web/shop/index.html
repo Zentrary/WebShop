@@ -3,32 +3,37 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ร้านค้า - ZenMarket</title>
+  <title>ร้านค้า — ZenMarket</title>
   <link rel="stylesheet" href="/src/styles/base.css">
   <link rel="stylesheet" href="/src/styles/spaces.css">
   <link rel="stylesheet" href="/src/styles/responsive.css">
-  <link rel="icon" href="/public/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <script type="module" src="/src/pages/storefront/store.js"></script>
+  <noscript><style>.reveal{opacity:1!important;transform:none!important}</style></noscript>
 </head>
 <body>
-  <main class="container pt-lg pb-xl">
-    <div class="flex justify-between items-center mb-lg">
-      <h1 data-i18n="nav.shop">ร้านค้า</h1>
-      <div class="flex gap-sm">
-        <input type="text" id="product-search" class="form-input w-64" placeholder="ค้นหาสินค้า...">
-        <select id="category-filter" class="form-select w-64">
-          <option value="">ทุกหมวดหมู่</option>
-        </select>
+  <main class="container page">
+    <div class="page-head reveal">
+      <span class="eyebrow">Shop</span>
+      <h1 class="page-title">ร้านค้า</h1>
+      <p class="page-sub">สินค้าทั้งหมดของร้าน คัดสรรด้วยความใส่ใจ</p>
+    </div>
+
+    <div class="shop-toolbar reveal" data-delay="1">
+      <div class="search-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" id="product-search" class="form-input" placeholder="ค้นหาสินค้า...">
       </div>
+      <select id="category-filter" class="form-select">
+        <option value="">ทุกหมวดหมู่</option>
+      </select>
     </div>
 
-    <div id="product-count" class="text-secondary mb-md"></div>
+    <div id="product-count" class="text-muted mb-md" style="font-size:var(--font-size-sm)"></div>
 
-    <div id="product-grid" class="grid grid-cols-4 gap-grid-lg">
-      <!-- Products loaded via JavaScript -->
-    </div>
+    <div id="product-grid" class="product-grid"></div>
 
-    <div id="pagination" class="flex justify-center gap-sm mt-lg"></div>
+    <div id="pagination" class="pagination"></div>
   </main>
 </body>
 </html>

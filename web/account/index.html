@@ -3,67 +3,86 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>บัญชีของฉัน - ZenMarket</title>
+  <title>บัญชีของฉัน — ZenMarket</title>
   <link rel="stylesheet" href="/src/styles/base.css">
   <link rel="stylesheet" href="/src/styles/spaces.css">
   <link rel="stylesheet" href="/src/styles/responsive.css">
-  <link rel="icon" href="/public/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <script type="module" src="/src/pages/customer/account.js"></script>
+  <noscript><style>.reveal{opacity:1!important;transform:none!important}</style></noscript>
 </head>
 <body>
-  <main class="container pt-lg pb-xl">
-    <div class="account-layout grid grid-cols-3 gap-grid-lg">
-      <aside class="account-sidebar col-span-1">
-        <div class="card p-md">
-          <div class="text-center mb-md">
-            <img id="account-avatar" src="/public/images/placeholder.svg" alt="avatar" class="w-16 h-16 rounded-full mx-auto mb-sm bg-surface">
-            <h3 id="account-name" class="font-semibold">ผู้ใช้งาน</h3>
-            <p id="account-email" class="text-secondary text-sm"></p>
-          </div>
-          <nav class="space-y-sm">
-            <a href="#" class="btn btn-outline btn-full text-left py-sm" data-i18n="account.profile">โปรไฟล์</a>
-            <a href="#" class="btn btn-outline btn-full text-left py-sm" data-i18n="account.addresses">สมุดที่อยู่</a>
-            <a href="#" class="btn btn-outline btn-full text-left py-sm" data-i18n="account.orders">คำสั่งซื้อ</a>
-            <a href="#" class="btn btn-outline btn-full text-left py-sm" data-i18n="account.favorites">รายการโปรด</a>
-          </nav>
-        </div>
+  <main class="container page">
+    <div class="page-head reveal">
+      <span class="eyebrow">Account</span>
+      <h1 class="page-title" data-i18n="account.title">บัญชีของฉัน</h1>
+    </div>
+
+    <div class="account-grid">
+      <aside class="side-card reveal">
+        <div class="avatar" id="account-avatar">ผ</div>
+        <div class="font-semibold" id="account-name">ผู้ใช้งาน</div>
+        <div class="text-muted text-sm" id="account-email"></div>
+
+        <nav class="side-nav mt-lg">
+          <a href="#" class="active" data-tab="profile">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>
+            <span data-i18n="account.profile">โปรไฟล์</span>
+          </a>
+          <a href="#" data-tab="orders">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/></svg>
+            <span data-i18n="account.orders">คำสั่งซื้อ</span>
+          </a>
+          <a href="#" data-tab="addresses">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+            <span data-i18n="account.addresses">ที่อยู่</span>
+          </a>
+          <a href="/account/favorites.html">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8Z"/></svg>
+            <span data-i18n="account.favorites">รายการโปรด</span>
+          </a>
+        </nav>
       </aside>
 
-      <div class="account-content col-span-2">
-        <div id="account-profile" class="account-section">
-          <h2 data-i18n="account.profile">โปรไฟล์</h2>
-          <form id="profile-form" class="space-y-md">
+      <div>
+        <!-- โปรไฟล์ -->
+        <section id="account-profile" class="panel reveal">
+          <h2>โปรไฟล์</h2>
+          <form id="profile-form">
             <div class="form-group">
-              <label class="form-label">ชื่อผู้ใช้</label>
-              <input type="text" id="profile-username" class="form-input" readonly>
+              <label class="form-label" for="profile-username">ชื่อผู้ใช้</label>
+              <input type="text" id="profile-username" class="form-input" placeholder="username">
+            </div>
+            <div class="flex gap-md" style="flex-wrap:wrap">
+              <div class="form-group" style="flex:1;min-width:180px">
+                <label class="form-label" for="profile-firstname">ชื่อ</label>
+                <input type="text" id="profile-firstname" class="form-input" placeholder="ชื่อ">
+              </div>
+              <div class="form-group" style="flex:1;min-width:180px">
+                <label class="form-label" for="profile-lastname">นามสกุล</label>
+                <input type="text" id="profile-lastname" class="form-input" placeholder="นามสกุล">
+              </div>
             </div>
             <div class="form-group">
-              <label class="form-label">อีเมล</label>
-              <input type="email" id="profile-email" class="form-input" required>
+              <label class="form-label" for="profile-phone">เบอร์โทรศัพท์</label>
+              <input type="tel" id="profile-phone" class="form-input" placeholder="0812345678">
             </div>
-            <div class="form-group">
-              <label class="form-label">เบอร์โทรศัพท์</label>
-              <input type="tel" id="profile-phone" class="form-input">
-            </div>
-            <button type="submit" class="btn btn-primary" data-i18n="common.save">บันทึก</button>
+            <button type="submit" class="btn btn-primary">บันทึกการเปลี่ยนแปลง</button>
           </form>
-        </div>
+        </section>
 
-        <div id="account-addresses" class="account-section hidden">
-          <h2 data-i18n="account.addresses">สมุดที่อยู่</h2>
-          <div id="addresses-list" class="space-y-sm mb-lg"></div>
-          <button id="add-address-btn" class="btn btn-outline btn-full" data-i18n="common.save">เพิ่มที่อยู่</button>
-        </div>
+        <!-- คำสั่งซื้อ -->
+        <section id="account-orders" class="panel reveal hidden">
+          <h2>คำสั่งซื้อล่าสุด</h2>
+          <div id="customer-orders-list"></div>
+          <a href="/account/orders.html" class="btn btn-outline mt-lg">ดูคำสั่งซื้อทั้งหมด</a>
+        </section>
 
-        <div id="account-orders" class="account-section hidden">
-          <h2 data-i18n="account.orders">คำสั่งซื้อ</h2>
-          <div id="customer-orders-list" class="space-y-sm"></div>
-        </div>
-
-        <div id="account-favorites" class="account-section hidden">
-          <h2 data-i18n="account.favorites">รายการโปรด</h2>
-          <div id="favorites-list" class="grid grid-cols-3 gap-grid-md"></div>
-        </div>
+        <!-- ที่อยู่ -->
+        <section id="account-addresses" class="panel reveal hidden">
+          <h2>สมุดที่อยู่</h2>
+          <div id="addresses-list"></div>
+        </section>
       </div>
     </div>
   </main>
