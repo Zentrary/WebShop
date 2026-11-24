@@ -220,16 +220,24 @@ const HTML_FILES = walk(WEB);
 }
 
 /* ------------------------------------------------------------------ *
- * 6. หน้า auth ต้องไม่มีตัวอักษร Z และต้องแสดงโลโก้ที่ตั้งค่าไว้
+ * 6. หน้า auth: ไม่มีโลโก้ เหลือแต่ข้อความ + ต้องเป็นหน้า stand-alone
  * ------------------------------------------------------------------ */
 {
   for (const page of ['login.html', 'register.html', 'reset-password.html', 'forgot-password.html']) {
     const file = path.join(WEB, 'auth', page);
     const html = fs.readFileSync(file, 'utf8');
     A.ok(`auth: ${page} ไม่มีตัวอักษร Z เป็นโลโก้`, !/>Z</.test(html));
-    A.ok(`auth: ${page} มีคอนเทนเนอร์ auth-logo`, html.includes('id="auth-logo"'));
-    A.ok(`auth: ${page} มีคอนเทนเนอร์ auth-mark สำรอง`, html.includes('id="auth-mark"'));
+    A.ok(`auth: ${page} ไม่มีรูปโลโก้ในหน้า`, !html.includes('id="auth-logo"'));
+    A.ok(`auth: ${page} ไม่มีเครื่องหมายสำรอง`, !html.includes('id="auth-mark"'));
+    A.ok(`auth: ${page} มีชื่อร้านเป็นข้อความ`, html.includes('id="auth-brand-name"'));
+    A.ok(`auth: ${page} มีแผงข้อความแนะนำ`, html.includes('class="auth-aside"'));
+    A.ok(`auth: ${page} มีปุ่มสลับภาษา`, html.includes('id="auth-lang-toggle"'));
+    A.ok(`auth: ${page} ใช้เลย์เอาต์ auth-shell`, html.includes('auth-shell'));
   }
+
+  const adminLogin = fs.readFileSync(path.join(WEB, 'admin/login.html'), 'utf8');
+  A.ok('auth: หน้า login ผู้ดูแลไม่มีตัวอักษร Z', !/>Z</.test(adminLogin));
+  A.ok('auth: หน้า login ผู้ดูแลไม่มีรูปโลโก้', !adminLogin.includes('id="auth-logo"'));
 
   const supabase = await makeSupabaseMock({
     session: null,
@@ -237,7 +245,7 @@ const HTML_FILES = walk(WEB);
     rpcResults: {
       get_storefront: {
         singleton: true,
-        shop_name: 'ZenMarket',
+        shop_name: 'ร้านทดสอบ',
         tagline: 'ทดสอบ',
         logo_url: 'https://cdn.example.test/logo.png',
       },
@@ -250,25 +258,26 @@ const HTML_FILES = walk(WEB);
   });
   await wait(300);
 
-  const img = el(document, 'auth-logo');
-  const mark = el(document, 'auth-mark');
-  A.ok('auth: โลโก้ที่ตั้งค่าไว้ถูกแสดง', !!img && img.src.includes('logo.png'));
-  A.eq('auth: โลโก้ที่ตั้งค่าไว้ไม่ถูกซ่อน', img?.hidden, false);
-  A.eq('auth: กรอบสำรองถูกซ่อนเมื่อมีโลโก้', mark?.hidden, true);
+  A.eq('auth: ชื่อร้านมาจากการตั้งค่า', el(document, 'auth-brand-name')?.textContent.trim(), 'ร้านทดสอบ');
+  A.ok('auth: หน้า login ไม่มีแถบหัวเว็บของเว็บไซต์', !document.querySelector('.site-header'));
+  A.ok('auth: หน้า login ไม่มีท้ายเว็บของเว็บไซต์', !document.querySelector('.site-footer'));
+  A.ok('auth: ปุ่มสลับภาษาแสดงป้ายภาษา', /TH|EN/.test(el(document, 'auth-lang-toggle')?.textContent || ''));
 }
 
 /* ------------------------------------------------------------------ *
- * 7. กฎ CSS ที่ทำให้ [hidden] ใช้งานได้จริง
+ * 7. กฎ CSS ของหน้า auth
  * ------------------------------------------------------------------ */
 {
   const base = fs.readFileSync(path.join(ROOT, 'src/styles/base.css'), 'utf8');
   A.ok('css: มีกฎ [hidden] ที่บังคับ display:none', /\[hidden\]\s*\{[^}]*display:\s*none\s*!important/.test(base));
-  A.ok('css: กรอบสำรอง auth มีรูปทรงแบบกริด', /\.auth-head \.mark\s*\{[^}]*display:\s*grid/.test(base));
+  A.ok('css: มีเลย์เอาต์ auth แบบ 2 คอลัมน์', /\.auth-layout\s*\{[^}]*grid-template-columns/.test(base));
   A.ok('css: มีกริด 2 คอลัมน์สำหรับฟอร์มสมัครสมาชิก', /\.auth-grid\s*\{[^}]*grid-template-columns:\s*repeat\(2/.test(base));
-  A.ok('css: การ์ดสมัครสมาชิกกว้างพอสำหรับ 2 คอลัมน์', /\.auth-card-wide\s*\{[^}]*max-width/.test(base));
+  A.ok('css: มีแถบบนสุดของหน้า auth', /\.auth-topbar\s*\{/.test(base));
+  A.ok('css: มีแผงแนะนำพร้อมไล่เฉด', /\.auth-aside\s*\{[^}]*background:[^}]*gradient/.test(base));
 
   const responsive = fs.readFileSync(path.join(ROOT, 'src/styles/responsive.css'), 'utf8');
   A.ok('css: ฟอร์มสมัครสมาชิกยุบเป็น 1 คอลัมน์บนมือถือ', /\.auth-grid\s*\{\s*grid-template-columns:\s*1fr/.test(responsive));
+  A.ok('css: หน้า auth ซ้อนเป็น 1 คอลัมน์บนแท็บเล็ต', /\.auth-layout\s*\{\s*grid-template-columns:\s*1fr/.test(responsive));
 }
 
 process.exit(A.report('i18n') ? 1 : 0);

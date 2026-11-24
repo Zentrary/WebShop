@@ -206,7 +206,9 @@ const CART = [{ product_id: 'p1', name: 'กาแฟ', price: 120, quantity: 2 
   A.eq('register: อายุต่ำสุด 13', age.getAttribute('min'), '13');
   A.eq('register: อายุสูงสุด 120', age.getAttribute('max'), '120');
   A.eq('register: รหัสผ่านอย่างน้อย 8 ตัว', password.getAttribute('minlength'), '8');
-  A.ok('register: มีการ์ดกระชับ', !!document.querySelector('.auth-card-compact'));
+  A.ok('register: มีเลย์เอาต์ฟอร์มสองคอลัมน์', !!document.querySelector('.auth-grid'));
+  A.ok('register: ไม่มีโลโก้ในหน้า auth', !document.getElementById('auth-logo'));
+  A.ok('register: ไม่มีเครื่องหมายสำรอง', !document.getElementById('auth-mark'));
 }
 
 {
@@ -237,9 +239,13 @@ const CART = [{ product_id: 'p1', name: 'กาแฟ', price: 120, quantity: 2 
     scripts: ['src/pages/customer/account.js'],
     supabase,
   });
-  A.ok('login: มีช่องโลโก้จริง', !!document.getElementById('auth-logo'));
-  A.ok('login: มีตัวอักษรสำรอง', !!document.getElementById('auth-mark'));
-  A.ok('login: มีการ์ดกระชับ', !!document.querySelector('.auth-card-compact'));
+  A.ok('login: ไม่มีโลโก้ในหน้า auth', !document.getElementById('auth-logo'));
+  A.ok('login: ไม่มีเครื่องหมายสำรอง', !document.getElementById('auth-mark'));
+  A.ok('login: มีแถบบนสุดพร้อมชื่อร้าน', !!document.getElementById('auth-brand-name'));
+  A.ok('login: มีปุ่มสลับภาษา', !!document.getElementById('auth-lang-toggle'));
+  A.ok('login: มีแผงแนะนำด้านข้าง', !!document.querySelector('.auth-aside'));
+  A.ok('login: ไม่มีแถบหัวเว็บของเว็บไซต์', !document.querySelector('.site-header'));
+  A.ok('login: ไม่มีท้ายเว็บของเว็บไซต์', !document.querySelector('.site-footer'));
 }
 
 {

@@ -171,21 +171,43 @@
   .hero-cta .btn {
     flex: 1 1 auto;
   }
-  .auth-card {
-    padding: var(--space-xl);
+  .auth-layout {
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
   }
-  .auth-card-compact {
-    padding: var(--space-lg) var(--space-md);
+  .auth-aside {
+    padding: var(--space-2xl) var(--space-xl);
   }
-  .auth-card-wide {
-    max-width: 560px;
+  .auth-topbar {
+    padding: var(--space-md) var(--space-lg);
   }
-  .auth-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .auth-panel {
+    padding: var(--space-2xl) var(--space-lg);
   }
   .toast-stack {
     left: var(--space-md);
     right: var(--space-md);
+  }
+}
+
+@media (max-width: 900px) {
+  .auth-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+  .auth-aside {
+    border-right: none;
+    border-bottom: 1px solid var(--color-border-soft);
+    padding: var(--space-xl) var(--space-lg);
+    gap: var(--space-sm);
+    justify-content: flex-start;
+  }
+  .auth-aside-title {
+    font-size: clamp(1.5rem, 5vw, 2rem);
+    max-width: 24ch;
+  }
+  .auth-aside-text,
+  .auth-points {
+    display: none;
   }
 }
 
@@ -209,6 +231,18 @@
   .form-group {
     margin-bottom: var(--space-sm);
   }
+  .auth-topbar {
+    padding: var(--space-sm) var(--space-md);
+  }
+  .auth-panel {
+    padding: var(--space-xl) var(--space-md);
+  }
+  .auth-panel-inner {
+    max-width: 100%;
+  }
+  .auth-topbar-link {
+    display: none;
+  }
 }
 
 @media (max-width: 560px) {
@@ -222,15 +256,8 @@
   .header-actions .btn-sm {
     padding: 0.4rem 0.55rem;
   }
-  .auth-row {
-    grid-template-columns: 1fr;
-    gap: 0;
-  }
   .auth-grid {
     grid-template-columns: 1fr;
-  }
-  .auth-head-inline {
-    align-items: flex-start;
   }
   .summary .sum-row {
     font-size: var(--font-size-sm);
@@ -273,14 +300,8 @@
   .header-actions .account-label {
     display: none;
   }
-  .auth-card {
+  .auth-aside {
     padding: var(--space-lg) var(--space-md);
-  }
-  .auth-card-compact {
-    padding: var(--space-lg) var(--space-sm);
-  }
-  .auth-wrap {
-    padding: var(--space-md) var(--space-sm);
   }
   .step {
     padding: var(--space-lg);
@@ -343,8 +364,8 @@
 }
 
 @supports (height: 100dvh) {
-  .auth-wrap {
-    min-height: calc(100dvh - var(--header-height));
+  .auth-shell {
+    min-height: 100dvh;
   }
 }
 

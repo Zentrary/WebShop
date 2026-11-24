@@ -12,13 +12,13 @@ const WEB = path.join(ROOT, 'web');
 const THAI = /[\u0E00-\u0E7F]/;
 
 /* ------------------------------------------------------------------ *
- * 1. โลโก้สำรอง: ไม่มีโลโก้ที่ตั้งค่าไว้ -> ใช้รูปกระเป๋าซื้อของแทน
+ * 1. หน้า auth: ไม่มีโลโก้ เหลือแต่ข้อความ และเป็นหน้า stand-alone
  * ------------------------------------------------------------------ */
 {
   const supabase = await makeSupabaseMock({
     session: null,
     user: null,
-    rpcResults: { get_storefront: { singleton: true, shop_name: 'ZenMarket' } },
+    rpcResults: { get_storefront: { singleton: true, shop_name: 'ร้านพรีเมียม' } },
   });
   const { document } = await loadPage({
     htmlPath: path.join(WEB, 'auth/login.html'),
@@ -27,14 +27,50 @@ const THAI = /[\u0E00-\u0E7F]/;
   });
   await wait(300);
 
-  const img = el(document, 'auth-logo');
-  const mark = el(document, 'auth-mark');
-  A.ok('logo: มีคอนเทนเนอร์โลโก้จริง', !!img);
-  A.ok('logo: มีคอนเทนเนอร์รูปสำรอง', !!mark);
-  A.eq('logo: โลโก้จริงถูกซ่อนเมื่อไม่ได้ตั้งค่า', img?.hidden, true);
-  A.eq('logo: รูปสำรองถูกแสดงเมื่อไม่ได้ตั้งค่า', mark?.hidden, false);
-  A.ok('logo: รูปสำรองเป็น SVG ไม่ใช่ตัวอักษร Z', !!mark?.querySelector('svg'));
-  A.ok('logo: รูปสำรองไม่มีตัวอักษร Z', !/>Z</.test(mark?.innerHTML || ''));
+  A.ok('auth: ไม่มีคอนเทนเนอร์โลโก้', !document.getElementById('auth-logo'));
+  A.ok('auth: ไม่มีคอนเทนเนอร์เครื่องหมายสำรอง', !document.getElementById('auth-mark'));
+  A.ok('auth: ไม่มีรูปภาพโลโก้ในหน้า', document.querySelectorAll('.auth-aside img, .auth-topbar img').length === 0);
+  A.eq('auth: ชื่อร้านแสดงเป็นข้อความ', el(document, 'auth-brand-name')?.textContent.trim(), 'ร้านพรีเมียม');
+  A.ok('auth: มีแถบบนสุด', !!document.querySelector('.auth-topbar'));
+  A.ok('auth: มีแผงแนะนำ', !!document.querySelector('.auth-aside'));
+  A.ok('auth: มีหัวข้อฟอร์ม', !!document.querySelector('.auth-title'));
+  A.ok('auth: ไม่มีแถบหัวเว็บของเว็บไซต์', !document.querySelector('.site-header'));
+  A.ok('auth: ไม่มีท้ายเว็บของเว็บไซต์', !document.querySelector('.site-footer'));
+
+  const toggle = el(document, 'auth-lang-toggle');
+  A.ok('auth: ปุ่มสลับภาษามี aria-label', !!toggle.getAttribute('aria-label'));
+  toggle.dispatchEvent(new document.defaultView.Event('click', { bubbles: true }));
+  await wait(120);
+  A.ok('auth: กดสลับภาษาแล้วข้อความเปลี่ยน', !/[฀-๿]/.test(document.querySelector('.auth-title')?.textContent || ''));
+  A.eq('auth: ชื่อร้านยังคงเดิมหลังสลับภาษา', el(document, 'auth-brand-name')?.textContent.trim(), 'ร้านพรีเมียม');
+}
+
+/* ------------------------------------------------------------------ *
+ * 1b. หน้า login ผู้ดูแล ใช้เลย์เอาต์เดียวกันและไม่มีโลโก้
+ * ------------------------------------------------------------------ */
+{
+  const html = fs.readFileSync(path.join(WEB, 'admin/login.html'), 'utf8');
+  A.ok('admin-login: ไม่มีตัวอักษร Z', !/>Z</.test(html));
+  A.ok('admin-login: ไม่มีรูปโลโก้', !html.includes('id="auth-logo"'));
+  A.ok('admin-login: ใช้เลย์เอาต์ auth-shell', html.includes('auth-shell'));
+  A.ok('admin-login: มีปุ่มสลับภาษา', html.includes('id="auth-lang-toggle"'));
+  A.ok('admin-login: มีชื่อร้านเป็นข้อความ', html.includes('id="auth-brand-name"'));
+
+  const supabase = await makeSupabaseMock({
+    session: null,
+    user: null,
+    rpcResults: { get_storefront: { singleton: true, shop_name: 'ร้านผู้ดูแล' } },
+  });
+  const { document } = await loadPage({
+    htmlPath: path.join(WEB, 'admin/login.html'),
+    scripts: ['src/pages/admin/login.js'],
+    supabase,
+  });
+  await wait(250);
+
+  A.ok('admin-login: พบฟอร์มเข้าสู่ระบบ', !!document.getElementById('admin-login-form'));
+  A.ok('admin-login: ไม่มีแถบหัวเว็บของเว็บไซต์', !document.querySelector('.site-header'));
+  A.eq('admin-login: ชื่อร้านแสดงเป็นข้อความ', el(document, 'auth-brand-name')?.textContent.trim(), 'ร้านผู้ดูแล');
 }
 
 /* ------------------------------------------------------------------ *
@@ -43,7 +79,7 @@ const THAI = /[\u0E00-\u0E7F]/;
 {
   const html = fs.readFileSync(path.join(WEB, 'auth/register.html'), 'utf8');
   A.ok('register: ฟอร์มใช้คลาส auth-grid', /id="register-form"[^>]*class="[^"]*auth-grid/.test(html));
-  A.ok('register: การ์ดใช้คลาส auth-card-wide', /auth-card-wide/.test(html));
+  A.ok('register: หน้าใช้เลย์เอาต์กว้าง', /auth-shell-wide/.test(html));
   A.ok('register: ปุ่มสมัครสมาชิกกินเต็มแถว', /auth-grid-full[^>]*data-i18n="auth.submit_register"/.test(html));
 
   const base = fs.readFileSync(path.join(ROOT, 'src/styles/base.css'), 'utf8');
@@ -52,11 +88,10 @@ const THAI = /[\u0E00-\u0E7F]/;
     /\.auth-grid\s*\{[^}]*grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/.test(base),
   );
   A.ok('register: มี auth-grid-full ครอบทั้งแถว', /\.auth-grid-full\s*\{[^}]*grid-column:\s*1\s*\/\s*-1/.test(base));
+  A.ok('register: ฟอร์มกว้างพอสำหรับ 2 คอลัมน์', /\.auth-panel-wide \.auth-panel-inner\s*\{[^}]*max-width/.test(base));
 
   const responsive = fs.readFileSync(path.join(ROOT, 'src/styles/responsive.css'), 'utf8');
-  const mobileBlock = responsive.slice(responsive.indexOf('max-width: 768px'));
   A.ok('register: บนมือถือยุบเหลือ 1 คอลัมน์', /\.auth-grid\s*\{[^}]*grid-template-columns:\s*1fr/.test(responsive));
-  void mobileBlock;
 }
 
 /* ------------------------------------------------------------------ *

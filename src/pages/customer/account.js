@@ -13,12 +13,16 @@ import {
 } from '/src/core/validation.js';
 import { getStockStatusText, getStockStatusClass } from '/src/core/customer.js';
 import { loadFavoriteProducts, toggleFavorite, isFavorite, canUseFavorites } from '/src/core/favorites.js';
+import { initAuthShell } from '/src/core/auth-shell.js';
+
+const isAuthPage = () => window.location.pathname.includes('/auth/');
 
 document.addEventListener('DOMContentLoaded', async () => {
-  await initApp();
+  // The authentication pages are standalone: no site header, no site footer.
+  await initApp({ shell: !isAuthPage() });
   translatePage();
   initCaptcha();
-  applyAuthLogo();
+  if (isAuthPage()) initAuthShell();
 
   if (!requireSupabase()) return;
 
@@ -58,19 +62,6 @@ function bindPasswordStrength(inputId, hintId) {
     hint.className = result.ok ? 'auth-hint auth-hint-ok' : 'auth-hint auth-hint-bad';
     input.setAttribute('aria-invalid', result.ok ? 'false' : 'true');
   });
-}
-
-function applyAuthLogo() {
-  const raw = state.storeSettings?.logo_url;
-  const logo = raw ? safeImage(raw) : '';
-  const img = document.getElementById('auth-logo');
-  const mark = document.getElementById('auth-mark');
-  if (!img || !mark) return;
-  if (logo && !logo.includes('placeholder')) {
-    img.src = logo;
-    img.hidden = false;
-    mark.hidden = true;
-  }
 }
 
 function initLoginPage() {

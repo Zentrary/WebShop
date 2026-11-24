@@ -1,10 +1,13 @@
 import { setAudience } from '/src/core/audience.js';
 import { notify } from '/src/core/ui.js';
 import { initI18n, t, translatePage } from '/src/core/i18n.js';
+import { initAuthShell, paintAuthBrand } from '/src/core/auth-shell.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   initI18n();
   translatePage();
+  initAuthShell();
+  loadAdminBrandName();
 
   const form = document.getElementById('admin-login-form');
   if (!form) return;
@@ -61,3 +64,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
+
+/**
+ * The admin login page runs outside the main app shell, so it fetches the
+ * storefront settings on its own to show the real shop name as plain text.
+ */
+async function loadAdminBrandName() {
+  try {
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY);
+    const { data } = await supabase.rpc('get_storefront');
+    if (data && data.shop_name) {
+      const brand = document.getElementById('auth-brand-name');
+      if (brand) brand.textContent = data.shop_name;
+    }
+  } catch {
+    paintAuthBrand();
+  }
+}
