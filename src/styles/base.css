@@ -1908,6 +1908,8 @@ table.data .num {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  /* Thai vowels sit above the line box — keep them clear of the clip. */
+  line-height: 1.5;
 }
 .admin-brand-role {
   font-size: var(--font-size-xs);
@@ -2131,6 +2133,36 @@ table.data .num {
   transform: rotate(180deg);
 }
 .admin-nav-mobile {
+  margin-top: var(--space-md);
+  padding: var(--space-md);
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+.admin-lang-toggle {
+  align-self: flex-start;
+  padding: var(--space-xs) var(--space-sm);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-family: inherit;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition:
+    color var(--transition-fast),
+    border-color var(--transition-fast);
+}
+.admin-lang-toggle:hover {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+.admin-mobile-nav-foot {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
   margin-top: var(--space-md);
   padding: var(--space-md);
   border: 1px solid var(--color-border-soft);

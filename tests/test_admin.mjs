@@ -185,9 +185,36 @@ const ADMIN_SESSION = { user: { id: 'admin-1', email: 'admin@zenmarket.test' } }
   const logout = document.getElementById('admin-logout');
   A.ok('admin: ปุ่มออกจากระบบเป็นสีแดง', !!logout && logout.classList.contains('btn-danger-solid'));
 
+  const langBtn = document.getElementById('admin-lang-toggle');
+  A.ok('admin: แถบด้านข้างมีปุ่มสลับภาษา', !!langBtn);
+  A.ok('admin: ปุ่มสลับภาษาแสดงป้าย TH / EN', /TH\s*\/\s*EN/.test(langBtn?.textContent || ''));
+
+  const mobileNav = document.querySelector('.admin-mobile-nav');
+  A.ok('admin: มีเมนูแบบพับสำหรับมือถือ', !!mobileNav);
+  A.ok('admin: เมนูมือถือมีปุ่มสลับภาษา', !!document.getElementById('admin-mobile-lang-toggle'));
+  const mobileLogout = document.getElementById('admin-mobile-logout');
+  A.ok('admin: เมนูมือถือมีปุ่มออกจากระบบสีแดง', !!mobileLogout && mobileLogout.classList.contains('btn-danger-solid'));
+  A.eq('admin: เมนูมือถือมีลิงก์ครบ 8 รายการ', mobileNav?.querySelectorAll('.admin-nav a').length, 8);
+
   A.eq('admin: หัวหน้าหน้าไม่มี eyebrow ซ้ำ', document.querySelectorAll('.admin-content .eyebrow').length, 0);
   const title = document.querySelector('.admin-page-title');
   A.eq('admin: หัวข้อหน้าใช้ admin-page-title', title?.textContent.trim(), 'การดำเนินงาน');
+
+  // กดปุ่มสลับภาษาในแถบด้านข้างแล้วเมนูทั้งชุดต้องเปลี่ยนเป็นอังกฤษทันที
+  langBtn.dispatchEvent(new document.defaultView.Event('click', { bubbles: true }));
+  await wait(150);
+  const enLabels = [...document.querySelectorAll('.admin-sidebar .admin-nav-label')].map((e) => e.textContent.trim());
+  A.eq('admin: กดสลับภาษาแล้วป้ายกลุ่มเมนูเป็นอังกฤษ', enLabels, ['Manage the store', 'System setup']);
+  A.eq(
+    'admin: ปุ่มสลับภาษาแสดง EN / TH หลังสลับ',
+    document.getElementById('admin-lang-toggle')?.textContent.trim(),
+    'EN / TH',
+  );
+  A.eq(
+    'admin: ป้ายเมนูมือถือเปลี่ยนตามภาษา',
+    document.querySelector('.admin-mobile-nav-title')?.textContent.trim(),
+    'Admin menu',
+  );
 }
 
 /* ------------------------------------------------------------------ *

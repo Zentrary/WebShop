@@ -1,5 +1,5 @@
 import { isOwner, logout } from '/src/core/audience.js';
-import { t, onLanguageChange } from '/src/core/i18n.js';
+import { t, onLanguageChange, toggleLanguage, getLanguage } from '/src/core/i18n.js';
 import { safeImage } from '/src/core/lib.js';
 
 const NAV_GROUPS = [
@@ -100,6 +100,7 @@ export function initAdminLayout(activeHref, storeSettings = {}) {
       </a>
       <nav class="admin-nav">${navHtml()}</nav>
       <div class="admin-sidebar-foot">
+        <button type="button" id="admin-lang-toggle" class="lang-link admin-lang-toggle" aria-label="${t('common.change_lang')}" data-i18n-aria-label="common.change_lang">${getLanguage() === 'th' ? 'TH / EN' : 'EN / TH'}</button>
         <a href="/home.html" class="btn btn-outline btn-sm btn-full" data-i18n="admin.back_store">← ${t('admin.back_store')}</a>
         <button id="admin-logout" class="btn btn-danger-solid btn-sm btn-full" data-i18n="admin.logout">${t('admin.logout')}</button>
       </div>
@@ -113,6 +114,11 @@ export function initAdminLayout(activeHref, storeSettings = {}) {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg>
       </summary>
       <nav class="admin-nav admin-nav-mobile">${navHtml()}</nav>
+      <div class="admin-mobile-nav-foot">
+        <button type="button" id="admin-mobile-lang-toggle" class="lang-link admin-lang-toggle" aria-label="${t('common.change_lang')}" data-i18n-aria-label="common.change_lang">${getLanguage() === 'th' ? 'TH / EN' : 'EN / TH'}</button>
+        <a href="/home.html" class="btn btn-outline btn-sm btn-full" data-i18n="admin.back_store">← ${t('admin.back_store')}</a>
+        <button id="admin-mobile-logout" class="btn btn-danger-solid btn-sm btn-full" data-i18n="admin.logout">${t('admin.logout')}</button>
+      </div>
     `;
 
     layout.querySelector('.admin-sidebar')?.remove();
@@ -120,17 +126,34 @@ export function initAdminLayout(activeHref, storeSettings = {}) {
     layout.insertBefore(sidebar, layout.firstChild);
     layout.insertBefore(mobileNav, layout.firstChild);
 
+    const langBtn = document.getElementById('admin-lang-toggle');
+    if (langBtn) {
+      langBtn.addEventListener('click', () => toggleLanguage());
+    }
+
+    const mobileLangBtn = document.getElementById('admin-mobile-lang-toggle');
+    if (mobileLangBtn) {
+      mobileLangBtn.addEventListener('click', () => toggleLanguage());
+    }
+
+    const signOut = async () => {
+      try {
+        const { createClient } = await import('@supabase/supabase-js');
+        const supabase = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY);
+        await supabase.auth.signOut();
+      } catch {}
+      logout();
+      window.location.href = '/admin/login.html';
+    };
+
     const logoutBtn = document.getElementById('admin-logout');
     if (logoutBtn) {
-      logoutBtn.addEventListener('click', async () => {
-        try {
-          const { createClient } = await import('@supabase/supabase-js');
-          const supabase = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY);
-          await supabase.auth.signOut();
-        } catch {}
-        logout();
-        window.location.href = '/admin/login.html';
-      });
+      logoutBtn.addEventListener('click', signOut);
+    }
+
+    const mobileLogoutBtn = document.getElementById('admin-mobile-logout');
+    if (mobileLogoutBtn) {
+      mobileLogoutBtn.addEventListener('click', signOut);
     }
   };
 
