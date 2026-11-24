@@ -21,6 +21,36 @@ function getHtmlEntries(dir) {
   return entries;
 }
 
+/**
+ * ให้ dev/preview server รับ URL แบบ clean URL เหมือนบน Vercel
+ * (/home → home.html, /shop → shop/index.html, /admin/dashboard → admin/dashboard.html)
+ */
+function cleanUrls(root) {
+  const resolveFile = (url) => {
+    const pathname = decodeURIComponent(url.split('?')[0]);
+    if (pathname === '/' || pathname === '') return '/home.html';
+    if (/\.[A-Za-z0-9]+$/.test(pathname)) return null;
+    const direct = path.join(root, pathname);
+    if (fs.existsSync(path.join(direct, 'index.html'))) return `${pathname.replace(/\/$/, '')}/index.html`;
+    if (fs.existsSync(`${direct}.html`)) return `${pathname}.html`;
+    return null;
+  };
+  const middleware = (req, res, next) => {
+    const target = resolveFile(req.url);
+    if (target) req.url = target;
+    next();
+  };
+  return {
+    name: 'zenmarket-clean-urls',
+    configureServer(server) {
+      server.middlewares.use(middleware);
+    },
+    configurePreviewServer(server) {
+      server.middlewares.use(middleware);
+    },
+  };
+}
+
 export default defineConfig({
   root: 'web',
   envDir: '..',
@@ -45,4 +75,5 @@ export default defineConfig({
       '/src': path.resolve('./src'),
     },
   },
+  plugins: [cleanUrls(path.resolve('web'))],
 });

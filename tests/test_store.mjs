@@ -50,7 +50,7 @@ const PRODUCTS = [
   const content = el(document, 'shop-content');
   A.ok('store: guest เห็นประตูสมัครสมาชิก', !!gate && !gate.classList.contains('hidden'));
   A.ok('store: guest ถูกซ่อนเนื้อหาสินค้า', !!content && content.classList.contains('hidden'));
-  A.ok('store: guest มีปุ่มสมัครสมาชิก', !!gate.querySelector('a[href="/auth/register.html"]'));
+  A.ok('store: guest มีปุ่มสมัครสมาชิก', !!gate.querySelector('a[href="/auth/register"]'));
   A.eq('store: guest ไม่เห็นการ์ดสินค้า', el(document, 'product-grid').querySelectorAll('.product-card').length, 0);
 }
 
@@ -230,7 +230,7 @@ const PRODUCTS = [
   A.ok('responsive: quick-add ถูกบังคับแสดง', /\.quick-add[^{]*\{[^}]*opacity:\s*1/.test(css) || /\.quick-add/.test(css));
   A.ok('responsive: favorite ถูกบังคับแสดง', /\.favorite-btn/.test(css));
 
-  for (const bp of [1200, 1024, 900, 768, 640, 560, 480, 400]) {
+  for (const bp of [1200, 1024, 900, 768, 640, 600, 560, 480, 360]) {
     A.ok(`responsive: มี breakpoint ${bp}px`, css.includes(`max-width: ${bp}px`));
   }
   A.ok('responsive: เมนูหลักซ่อนบนมือถือ', /\.header-nav\s*\{[^}]*display:\s*none/.test(css));

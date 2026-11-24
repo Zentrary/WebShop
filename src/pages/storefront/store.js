@@ -15,6 +15,7 @@ import { getStockStatusText, getStockStatusClass } from '/src/core/customer.js';
 import { observeReveals } from '/src/core/reveal.js';
 import { loadFavorites, toggleFavorite, isFavorite, canUseFavorites } from '/src/core/favorites.js';
 import { t, applyDocumentTitle, onLanguageChange } from '/src/core/i18n.js';
+import { normalizePath } from '/src/core/routes.js';
 
 let currentProduct = null;
 let currentPage = 1;
@@ -46,10 +47,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   await loadFavorites();
 
-  if (path.includes('/shop/index.html') || path === '/shop') {
-    currentRenderer = initStorePage;
-  } else if (path.includes('/shop/product.html')) {
+  const route = normalizePath(path);
+  if (route.startsWith('/shop/product')) {
     currentRenderer = initProductPage;
+  } else if (route === '/shop') {
+    currentRenderer = initStorePage;
   }
 
   if (currentRenderer) await currentRenderer();
@@ -107,7 +109,7 @@ function createProductCard(product) {
       handleFavoriteClick(favBtn, product.id);
       return;
     }
-    window.location.href = `/shop/product.html?id=${product.id}`;
+    window.location.href = `/shop/product?id=${product.id}`;
   });
 
   return card;
@@ -118,7 +120,7 @@ async function handleFavoriteClick(button, productId) {
     notify(t('toast.login_required'), 'warning');
     sessionStorage.setItem('zenmarket_return_path', window.location.pathname + window.location.search);
     setTimeout(() => {
-      window.location.href = '/auth/login.html';
+      window.location.href = '/auth/login';
     }, 900);
     return;
   }
@@ -270,7 +272,7 @@ async function initProductPage() {
   const productId = urlParams.get('id');
 
   if (!productId) {
-    window.location.href = '/shop/index.html';
+    window.location.href = '/shop';
     return;
   }
 
@@ -343,7 +345,7 @@ async function initProductPage() {
           notify(t('toast.login_required'), 'warning');
           sessionStorage.setItem('zenmarket_return_path', window.location.pathname + window.location.search);
           setTimeout(() => {
-            window.location.href = '/auth/login.html';
+            window.location.href = '/auth/login';
           }, 900);
           return;
         }
@@ -356,7 +358,7 @@ async function initProductPage() {
       const qty = parseInt(qtyInput.value) || 1;
       addToCart(product, qty);
       updateCartBadge();
-      window.location.href = '/shop/checkout.html';
+      window.location.href = '/shop/checkout';
     });
 
     const { data: reviews } = await state.supabase

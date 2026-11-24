@@ -299,8 +299,11 @@
     font-size: 2.25rem;
   }
   .header-logo-name {
-    max-width: 22vw;
+    max-width: 42vw;
     font-size: var(--font-size-base);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .header-actions .account-label {
     display: none;
@@ -313,11 +316,8 @@
   }
 }
 
-@media (max-width: 400px) {
-  #lang-toggle,
-  .header-admin {
-    display: none;
-  }
+@media (max-width: 360px) {
+  /* จอเล็กมาก ๆ ค่อยซ่อนชื่อร้าน เก็บไว้แค่ตราสัญลักษณ์ */
   .header-logo-name {
     display: none;
   }
@@ -337,6 +337,204 @@
   }
   .hero .lead {
     font-size: var(--font-size-base);
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * โทรศัพท์: เปลี่ยนตารางข้อมูลเป็น "การ์ดทีละแถว" ไม่ให้คอลัมน์ล้นจอ
+ * (ทุก td ต้องมี data-label เพื่อโชว์หัวข้อด้านซ้าย) — ใช้ถึงแท็บเล็ตแนวตั้ง
+ * เพราะตาราง 6–7 คอลัมน์บีบจนอ่านไม่ไหว; 990px ขึ้นไปกลับมาเป็นตารางปกติ
+ * ------------------------------------------------------------------ */
+@media (max-width: 900px) {
+  .table-wrap:has(> table.data) {
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+  .table-wrap table.data {
+    min-width: 0;
+  }
+  table.data,
+  table.data tbody,
+  table.data tr,
+  table.data td {
+    display: block;
+    width: 100%;
+  }
+  table.data thead {
+    display: none;
+  }
+  table.data tr {
+    padding: var(--space-sm) var(--space-lg);
+    border: var(--card-border);
+    border-radius: var(--card-radius);
+    background: var(--card-bg);
+  }
+  table.data tr + tr {
+    margin-top: var(--space-sm);
+  }
+  table.data tr:hover td {
+    background: transparent;
+  }
+  table.data td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-md);
+    padding: 0.5rem 0;
+    border: 0;
+    text-align: right;
+    color: var(--color-text);
+  }
+  table.data td + td {
+    border-top: 1px solid var(--color-border-soft);
+  }
+  table.data td::before {
+    content: attr(data-label);
+    flex: 0 0 36%;
+    text-align: left;
+    font-size: var(--font-size-xs);
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    color: var(--color-text-muted);
+    white-space: nowrap;
+  }
+  table.data td:not([data-label])::before,
+  table.data td[data-label='']::before {
+    content: none;
+    display: none;
+  }
+  table.data td.num {
+    text-align: right;
+  }
+  table.data td.cell-actions {
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+    padding-top: var(--space-sm);
+    margin-top: var(--space-xs);
+  }
+  table.data td.cell-actions .btn {
+    white-space: nowrap;
+    flex: 0 0 auto;
+  }
+  table.data td[colspan] {
+    display: block;
+    text-align: center;
+  }
+  table.data td .cell-thumb {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-sm);
+    object-fit: cover;
+  }
+}
+
+/* หัวหน้าหลังบ้านบนมือถือ: หัวข้อเต็มบรรทัด แล้วค่อยตามด้วยค้นหา + ปุ่ม */
+@media (max-width: 600px) {
+  .admin-head {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-md);
+  }
+  .admin-head-actions {
+    width: 100%;
+    flex-wrap: nowrap;
+  }
+  .admin-head-actions .admin-search {
+    flex: 1 1 auto;
+    max-width: none;
+  }
+  .admin-head-actions .btn {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+  .kpi-grid {
+    grid-auto-rows: 1fr;
+  }
+}
+
+/* กราฟยอดขายบนมือถือ: ตัวเลขบนแท่งทับกันไม่ไหว ซ่อนไว้แล้วดูแกนกับแท่งแทน */
+@media (max-width: 768px) {
+  .sales-value {
+    display: none;
+  }
+  .sales-chart {
+    min-height: 200px;
+  }
+  .sales-chart-axis {
+    padding-bottom: 24px;
+  }
+  .sales-day-label {
+    font-size: 0.625rem;
+    letter-spacing: 0;
+  }
+  /* KPI: ตัวเลขยาว ๆ ต้องไม่ล้นกรอบ */
+  .kpi .k-value {
+    font-size: clamp(1.35rem, 6.4vw, 2rem);
+    letter-spacing: -0.03em;
+  }
+  .kpi {
+    min-width: 0;
+  }
+}
+
+/* เมนูจัดการหลังบ้านอยู่ใน .admin-mobile-nav-body ที่ซ่อนไว้จนกว่าจะเปิด */
+.admin-mobile-nav-body {
+  display: none;
+}
+.admin-mobile-nav.is-open .admin-mobile-nav-body {
+  display: block;
+}
+
+/* ------------------------------------------------------------------ *
+ * โทรศัพท์: หัวเว็บเหลือของที่จำเป็นจริง ๆ ที่เหลือย้ายเข้าเมนู
+ * ------------------------------------------------------------------ */
+@media (max-width: 768px) {
+  .header-container {
+    gap: var(--space-sm);
+  }
+  .header-logo {
+    min-width: 0;
+  }
+  .header-actions {
+    flex-shrink: 0;
+  }
+  #lang-toggle,
+  .header-admin,
+  .header-logout {
+    display: none !important;
+  }
+  .header-account .account-label {
+    display: none;
+  }
+  .header-account,
+  .header-cart {
+    padding: 0.45rem 0.55rem;
+  }
+  .site-header .header-container {
+    padding-left: max(var(--space-md), env(safe-area-inset-left));
+    padding-right: max(var(--space-md), env(safe-area-inset-right));
+  }
+  .mobile-nav-logout {
+    display: block;
+    width: 100%;
+    margin-top: var(--space-md);
+    padding: 0.7rem var(--space-md);
+    border: 1px solid var(--color-error);
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--color-error);
+    font-family: inherit;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    text-align: center;
+    cursor: pointer;
+  }
+  .mobile-nav a,
+  .mobile-nav-lang {
+    padding: 0.7rem 0;
   }
 }
 

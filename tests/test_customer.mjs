@@ -24,7 +24,7 @@ const CART = [{ product_id: 'p1', name: 'กาแฟ', price: 120, quantity: 2 
   const gate = el(document, 'checkout-gate');
   A.ok('checkout: guest เห็น gate', !gate.classList.contains('hidden'));
   A.ok('checkout: guest ถูกซ่อนฟอร์ม', el(document, 'checkout-content').classList.contains('hidden'));
-  A.ok('checkout: guest gate มีปุ่มเข้าสู่ระบบ', gate.innerHTML.includes('/auth/login.html'));
+  A.ok('checkout: guest gate มีปุ่มเข้าสู่ระบบ', gate.innerHTML.includes('/auth/login'));
 }
 
 {
@@ -262,20 +262,20 @@ const CART = [{ product_id: 'p1', name: 'กาแฟ', price: 120, quantity: 2 
   A.ok('header: guest มีแถบหัวเว็บ', !!header);
   const nav = document.querySelector('#header-nav');
   const navText = nav ? nav.textContent : '';
-  A.ok('header: guest ไม่เห็นลิงก์สินค้า', !nav.querySelector('a[href="/shop/index.html"]'));
-  A.ok('header: guest ไม่เห็นลิงก์หมวดหมู่', !nav.querySelector('a[href="/shop/categories.html"]'));
+  A.ok('header: guest ไม่เห็นลิงก์สินค้า', !nav.querySelector('a[href="/shop"]'));
+  A.ok('header: guest ไม่เห็นลิงก์หมวดหมู่', !nav.querySelector('a[href="/shop/categories"]'));
   const actions = document.querySelector('#header-actions');
-  A.ok('header: guest ไม่เห็นปุ่มตะกร้า', !actions.querySelector('a[href="/shop/cart.html"]'));
-  A.ok('header: guest เห็นปุ่มเข้าสู่ระบบ', !!actions.querySelector('a[href="/auth/login.html"]'));
-  A.ok('header: guest เห็นปุ่มสมัครสมาชิก', !!actions.querySelector('a[href="/auth/register.html"]'));
+  A.ok('header: guest ไม่เห็นปุ่มตะกร้า', !actions.querySelector('a[href="/shop/cart"]'));
+  A.ok('header: guest เห็นปุ่มเข้าสู่ระบบ', !!actions.querySelector('a[href="/auth/login"]'));
+  A.ok('header: guest เห็นปุ่มสมัครสมาชิก', !!actions.querySelector('a[href="/auth/register"]'));
   A.ok('header: ชื่อร้านไม่มีชื่อหน้าแนบ', !navText.includes('|'));
   const logoText = document.querySelector('.header-logo-text');
   A.ok('header: .header-logo-text มีแค่ชื่อร้าน', !!logoText && !logoText.textContent.includes('|'));
-  const heroCta = document.querySelector('.hero-cta a[href="/shop/index.html"]');
+  const heroCta = document.querySelector('.hero-cta a[href="/shop"]');
   A.ok('hero: guest ซ่อนปุ่มเลือกซื้อสินค้า', !!heroCta && heroCta.classList.contains('hidden'));
-  const heroRegister = document.querySelector('.hero-cta a[href="/auth/register.html"]');
+  const heroRegister = document.querySelector('.hero-cta a[href="/auth/register"]');
   A.ok('hero: ไม่มีปุ่มสมัครสมาชิกใน hero', !heroRegister);
-  const heroLogin = document.querySelector('.hero-cta a[href="/auth/login.html"]');
+  const heroLogin = document.querySelector('.hero-cta a[href="/auth/login"]');
   A.ok('hero: ไม่มีปุ่มเข้าสู่ระบบใน hero', !heroLogin);
   const langToggle = document.getElementById('lang-toggle');
   A.ok('header: ปุ่มสลับภาษาอยู่ท้ายแถบหัวเว็บ', !!langToggle && !!langToggle.closest('.site-header'));
@@ -298,24 +298,21 @@ const CART = [{ product_id: 'p1', name: 'กาแฟ', price: 120, quantity: 2 
   });
   await wait(300);
   const nav = document.querySelector('#header-nav');
-  A.ok('header: member เห็นลิงก์สินค้า', !!nav.querySelector('a[href="/shop/index.html"]'));
-  A.ok(
-    'header: member ไม่เห็นลิงก์หมวดหมู่แยก (รวมไว้ในหน้ารายการสินค้า)',
-    !nav.querySelector('a[href="/shop/categories.html"]'),
-  );
+  A.ok('header: member เห็นลิงก์สินค้า', !!nav.querySelector('a[href="/shop"]'));
+  A.ok('header: member ไม่เห็นลิงก์หมวดหมู่แยก (รวมไว้ในหน้ารายการสินค้า)', !nav.querySelector('a[href="/shop/categories"]'));
   const actions = document.querySelector('#header-actions');
-  A.ok('header: member เห็นปุ่มตะกร้า', !!actions.querySelector('a[href="/shop/cart.html"]'));
-  const heroCta = document.querySelector('.hero-cta a[href="/shop/index.html"]');
+  A.ok('header: member เห็นปุ่มตะกร้า', !!actions.querySelector('a[href="/shop/cart"]'));
+  const heroCta = document.querySelector('.hero-cta a[href="/shop"]');
   A.ok('hero: member เห็นปุ่มเลือกซื้อสินค้า', !!heroCta && !heroCta.classList.contains('hidden'));
-  const heroRegister = document.querySelector('.hero-cta a[href="/auth/register.html"]');
+  const heroRegister = document.querySelector('.hero-cta a[href="/auth/register"]');
   A.ok('hero: member ไม่มีปุ่มสมัครสมาชิก', !heroRegister);
   const headerLogout = document.querySelector('#user-menu-btn');
   A.ok('header: ปุ่มออกจากระบบใช้สไตล์สีแดง', !!headerLogout && headerLogout.classList.contains('btn-danger'));
 
   // บัญชีของฉันต้องมีที่เดียว — เป็นปุ่มไอคอนทางขวา ไม่ซ้ำในเมนูหลัก
-  A.eq('header: เมนูหลักไม่มี "บัญชีของฉัน" ซ้ำ', nav.querySelectorAll('a[href="/account/index.html"]').length, 0);
-  A.ok('header: ยังมีปุ่มบัญชีของฉันทางขวา', !!actions.querySelector('a[href="/account/index.html"]'));
-  A.ok('header: เมนูมือถือยังเข้าบัญชีของฉันได้', !!document.querySelector('#mobile-nav a[href="/account/index.html"]'));
+  A.eq('header: เมนูหลักไม่มี "บัญชีของฉัน" ซ้ำ', nav.querySelectorAll('a[href="/account"]').length, 0);
+  A.ok('header: ยังมีปุ่มบัญชีของฉันทางขวา', !!actions.querySelector('a[href="/account"]'));
+  A.ok('header: เมนูมือถือยังเข้าบัญชีของฉันได้', !!document.querySelector('#mobile-nav a[href="/account"]'));
 }
 
 /* ------------------------------------------------------------------ *
@@ -323,11 +320,11 @@ const CART = [{ product_id: 'p1', name: 'กาแฟ', price: 120, quantity: 2 
  * ------------------------------------------------------------------ */
 {
   const { safeReturnPath } = await importPage('/src/core/lib.js');
-  A.eq('login: ค่าเริ่มต้นหลังเข้าสู่ระบบคือหน้าแรก', safeReturnPath(null), '/home.html');
-  A.eq('login: ยังพากลับไปหน้าที่ตั้งใจไว้ได้', safeReturnPath('/shop/cart.html'), '/shop/cart.html');
+  A.eq('login: ค่าเริ่มต้นหลังเข้าสู่ระบบคือหน้าแรก', safeReturnPath(null), '/home');
+  A.eq('login: ยังพากลับไปหน้าที่ตั้งใจไว้ได้', safeReturnPath('/shop/cart'), '/shop/cart');
 
   const source = fs.readFileSync('/home/user/WebShop/src/pages/customer/account.js', 'utf8');
-  A.ok('login: ฟอร์มเข้าสู่ระบบใช้หน้าแรกเป็นปลายทางเริ่มต้น', /zenmarket_return_path'\)\s*,\s*'\/home\.html'/.test(source));
+  A.ok('login: ฟอร์มเข้าสู่ระบบใช้หน้าแรกเป็นปลายทางเริ่มต้น', /zenmarket_return_path'\)\s*,\s*'\/home'/.test(source));
 }
 
 /* ------------------------------------------------------------------ *

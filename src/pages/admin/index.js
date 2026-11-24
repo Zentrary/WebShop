@@ -10,6 +10,7 @@ import {
   ratingStars,
 } from '/src/core/lib.js';
 import { validateSocialUrl, getOrderStatusBadge } from '/src/core/experience.js';
+import { normalizePath } from '/src/core/routes.js';
 import { initReveal } from '/src/core/reveal.js';
 import { initAdminLayout } from '/src/pages/admin/layout.js';
 import { initI18n, t, translatePage, onLanguageChange, getLanguage } from '/src/core/i18n.js';
@@ -55,22 +56,24 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   if (!allowed) {
-    window.location.href = '/admin/login.html';
+    window.location.href = '/admin/login';
     return;
   }
 
-  const path = window.location.pathname;
-  const layoutMap = [
-    ['/admin/dashboard.html', '/admin/dashboard.html'],
-    ['/admin/products.html', '/admin/products.html'],
-    ['/admin/categories.html', '/admin/categories.html'],
-    ['/admin/reviews.html', '/admin/reviews.html'],
-    ['/admin/settings.html', '/admin/settings.html'],
-    ['/admin/payments.html', '/admin/payments.html'],
-    ['/admin/order.html', '/admin/orders.html'],
-    ['/admin/orders.html', '/admin/orders.html'],
-  ];
-  const active = layoutMap.find(([key]) => path.includes(key))?.[1];
+  // ใช้ path แบบ clean URL: /admin/orders กับ /admin/order ต้องแยกกันให้ชัด
+  const path = normalizePath(window.location.pathname);
+  const active =
+    {
+      '/admin/dashboard': '/admin/dashboard',
+      '/admin/products': '/admin/products',
+      '/admin/categories': '/admin/categories',
+      '/admin/reviews': '/admin/reviews',
+      '/admin/settings': '/admin/settings',
+      '/admin/payments': '/admin/payments',
+      '/admin/operations': '/admin/operations',
+      '/admin/order': '/admin/orders',
+      '/admin/orders': '/admin/orders',
+    }[path] || '/admin/dashboard';
 
   let storeSettings = {};
   try {
@@ -82,14 +85,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   initReveal();
 
   let renderer = null;
-  if (path.includes('/admin/dashboard.html')) renderer = initDashboard;
-  else if (path.includes('/admin/products.html')) renderer = initProducts;
-  else if (path.includes('/admin/categories.html')) renderer = initCategories;
-  else if (path.includes('/admin/reviews.html')) renderer = initReviews;
-  else if (path.includes('/admin/settings.html')) renderer = initSettings;
-  else if (path.includes('/admin/payments.html')) renderer = initPayments;
-  else if (path.includes('/admin/order.html')) renderer = initAdminOrderDetail;
-  else if (path.includes('/admin/orders.html')) renderer = initAdminOrders;
+  if (path === '/admin/dashboard') renderer = initDashboard;
+  else if (path === '/admin/products') renderer = initProducts;
+  else if (path === '/admin/categories') renderer = initCategories;
+  else if (path === '/admin/reviews') renderer = initReviews;
+  else if (path === '/admin/settings') renderer = initSettings;
+  else if (path === '/admin/payments') renderer = initPayments;
+  else if (path === '/admin/orders') renderer = initAdminOrders;
+  else if (path === '/admin/order') renderer = initAdminOrderDetail;
 
   if (renderer) await renderer();
 
@@ -255,13 +258,13 @@ async function initProducts() {
     products?.forEach((p) => {
       const tr = document.createElement('tr');
       tr.innerHTML =
-        `<td><img src="${p.image_url || '/images/placeholder.svg'}" style="width:40px;height:40px;object-fit:cover;border-radius:6px" alt=""></td>` +
-        `<td class="font-semibold" style="color:var(--color-text)">${escapeHTML(p.name)}</td>` +
-        `<td>${escapeHTML(p.category || '-')}</td>` +
-        `<td class="num">${formatTHB(p.price)}</td>` +
-        `<td style="text-align:center">${p.stock}</td>` +
-        `<td><span class="badge badge-${p.active ? 'success' : 'error'}">${p.active ? t('admin.active') : t('admin.hidden')}</span></td>` +
-        `<td><button class="btn btn-outline btn-sm" data-edit="${p.id}">${t('common.edit')}</button> ` +
+        `<td data-label="${t('admin.product_image')}"><img class="cell-thumb" src="${p.image_url || '/images/placeholder.svg'}" alt=""></td>` +
+        `<td data-label="${t('admin.product_name')}" class="font-semibold" style="color:var(--color-text)">${escapeHTML(p.name)}</td>` +
+        `<td data-label="${t('admin.product_category')}">${escapeHTML(p.category || '-')}</td>` +
+        `<td data-label="${t('common.price')}" class="num">${formatTHB(p.price)}</td>` +
+        `<td data-label="${t('admin.product_stock')}" class="num">${p.stock}</td>` +
+        `<td data-label="${t('common.status')}"><span class="badge badge-${p.active ? 'success' : 'error'}">${p.active ? t('admin.active') : t('admin.hidden')}</span></td>` +
+        `<td class="cell-actions"><button class="btn btn-outline btn-sm" data-edit="${p.id}">${t('common.edit')}</button> ` +
         `<button class="btn btn-outline btn-sm" data-toggle="${p.id}">${p.active ? t('admin.hide') : t('admin.show')}</button> ` +
         `<button class="btn btn-danger btn-sm" data-del="${p.id}">${t('common.delete')}</button></td>`;
       tbody.appendChild(tr);
@@ -614,12 +617,12 @@ async function initReviews() {
     const rating = Math.max(0, Math.min(5, Number(r.rating) || 0));
     const tr = document.createElement('tr');
     tr.innerHTML =
-      `<td>${escapeHTML(r.reviewer_name || t('common.customer'))}</td>` +
-      `<td>${escapeHTML(r.product_name || '-')}</td>` +
-      `<td style="text-align:center">${ratingStars(rating, 12)}</td>` +
-      `<td>${escapeHTML(r.comment || '-')}</td>` +
-      `<td>${r.created_at ? new Date(r.created_at).toLocaleDateString('th-TH') : '-'}</td>` +
-      `<td>${
+      `<td data-label="${t('admin.reviewer')}">${escapeHTML(r.reviewer_name || t('common.customer'))}</td>` +
+      `<td data-label="${t('admin.product')}">${escapeHTML(r.product_name || '-')}</td>` +
+      `<td data-label="${t('admin.rating')}" class="review-rating">${ratingStars(rating, 12)}</td>` +
+      `<td data-label="${t('admin.comment')}">${escapeHTML(r.comment || '-')}</td>` +
+      `<td data-label="${t('common.date')}">${r.created_at ? new Date(r.created_at).toLocaleDateString('th-TH') : '-'}</td>` +
+      `<td class="cell-actions">${
         r.id
           ? `<button class="btn btn-danger btn-sm" data-del="${escapeHTML(r.id)}">${t('common.delete')}</button>`
           : ''
@@ -1038,12 +1041,12 @@ async function initAdminOrders() {
       const badge = getOrderStatusBadge(order.status);
       const tr = document.createElement('tr');
       tr.innerHTML =
-        `<td class="font-semibold" style="color:var(--color-text)">#${order.id.slice(0, 8)}</td>` +
-        `<td>${escapeHTML(order.recipient || '-')}</td>` +
-        `<td>${order.created_at ? new Date(order.created_at).toLocaleDateString('th-TH') : '-'}</td>` +
-        `<td class="num">${formatTHB(order.total)}</td>` +
-        `<td><span class="badge badge-${badge.variant}">${badge.label}</span></td>` +
-        `<td><a href="/admin/order.html?id=${order.id}" class="btn btn-outline btn-sm">${t('common.view')}</a></td>`;
+        `<td data-label="${t('order.no')}" class="font-semibold" style="color:var(--color-text)">#${order.id.slice(0, 8)}</td>` +
+        `<td data-label="${t('admin.order_customer')}">${escapeHTML(order.recipient || '-')}</td>` +
+        `<td data-label="${t('common.date')}">${order.created_at ? new Date(order.created_at).toLocaleDateString('th-TH') : '-'}</td>` +
+        `<td data-label="${t('common.total')}" class="num">${formatTHB(order.total)}</td>` +
+        `<td data-label="${t('common.status')}"><span class="badge badge-${badge.variant}">${badge.label}</span></td>` +
+        `<td class="cell-actions"><a href="/admin/order?id=${order.id}" class="btn btn-outline btn-sm">${t('common.view')}</a></td>`;
       tbody.appendChild(tr);
     });
   }
