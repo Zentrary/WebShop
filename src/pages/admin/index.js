@@ -7,11 +7,12 @@ import {
   createPromptPayQRDataURL,
   getPrivateImageUrl,
   bindOnce,
+  ratingStars,
 } from '/src/core/lib.js';
 import { validateSocialUrl, getOrderStatusBadge } from '/src/core/experience.js';
 import { initReveal } from '/src/core/reveal.js';
 import { initAdminLayout } from '/src/pages/admin/layout.js';
-import { initI18n, t, translatePage, onLanguageChange } from '/src/core/i18n.js';
+import { initI18n, t, translatePage, onLanguageChange, getLanguage } from '/src/core/i18n.js';
 import {
   uploadStoreLogo,
   removeStoreLogo,
@@ -112,24 +113,7 @@ async function initDashboard() {
     set('kpi-products', d.product_count || 0);
     set('kpi-rating', (d.average_rating || 0).toFixed(1));
 
-    const chart = document.getElementById('sales-chart');
-    if (chart && d.daily_revenue) {
-      const max = Math.max(...d.daily_revenue.map((x) => Number(x.total)), 1);
-      chart.innerHTML = d.daily_revenue
-        .map(
-          (x) => `
-        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end">
-          <div style="width:100%;max-width:36px;height:${Math.max(4, (Number(x.total) / max) * 100)}%;background:var(--color-accent);border-radius:4px 4px 0 0;min-height:4px" title="${formatTHB(x.total)}"></div>
-          <span style="font-size:11px;color:var(--color-text-muted)">${new Date(x.day).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })}</span>
-        </div>
-      `,
-        )
-        .join('');
-      chart.style.display = 'flex';
-      chart.style.alignItems = 'stretch';
-      chart.style.gap = '8px';
-      chart.style.padding = '16px';
-    }
+    renderSalesChart(Array.isArray(d.daily_revenue) ? d.daily_revenue : []);
 
     const { data: products } = await supabase.from('products').select('*').order('stock', { ascending: true }).limit(5);
     const lowStockList = document.getElementById('low-stock-list');
@@ -158,7 +142,7 @@ async function initDashboard() {
           .map(
             (r) => `
         <div style="padding:0.5rem 0;border-bottom:1px solid var(--color-border-soft)">
-          <div class="stars" style="font-size:12px">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</div>
+          <div>${ratingStars(r.rating, 12)}</div>
           <div class="text-sm">${escapeHTML(r.comment || '')} <span class="text-muted">— ${escapeHTML(r.reviewer_name || '')}</span></div>
         </div>
       `,
@@ -169,6 +153,84 @@ async function initDashboard() {
     console.error(err);
     notify(t('admin.system_error'), 'error');
   }
+}
+
+/**
+ * Draws the "last 7 days" chart from the dashboard RPC payload.
+ *
+ * The chart draws itself with plain markup and CSS variables: a soft grid, one
+ * column per day, a value label above every bar and the date underneath. When
+ * the week has no sales at all it says so instead of showing seven flat bars.
+ */
+function renderSalesChart(days) {
+  const chart = document.getElementById('sales-chart');
+  const totalEl = document.getElementById('sales-chart-total');
+  if (!chart) return;
+
+  const rows = days.map((d) => ({ day: d.day, total: Number(d.total) || 0 }));
+  const total = rows.reduce((sum, r) => sum + r.total, 0);
+  const max = Math.max(...rows.map((r) => r.total), 0);
+  const axisMax = niceAxisMax(max);
+
+  if (totalEl) {
+    if (!rows.length) totalEl.textContent = '';
+    else if (!total) totalEl.textContent = t('admin.chart_no_data');
+    else
+      totalEl.textContent = t('admin.chart_summary', {
+        total: formatTHB(total),
+        avg: formatTHB(Math.round(total / rows.length)),
+      });
+  }
+
+  if (!rows.length) {
+    chart.innerHTML = `<div class="sales-chart-empty"><span>${t('admin.chart_no_data')}</span></div>`;
+    return;
+  }
+
+  const todayKey = new Date().toLocaleDateString('sv-SE');
+  const label = (iso) =>
+    new Date(`${iso}T00:00:00`).toLocaleDateString(getLanguage() === 'th' ? 'th-TH' : 'en-GB', {
+      day: 'numeric',
+      month: 'short',
+    });
+
+  // ยอดขายเป็นศูนย์ทั้งสัปดาห์: ไม่ต้องมีแกนซ้ำสองบรรทัด "฿0" ให้รก
+  const axis = axisMax
+    ? `<div class="sales-chart-axis">
+      <span>${formatTHB(axisMax)}</span>
+      <span>฿0</span>
+    </div>`
+    : '';
+
+  chart.classList.toggle('is-flat', !axisMax);
+  chart.innerHTML = `
+    ${axis}
+    <div class="sales-chart-plot${axisMax ? '' : ' is-flat'}">
+      ${rows
+        .map((r) => {
+          const height = axisMax ? Math.max(2, Math.round((r.total / axisMax) * 100)) : 2;
+          const key = String(r.day).slice(0, 10);
+          const classes = ['sales-day'];
+          if (key === todayKey) classes.push('is-today');
+          if (!r.total) classes.push('is-empty');
+          return `
+        <div class="${classes.join(' ')}" style="--h:${height}%" title="${label(key)} — ${formatTHB(r.total)}">
+          <span class="sales-value">${r.total ? formatTHB(r.total) : ''}</span>
+          <span class="sales-bar"></span>
+          <span class="sales-day-label">${label(key)}</span>
+        </div>`;
+        })
+        .join('')}
+    </div>
+  `;
+}
+
+/** Rounds a maximum up to a friendly value so the axis shows round numbers. */
+function niceAxisMax(value) {
+  if (!value || value <= 0) return 0;
+  const magnitude = 10 ** Math.floor(Math.log10(value));
+  const step = [1, 2, 2.5, 5, 10].find((s) => magnitude * s >= value) || 10;
+  return magnitude * step;
 }
 
 async function initProducts() {
@@ -353,29 +415,140 @@ async function initProducts() {
 async function initCategories() {
   const list = document.getElementById('admin-categories-list');
   const form = document.getElementById('admin-category-form');
+  if (!list) return;
+
+  let categories = [];
+  let counts = {};
+  let editing = null;
+
+  const paint = () => {
+    if (!categories.length) {
+      list.innerHTML = `<p class="empty-state" data-i18n="admin.no_categories">${t('admin.no_categories')}</p>`;
+      return;
+    }
+
+    list.innerHTML = categories
+      .map((name) => {
+        const count = counts[name] || 0;
+        const rows =
+          editing === name
+            ? `<form class="category-row is-editing" data-rename-form="${escapeHTML(name)}">
+                 <label class="sr-only" for="rename-${escapeHTML(name)}">${t('admin.category_name_label')}</label>
+                 <input type="text" id="rename-${escapeHTML(name)}" class="form-input form-input-sm" value="${escapeHTML(name)}" maxlength="80" required />
+                 <div class="category-row-actions">
+                   <button type="submit" class="btn btn-primary btn-sm">${t('admin.category_rename_save')}</button>
+                   <button type="button" class="btn btn-ghost btn-sm" data-cancel-rename>${t('admin.category_cancel')}</button>
+                 </div>
+               </form>`
+            : `<div class="category-row">
+                 <div class="category-row-text">
+                   <span class="category-row-name">${escapeHTML(name)}</span>
+                   <span class="category-row-meta">${count ? t('admin.category_products', { count }) : t('admin.category_empty')}</span>
+                 </div>
+                 <div class="category-row-actions">
+                   <button type="button" class="btn btn-outline btn-sm" data-rename="${escapeHTML(name)}">${t('admin.category_rename')}</button>
+                   <button type="button" class="btn btn-danger btn-sm" data-del="${escapeHTML(name)}">${t('common.delete')}</button>
+                 </div>
+               </div>`;
+        return rows;
+      })
+      .join('');
+
+    const input = list.querySelector('.category-row.is-editing input');
+    if (input) {
+      input.focus();
+      input.select();
+    }
+  };
 
   async function loadCategories() {
-    const { data: categories } = await supabase.from('categories').select('*').order('name');
-    list.innerHTML = '';
-    categories?.forEach((cat) => {
-      const item = document.createElement('div');
-      item.className = 'flex justify-between items-center';
-      item.style.cssText = 'padding:0.75rem 0;border-bottom:1px solid var(--color-border-soft)';
-      item.innerHTML =
-        `<span class="font-semibold" style="color:var(--color-text)">${escapeHTML(cat.name)}</span>` +
-        `<button class="btn btn-danger btn-sm" data-del="${escapeHTML(cat.name)}">${t('common.delete')}</button>`;
-      list.appendChild(item);
-    });
+    try {
+      const [{ data: rows }, { data: products }] = await Promise.all([
+        supabase.from('categories').select('*').order('name'),
+        supabase.from('products').select('category'),
+      ]);
+      categories = (rows || []).map((r) => r.name).filter(Boolean);
+      counts = {};
+      (products || []).forEach((p) => {
+        if (!p.category) return;
+        counts[p.category] = (counts[p.category] || 0) + 1;
+      });
+    } catch (err) {
+      console.warn('[ZenMarket] category load failed', err);
+      categories = [];
+      counts = {};
+    }
+    paint();
   }
+
+  const rename = async (oldName, newName) => {
+    const checked = validateCategory(newName);
+    if (!checked.ok) {
+      notify(t(checked.errorKey), 'error');
+      return false;
+    }
+    if (checked.value === oldName) {
+      editing = null;
+      paint();
+      return true;
+    }
+    if (categories.includes(checked.value)) {
+      notify(t('admin.category_exists'), 'error');
+      return false;
+    }
+    const { error } = await supabase.rpc('admin_rename_category', {
+      p_old: oldName,
+      p_new: checked.value,
+    });
+    if (error) {
+      notify(error.message || t('toast.error_generic'), 'error');
+      return false;
+    }
+    notify(t('admin.category_renamed'), 'success');
+    editing = null;
+    await loadCategories();
+    return true;
+  };
 
   loadCategories();
 
   bindOnce(list, 'click', async (e) => {
-    const btn = e.target.closest('[data-del]');
-    if (btn && confirm(t('admin.delete_confirm'))) {
-      await supabase.from('categories').delete().eq('name', btn.getAttribute('data-del'));
-      loadCategories();
+    const renameBtn = e.target.closest('[data-rename]');
+    if (renameBtn) {
+      editing = renameBtn.getAttribute('data-rename');
+      paint();
+      return;
     }
+
+    if (e.target.closest('[data-cancel-rename]')) {
+      editing = null;
+      paint();
+      return;
+    }
+
+    const delBtn = e.target.closest('[data-del]');
+    if (delBtn) {
+      const name = delBtn.getAttribute('data-del');
+      const count = counts[name] || 0;
+      const question = count ? t('admin.category_delete_has_products', { count }) : t('admin.delete_confirm');
+      if (!window.confirm(question)) return;
+      const { error } = await supabase.rpc('admin_delete_category', { p_name: name });
+      if (error) {
+        notify(error.message || t('toast.error_generic'), 'error');
+        return;
+      }
+      notify(t('admin.category_deleted'), 'success');
+      await loadCategories();
+    }
+  });
+
+  bindOnce(list, 'submit', async (e) => {
+    const renameForm = e.target.closest('[data-rename-form]');
+    if (!renameForm) return;
+    e.preventDefault();
+    const oldName = renameForm.getAttribute('data-rename-form');
+    const input = renameForm.querySelector('input');
+    await rename(oldName, input ? input.value : '');
   });
 
   if (form) {
@@ -387,12 +560,16 @@ async function initCategories() {
         return;
       }
       const name = checked.value;
+      if (categories.includes(name)) {
+        notify(t('admin.category_exists'), 'error');
+        return;
+      }
       const { error } = await supabase.from('categories').insert({ name });
       if (error) notify(error.message || t('toast.error_generic'), 'error');
       else {
         notify(t('admin.category_added'), 'success');
         form.reset();
-        loadCategories();
+        await loadCategories();
       }
     });
   }
@@ -401,33 +578,61 @@ async function initCategories() {
 async function initReviews() {
   const tbody = document.getElementById('admin-reviews-list');
   if (!tbody) return;
-  const { data: reviews, error } = await supabase
-    .from('product_reviews')
-    .select('*')
-    .order('created_at', { ascending: false });
-  if (error) {
-    notify(t('admin.system_error'), 'error');
-    return;
+
+  // Both the storefront and this table read the same reviews. Query the table
+  // first (it carries the ids used for deleting) and fall back to the public
+  // RPC when the table query is blocked, so the two pages can never disagree
+  // about whether the shop has reviews.
+  let reviews = [];
+  try {
+    const { data, error } = await supabase
+      .from('product_reviews')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (!error && Array.isArray(data)) reviews = data;
+  } catch (err) {
+    console.warn('[ZenMarket] review query failed', err);
+  }
+
+  if (!reviews.length) {
+    try {
+      const { data } = await supabase.rpc('get_home_reviews');
+      if (Array.isArray(data)) reviews = data;
+    } catch (err) {
+      console.warn('[ZenMarket] review rpc failed', err);
+    }
   }
 
   tbody.innerHTML = '';
-  reviews?.forEach((r) => {
+
+  if (!reviews.length) {
+    tbody.innerHTML = `<tr><td colspan="6"><p class="empty-state" data-i18n="admin.no_reviews">${t('admin.no_reviews')}</p></td></tr>`;
+    return;
+  }
+
+  reviews.forEach((r) => {
+    const rating = Math.max(0, Math.min(5, Number(r.rating) || 0));
     const tr = document.createElement('tr');
     tr.innerHTML =
       `<td>${escapeHTML(r.reviewer_name || t('common.customer'))}</td>` +
-      `<td>${escapeHTML(r.product_name || t('admin.product'))}</td>` +
-      `<td style="text-align:center"><span class="stars" style="font-size:12px">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</span></td>` +
+      `<td>${escapeHTML(r.product_name || '-')}</td>` +
+      `<td style="text-align:center">${ratingStars(rating, 12)}</td>` +
       `<td>${escapeHTML(r.comment || '-')}</td>` +
       `<td>${r.created_at ? new Date(r.created_at).toLocaleDateString('th-TH') : '-'}</td>` +
-      `<td><button class="btn btn-danger btn-sm" data-del="${r.id}">${t('common.delete')}</button></td>`;
+      `<td>${
+        r.id
+          ? `<button class="btn btn-danger btn-sm" data-del="${escapeHTML(r.id)}">${t('common.delete')}</button>`
+          : ''
+      }</td>`;
     tbody.appendChild(tr);
   });
 
   bindOnce(tbody, 'click', async (e) => {
     const btn = e.target.closest('[data-del]');
-    if (btn && confirm(t('admin.delete_confirm'))) {
-      await supabase.from('product_reviews').delete().eq('id', btn.getAttribute('data-del'));
-      initReviews();
+    if (btn && window.confirm(t('admin.delete_confirm'))) {
+      const { error } = await supabase.from('product_reviews').delete().eq('id', btn.getAttribute('data-del'));
+      if (error) notify(error.message || t('toast.error_generic'), 'error');
+      else await initReviews();
     }
   });
 }

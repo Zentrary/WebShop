@@ -229,9 +229,15 @@ function renderHeader(header) {
     account: path.includes('/account'),
   };
 
+  // The account only appears once — as the icon button on the right. Repeating
+  // it next to "รายการสินค้า" made the header look like it had two of them.
   const navItems = [
     { key: 'home', href: '/home.html', label: t('nav.home'), show: true },
     { key: 'shop', href: '/shop/index.html', label: t('nav.shop'), show: member },
+  ];
+
+  const mobileNavItems = [
+    ...navItems,
     { key: 'account', href: '/account/index.html', label: t('nav.account'), show: member || path.includes('/account') },
   ];
 
@@ -249,7 +255,7 @@ function renderHeader(header) {
   const mobileNav = header.querySelector('#mobile-nav');
   if (mobileNav) {
     mobileNav.innerHTML = `
-      ${navItems
+      ${mobileNavItems
         .filter((i) => i.show)
         .map(
           (i) =>

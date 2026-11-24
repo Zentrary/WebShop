@@ -1,9 +1,11 @@
 import { register } from 'node:module';
+import fs from 'node:fs';
 import { pathToFileURL } from 'node:url';
 
 register(new URL('./loader.mjs', import.meta.url).href, import.meta.url);
 
-const { loadPage, makeSupabaseMock, setVal, submit, fire, wait, makeAssert, el } = await import('./harness.mjs');
+const { loadPage, makeSupabaseMock, setVal, submit, fire, wait, makeAssert, el, importPage } =
+  await import('./harness.mjs');
 
 const A = makeAssert();
 const MEMBER = { id: 'member-1', email: 'member@zenmarket.test' };
@@ -309,6 +311,23 @@ const CART = [{ product_id: 'p1', name: 'กาแฟ', price: 120, quantity: 2 
   A.ok('hero: member ไม่มีปุ่มสมัครสมาชิก', !heroRegister);
   const headerLogout = document.querySelector('#user-menu-btn');
   A.ok('header: ปุ่มออกจากระบบใช้สไตล์สีแดง', !!headerLogout && headerLogout.classList.contains('btn-danger'));
+
+  // บัญชีของฉันต้องมีที่เดียว — เป็นปุ่มไอคอนทางขวา ไม่ซ้ำในเมนูหลัก
+  A.eq('header: เมนูหลักไม่มี "บัญชีของฉัน" ซ้ำ', nav.querySelectorAll('a[href="/account/index.html"]').length, 0);
+  A.ok('header: ยังมีปุ่มบัญชีของฉันทางขวา', !!actions.querySelector('a[href="/account/index.html"]'));
+  A.ok('header: เมนูมือถือยังเข้าบัญชีของฉันได้', !!document.querySelector('#mobile-nav a[href="/account/index.html"]'));
+}
+
+/* ------------------------------------------------------------------ *
+ * เข้าสู่ระบบแล้วต้องไปหน้าแรก ไม่ใช่หน้าบัญชีของฉัน
+ * ------------------------------------------------------------------ */
+{
+  const { safeReturnPath } = await importPage('/src/core/lib.js');
+  A.eq('login: ค่าเริ่มต้นหลังเข้าสู่ระบบคือหน้าแรก', safeReturnPath(null), '/home.html');
+  A.eq('login: ยังพากลับไปหน้าที่ตั้งใจไว้ได้', safeReturnPath('/shop/cart.html'), '/shop/cart.html');
+
+  const source = fs.readFileSync('/home/user/WebShop/src/pages/customer/account.js', 'utf8');
+  A.ok('login: ฟอร์มเข้าสู่ระบบใช้หน้าแรกเป็นปลายทางเริ่มต้น', /zenmarket_return_path'\)\s*,\s*'\/home\.html'/.test(source));
 }
 
 /* ------------------------------------------------------------------ *

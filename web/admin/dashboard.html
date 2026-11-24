@@ -48,8 +48,11 @@
         </div>
 
         <div class="panel mb-lg reveal">
-          <h2 data-i18n="admin.chart_title">ยอดขาย 7 วันล่าสุด</h2>
-          <div id="sales-chart" style="min-height: 180px"></div>
+          <div class="panel-head">
+            <h2 data-i18n="admin.chart_title">ยอดขาย 7 วันล่าสุด</h2>
+            <span class="panel-head-meta" id="sales-chart-total"></span>
+          </div>
+          <div id="sales-chart" class="sales-chart" aria-live="polite"></div>
         </div>
 
         <div class="admin-grid admin-grid-2 admin-two-col">
