@@ -26,7 +26,8 @@ import { mergeStoreSettings } from '/src/core/settings.js';
 import { initReveal } from '/src/core/reveal.js';
 import { installGlobalErrorHandlers } from '/src/core/errors.js';
 import { applyBrandAssets } from '/src/core/brand.js';
-import { escapeHTML, safeImage, safeLink } from '/src/core/lib.js';
+import { escapeHTML, safeImage } from '/src/core/lib.js';
+import { socialChannels, contactDetails, renderContactBands } from '/src/core/contact.js';
 import { state } from '/src/core/state.js';
 
 export { state };
@@ -211,6 +212,7 @@ export function initHeader() {
 
   onLanguageChange(() => {
     renderHeader(header);
+    renderContactBands(state.storeSettings || {});
     applyMemberGating();
   });
 }
@@ -224,14 +226,12 @@ function renderHeader(header) {
   const isActive = {
     home: path === '/' || path.includes('/home.html'),
     shop: path === '/shop' || path.includes('/shop/index'),
-    categories: path.includes('/shop/categories'),
     account: path.includes('/account'),
   };
 
   const navItems = [
     { key: 'home', href: '/home.html', label: t('nav.home'), show: true },
     { key: 'shop', href: '/shop/index.html', label: t('nav.shop'), show: member },
-    { key: 'categories', href: '/shop/categories.html', label: t('nav.categories'), show: member },
     { key: 'account', href: '/account/index.html', label: t('nav.account'), show: member || path.includes('/account') },
   ];
 
@@ -241,7 +241,7 @@ function renderHeader(header) {
       .filter((i) => i.show)
       .map(
         (i) =>
-          `<a href="${i.href}" data-nav="${i.key}" data-i18n="${i.key === 'home' ? 'nav.home' : i.key === 'shop' ? 'nav.shop' : i.key === 'categories' ? 'nav.categories' : 'nav.account'}" class="${isActive[i.key] ? 'active' : ''}">${i.label}</a>`,
+          `<a href="${i.href}" data-nav="${i.key}" data-i18n="nav.${i.key}" class="${isActive[i.key] ? 'active' : ''}">${i.label}</a>`,
       )
       .join('');
   }
@@ -253,7 +253,7 @@ function renderHeader(header) {
         .filter((i) => i.show)
         .map(
           (i) =>
-            `<a href="${i.href}" data-i18n="${i.key === 'home' ? 'nav.home' : i.key === 'shop' ? 'nav.shop' : i.key === 'categories' ? 'nav.categories' : 'nav.account'}">${i.label}</a>`,
+            `<a href="${i.href}" data-i18n="nav.${i.key}" class="${isActive[i.key] ? 'active' : ''}">${i.label}</a>`,
         )
         .join('')}
       ${member ? `<a href="/shop/cart.html" data-i18n="nav.cart">${t('nav.cart')}</a>` : ''}
@@ -272,7 +272,6 @@ function renderHeader(header) {
   const actions = header.querySelector('#header-actions');
   if (actions) {
     actions.innerHTML = `
-      <button id="lang-toggle" class="btn btn-ghost btn-sm" aria-label="${escapeHTML(t('common.change_lang'))}" data-i18n-aria-label="common.change_lang">${getLanguage() === 'th' ? 'TH/EN' : 'EN/TH'}</button>
       ${
         member
           ? `<a href="/shop/cart.html" class="btn btn-ghost btn-sm header-cart" aria-label="${t('nav.cart')}" data-i18n-aria-label="nav.cart">
@@ -284,10 +283,11 @@ function renderHeader(header) {
         member
           ? `<a href="/account/index.html" class="btn btn-ghost btn-sm header-account">${ICONS.user}<span class="account-label">${t('nav.account')}</span></a>
            ${isOwner() ? `<a href="/admin/dashboard.html" class="btn btn-outline btn-sm header-admin" data-i18n="nav.admin">${t('nav.admin')}</a>` : ''}
-           <button id="user-menu-btn" class="btn btn-outline btn-sm header-logout">${t('nav.logout')}</button>`
+           <button id="user-menu-btn" class="btn btn-danger btn-sm header-logout">${t('nav.logout')}</button>`
           : `<a href="/auth/login.html" class="btn btn-outline btn-sm header-login" data-i18n="nav.login">${t('nav.login')}</a>
            <a href="/auth/register.html" class="btn btn-primary btn-sm header-register" data-i18n="nav.register">${t('nav.register')}</a>`
       }
+      <button id="lang-toggle" class="lang-toggle" aria-label="${escapeHTML(t('common.change_lang'))}" data-i18n-aria-label="common.change_lang"><span class="lang-now">${getLanguage() === 'th' ? 'TH' : 'EN'}</span><span class="lang-sep">/</span><span>${getLanguage() === 'th' ? 'EN' : 'TH'}</span></button>
       <button id="menu-toggle" class="menu-toggle" aria-label="${t('nav.menu')}" data-i18n-aria-label="nav.menu">${ICONS.menu}</button>
     `;
 
@@ -344,9 +344,9 @@ function renderFooter(footer) {
   const member = isMember() || isOwner();
   const logo = logoUrl();
   const name = escapeHTML(shopName());
-  const mark = logo
-    ? `<img class="footer-logo-img" src="${escapeHTML(logo)}" alt="${name}">`
-    : `<span class="header-logo-mark">${BRAND_MARK_SVG}</span>`;
+  const mark = logo ? `<img class="footer-logo-img" src="${escapeHTML(logo)}" alt="${name}">` : '';
+  const channels = socialChannels(s);
+  const details = contactDetails(s);
 
   footer.innerHTML = `
     <div class="footer-inner">
@@ -359,7 +359,6 @@ function renderFooter(footer) {
         ${
           member
             ? `<a href="/shop/index.html" data-i18n="footer.all_products">${t('footer.all_products')}</a>
-             <a href="/shop/categories.html" data-i18n="footer.categories">${t('footer.categories')}</a>
              <a href="/shop/cart.html" data-i18n="footer.cart">${t('footer.cart')}</a>`
             : `<a href="/auth/register.html" data-i18n="nav.register">${t('nav.register')}</a>
              <a href="/auth/login.html" data-i18n="nav.login">${t('nav.login')}</a>`
@@ -374,16 +373,34 @@ function renderFooter(footer) {
       </div>
       <div class="footer-col">
         <h4>${t('footer.contact')}</h4>
-        ${s.contact_phone ? `<a href="${escapeHTML(safeLink('tel:' + s.contact_phone))}">${escapeHTML(s.contact_phone)}</a>` : ''}
-        ${s.contact_email ? `<a href="${escapeHTML(safeLink('mailto:' + s.contact_email))}">${escapeHTML(s.contact_email)}</a>` : ''}
-        ${s.contact_address ? `<span class="footer-text">${escapeHTML(s.contact_address)}</span>` : ''}
-        ${safeLink(s.line_url) ? `<a href="${escapeHTML(safeLink(s.line_url))}" target="_blank" rel="noopener noreferrer">LINE Official</a>` : ''}
-        ${safeLink(s.facebook_url) ? `<a href="${escapeHTML(safeLink(s.facebook_url))}" target="_blank" rel="noopener noreferrer">Facebook</a>` : ''}
-        ${safeLink(s.instagram_url) ? `<a href="${escapeHTML(safeLink(s.instagram_url))}" target="_blank" rel="noopener noreferrer">Instagram</a>` : ''}
+        <div class="footer-contact-list">
+          ${details
+            .map(
+              (d) =>
+                `<${
+                  d.href ? 'a' : 'span'
+                }${d.href ? ` href="${escapeHTML(d.href)}"` : ''}>${d.icon}<span>${escapeHTML(d.value)}</span></${d.href ? 'a' : 'span'}>`,
+            )
+            .join('')}
+          ${channels
+            .map(
+              (c) =>
+                `<a href="${escapeHTML(c.href)}" target="_blank" rel="noopener noreferrer">${c.icon}<span>${escapeHTML(c.label)}</span></a>`,
+            )
+            .join('')}
+        </div>
       </div>
     </div>
-    <div class="footer-bottom">© ${new Date().getFullYear()} ${name} — ${escapeHTML(t('footer.rights'))}</div>
+    <div class="footer-bottom">
+      <span>© ${new Date().getFullYear()} ${name} — ${escapeHTML(t('footer.rights'))}</span>
+      <button type="button" id="footer-lang-toggle" class="lang-link" aria-label="${escapeHTML(t('common.change_lang'))}" data-i18n-aria-label="common.change_lang">${getLanguage() === 'th' ? 'TH / EN' : 'EN / TH'}</button>
+    </div>
   `;
+
+  const footerLang = footer.querySelector('#footer-lang-toggle');
+  if (footerLang) {
+    footerLang.addEventListener('click', () => toggleLanguage());
+  }
 }
 
 export async function loadStoreSettings(attempt = 0) {
@@ -406,6 +423,7 @@ export async function loadStoreSettings(attempt = 0) {
     if (header) renderHeader(header);
   }
   if (document.querySelector('.site-footer')) renderFooter(document.querySelector('.site-footer'));
+  renderContactBands(state.storeSettings || {});
 }
 
 export function requireSupabase() {

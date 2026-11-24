@@ -16,6 +16,8 @@ export const DEFAULT_STORE_SETTINGS = {
   facebook_url: '',
   instagram_url: '',
   line_url: '',
+  tiktok_url: '',
+  show_contact: true,
   promptpay_id: '',
   recipient_name: '',
 };

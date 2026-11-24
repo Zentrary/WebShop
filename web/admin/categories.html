@@ -22,13 +22,13 @@
     <div class="admin-layout">
       <div class="admin-content">
         <div class="admin-head">
-          <div>
-            <span class="eyebrow" data-i18n="admin.categories">Categories</span>
-            <h1 style="font-size: var(--font-size-2xl)" data-i18n="admin.categories">หมวดหมู่</h1>
+          <div class="admin-head-text">
+            <h1 class="admin-page-title" data-i18n="admin.categories">หมวดหมู่</h1>
+            <p class="admin-page-sub" data-i18n="admin.categories_sub">หมวดหมู่สินค้าที่ลูกค้าเลือกซื้อ</p>
           </div>
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 320px; gap: var(--space-lg)" class="admin-two-col">
+        <div class="admin-grid admin-grid-side admin-two-col">
           <div class="panel reveal">
             <h2 data-i18n="admin.all_categories">หมวดหมู่ทั้งหมด</h2>
             <div id="admin-categories-list"></div>

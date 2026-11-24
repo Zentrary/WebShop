@@ -22,14 +22,14 @@
     <div class="admin-layout">
       <div class="admin-content">
         <div class="admin-head">
-          <div>
-            <span class="eyebrow" data-i18n="admin.dashboard">Dashboard</span>
-            <h1 style="font-size: var(--font-size-2xl)" data-i18n="admin.dashboard">แดชบอร์ด</h1>
+          <div class="admin-head-text">
+            <h1 class="admin-page-title" data-i18n="admin.dashboard">แดชบอร์ด</h1>
+            <p class="admin-page-sub" data-i18n="admin.dashboard_sub">ภาพรวมยอดขาย สินค้า และคำสั่งซื้อของร้านคุณ</p>
           </div>
         </div>
 
         <div class="kpi-grid">
-          <div class="kpi reveal">
+          <div class="kpi is-accent reveal">
             <div class="k-label" data-i18n="admin.kpi_sales">ยอดขายรวม</div>
             <div class="k-value accent" id="kpi-sales">—</div>
           </div>
@@ -52,7 +52,7 @@
           <div id="sales-chart" style="min-height: 180px"></div>
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-lg)" class="admin-two-col">
+        <div class="admin-grid admin-grid-2 admin-two-col">
           <div class="panel reveal" data-delay="1">
             <h2 data-i18n="admin.low_stock">สินค้าใกล้หมด</h2>
             <div id="low-stock-list"></div>

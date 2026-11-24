@@ -135,6 +135,9 @@ export function validateStoreSettings(settings = {}) {
   const contactPhone = String(settings.contact_phone || '');
   if (contactPhone.length > 30) return { ok: false, errorKey: 'validation.contact_phone_invalid' };
 
+  const contactAddress = String(settings.contact_address || '');
+  if (contactAddress.length > 300) return { ok: false, errorKey: 'validation.contact_address_invalid' };
+
   const logoUrl = String(settings.logo_url || '');
   if (logoUrl && (!logoUrl.startsWith('https://') || logoUrl.length > 1000)) {
     return { ok: false, errorKey: 'validation.logo_url_invalid' };
@@ -160,9 +163,11 @@ export function validateStoreSettings(settings = {}) {
       shipping_note: shippingNote,
       contact_email: contactEmail,
       contact_phone: contactPhone,
+      contact_address: contactAddress,
       logo_url: logoUrl,
       shipping_fee: shippingFee,
       free_shipping_threshold: threshold,
+      show_contact: settings.show_contact !== false,
     },
   };
 }

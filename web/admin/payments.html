@@ -22,15 +22,20 @@
     <div class="admin-layout">
       <div class="admin-content">
         <div class="admin-head">
-          <div>
-            <span class="eyebrow" data-i18n="admin.payments">Payments</span>
-            <h1 style="font-size: var(--font-size-2xl)" data-i18n="admin.payments">การชำระเงิน</h1>
+          <div class="admin-head-text">
+            <h1 class="admin-page-title" data-i18n="admin.payments">การชำระเงิน</h1>
+            <p class="admin-page-sub" data-i18n="admin.payments_sub">บัญชีรับเงินพร้อมเพย์และการทดสอบ QR</p>
           </div>
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-lg)" class="admin-two-col">
+        <div class="admin-grid admin-grid-2 admin-two-col">
           <form id="admin-payments-form" class="panel reveal">
-            <h2 data-i18n="admin.payments_account">บัญชีรับเงิน</h2>
+            <div class="admin-card-head">
+              <div>
+                <h2 class="admin-card-title" data-i18n="admin.payments_account">บัญชีรับเงิน</h2>
+                <p class="admin-card-hint" data-i18n="admin.payments_account_hint">เลขนี้จะถูกใส่ใน QR ที่ลูกค้าเห็นตอนชำระเงิน</p>
+              </div>
+            </div>
             <div class="form-group">
               <label class="form-label" for="payment-promptpay-id" data-i18n="admin.payments_promptpay_id">PromptPay ID</label>
               <input
@@ -60,19 +65,44 @@
           </form>
 
           <div class="panel reveal" data-delay="1">
-            <h2 data-i18n="admin.payments_test">ทดสอบสร้าง QR พร้อมเพย์</h2>
+            <div class="admin-card-head">
+              <div>
+                <h2 class="admin-card-title" data-i18n="admin.payments_test">ทดสอบสร้าง QR พร้อมเพย์</h2>
+                <p class="admin-card-hint" data-i18n="admin.payments_qr_hint">สแกนด้วยแอปธนาคารไทย เงินจะเข้าบัญชีที่ผูกกับ PromptPay ID นี้</p>
+              </div>
+            </div>
             <div class="form-group">
-              <label class="form-label" for="test-qr-amount" data-i18n="admin.payments_amount">ยอดเงิน</label>
+              <label class="form-label" for="test-qr-amount" data-i18n="admin.payments_qr_amount">ยอดทดสอบ</label>
               <input type="number" id="test-qr-amount" class="form-input" min="0" step="1" value="100" />
             </div>
             <div class="form-group">
               <label class="form-label" for="test-qr-reference" data-i18n="admin.payments_reference">เลขอ้างอิง</label>
               <input type="text" id="test-qr-reference" class="form-input" value="TEST" />
             </div>
-            <button type="button" id="test-generate-qr-btn" class="btn btn-outline" data-i18n="admin.payments_generate">สร้าง QR</button>
+            <button type="button" id="test-generate-qr-btn" class="btn btn-primary" data-i18n="admin.payments_generate">สร้าง QR</button>
 
-            <div id="test-qr-result" class="hidden mt-lg" style="text-align: center">
-              <div id="test-qr-image"></div>
+            <div id="test-qr-result" class="hidden mt-lg">
+              <div class="qr-preview">
+                <div id="test-qr-image"></div>
+                <dl class="qr-meta">
+                  <div>
+                    <dt data-i18n="admin.payments_qr_using">บัญชีรับเงินที่ใช้ทดสอบ</dt>
+                    <dd>
+                      <span id="test-qr-account">—</span>
+                      <span id="test-qr-source" class="qr-source"></span>
+                    </dd>
+                  </div>
+                  <div>
+                    <dt data-i18n="admin.payments_qr_amount">ยอดทดสอบ</dt>
+                    <dd id="test-qr-amount-text">—</dd>
+                  </div>
+                </dl>
+              </div>
+              <div class="flex gap-sm mt-md" style="flex-wrap: wrap">
+                <a id="test-qr-download" class="btn btn-outline btn-sm" download="promptpay-qr.png" data-i18n="admin.payments_download"
+                  >ดาวน์โหลดรูป QR</a
+                >
+              </div>
               <p class="text-muted text-sm mt-sm" style="word-break: break-all" id="test-qr-payload"></p>
             </div>
           </div>

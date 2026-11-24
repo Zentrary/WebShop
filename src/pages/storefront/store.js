@@ -18,6 +18,7 @@ import { t, applyDocumentTitle, onLanguageChange } from '/src/core/i18n.js';
 
 let currentProduct = null;
 let currentPage = 1;
+let activeCategory = '';
 const PRODUCTS_PER_PAGE = 12;
 const productCache = new Map();
 
@@ -47,8 +48,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if (path.includes('/shop/index.html') || path === '/shop') {
     currentRenderer = initStorePage;
-  } else if (path.includes('/shop/categories.html')) {
-    currentRenderer = initCategoriesPage;
   } else if (path.includes('/shop/product.html')) {
     currentRenderer = initProductPage;
   }
@@ -146,41 +145,68 @@ async function initStorePage() {
   const grid = document.getElementById('product-grid');
   const countEl = document.getElementById('product-count');
   const searchInput = document.getElementById('product-search');
-  const categorySelect = document.getElementById('category-filter');
+  const chipsEl = document.getElementById('category-chips');
+  const categoryCountEl = document.getElementById('category-count');
   if (!grid) return;
 
   showSkeletons(grid);
 
+  let categories = [];
   try {
-    const { data: categories } = await state.supabase.from('categories').select('name').order('name');
-    categorySelect.innerHTML = `<option value="">${t('shop.filter_all')}</option>`;
-    categories?.forEach((cat) => {
-      const opt = document.createElement('option');
-      opt.value = cat.name;
-      opt.textContent = cat.name;
-      categorySelect.appendChild(opt);
-    });
-  } catch {}
+    const { data } = await state.supabase.from('categories').select('name').order('name');
+    categories = data || [];
+  } catch {
+    categories = [];
+  }
 
   const params = new URLSearchParams(window.location.search);
   const presetCat = params.get('category');
-  if (presetCat) categorySelect.value = presetCat;
+  if (presetCat) activeCategory = presetCat;
 
-  await loadProducts(grid, countEl, searchInput.value, categorySelect.value || null);
+  renderCategoryChips(chipsEl, categories, grid, countEl, searchInput);
+
+  if (categoryCountEl) categoryCountEl.textContent = t('shop.categories_count', { n: categories.length });
+
+  await loadProducts(grid, countEl, searchInput.value, activeCategory || null);
 
   let debounce;
   bindOnce(searchInput, 'input', () => {
     clearTimeout(debounce);
     debounce = setTimeout(() => {
       currentPage = 1;
-      loadProducts(grid, countEl, searchInput.value, categorySelect.value || null);
+      loadProducts(grid, countEl, searchInput.value, activeCategory || null);
     }, 300);
   });
+}
 
-  bindOnce(categorySelect, 'change', () => {
-    currentPage = 1;
-    loadProducts(grid, countEl, searchInput.value, categorySelect.value || null);
-  });
+/**
+ * The category chips double as the filter: one click narrows the grid down,
+ * clicking the same chip again brings every product back.
+ */
+function renderCategoryChips(container, categories, grid, countEl, searchInput) {
+  if (!container) return;
+
+  container.innerHTML = '';
+
+  const addChip = (value, label) => {
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'category-chip';
+    if (activeCategory === value) chip.classList.add('active');
+    chip.textContent = label;
+    chip.addEventListener('click', () => {
+      const next = activeCategory === value ? '' : value;
+      activeCategory = next;
+      currentPage = 1;
+      container.querySelectorAll('.category-chip').forEach((el) => el.classList.remove('active'));
+      if (next) chip.classList.add('active');
+      loadProducts(grid, countEl, searchInput.value, activeCategory || null);
+    });
+    container.appendChild(chip);
+  };
+
+  addChip('', t('shop.filter_all'));
+  categories.forEach((cat) => addChip(cat.name, cat.name));
 }
 
 async function loadProducts(grid, countEl, search = '', category = null) {
@@ -232,55 +258,10 @@ function renderPagination(el, total) {
       currentPage = i;
       const grid = document.getElementById('product-grid');
       const countEl = document.getElementById('product-count');
-      loadProducts(
-        grid,
-        countEl,
-        document.getElementById('product-search').value,
-        document.getElementById('category-filter').value || null,
-      );
+      loadProducts(grid, countEl, document.getElementById('product-search').value, activeCategory || null);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     });
     el.appendChild(btn);
-  }
-}
-
-async function initCategoriesPage() {
-  const grid = document.getElementById('categories-grid');
-  const featuredGrid = document.getElementById('featured-grid');
-  if (!grid) return;
-
-  try {
-    const { data: categories } = await state.supabase.from('categories').select('*').order('name');
-
-    grid.innerHTML = '';
-    categories?.forEach((cat, idx) => {
-      const a = document.createElement('a');
-      a.className = 'cat-card reveal';
-      a.href = `/shop/index.html?category=${encodeURIComponent(cat.name)}`;
-      a.innerHTML = `
-        <span class="idx">${String(idx + 1).padStart(2, '0')}</span>
-        <h3>${escapeHTML(cat.name)}</h3>
-        <p>${t('shop.cat_view')}</p>
-        <span class="go">${t('shop.cat_view')}
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-        </span>
-      `;
-      grid.appendChild(a);
-    });
-    observeRevealsLocal(grid);
-
-    const { data: featured } = await state.supabase
-      .from('products')
-      .select('*')
-      .eq('active', true)
-      .order('created_at', { ascending: false })
-      .limit(8);
-
-    featuredGrid.innerHTML = '';
-    featured?.forEach((product) => featuredGrid.appendChild(createProductCard(product)));
-    observeRevealsLocal(featuredGrid);
-  } catch (err) {
-    notify(t('shop.categories_error'), 'error');
   }
 }
 

@@ -63,7 +63,7 @@
         </aside>
 
         <div>
-          <section id="account-profile" class="panel reveal">
+          <section id="account-profile" class="panel account-section reveal">
             <h2 data-i18n="account.profile">โปรไฟล์</h2>
             <form id="profile-form">
               <div class="form-group">
@@ -93,6 +93,10 @@
                 </div>
               </div>
               <div class="form-group">
+                <label class="form-label" for="profile-age" data-i18n="auth.age">อายุ</label>
+                <input type="number" id="profile-age" class="form-input" min="1" max="120" inputmode="numeric" placeholder="20" />
+              </div>
+              <div class="form-group">
                 <label class="form-label" for="profile-phone" data-i18n="common.phone">เบอร์โทรศัพท์</label>
                 <input
                   type="tel"
@@ -110,13 +114,13 @@
             </form>
           </section>
 
-          <section id="account-orders" class="panel reveal hidden">
+          <section id="account-orders" class="panel account-section reveal hidden">
             <h2 data-i18n="account.recent_orders">คำสั่งซื้อล่าสุด</h2>
             <div id="customer-orders-list"></div>
             <a href="/account/orders.html" class="btn btn-outline mt-lg" data-i18n="account.view_all_orders">ดูคำสั่งซื้อทั้งหมด</a>
           </section>
 
-          <section id="account-addresses" class="panel reveal hidden">
+          <section id="account-addresses" class="panel account-section reveal hidden">
             <div class="flex justify-between items-center mb-md" style="flex-wrap: wrap; gap: var(--space-sm)">
               <h2 style="margin: 0" data-i18n="account.address_book">สมุดที่อยู่</h2>
               <button id="address-add-btn" type="button" class="btn btn-outline btn-sm" data-i18n="account.add_address">+ เพิ่มที่อยู่</button>

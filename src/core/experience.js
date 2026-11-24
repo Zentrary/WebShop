@@ -53,6 +53,7 @@ export function validateSocialUrl(url, platform) {
       (h === 'facebook.com' || h === 'www.facebook.com' || h === 'fb.com' || h === 'www.fb.com') && p.length > 1,
     instagram: (h, p) => (h === 'instagram.com' || h === 'www.instagram.com') && p.length > 1,
     line: (h, p) => (h === 'line.me' || h === 'lin.ee') && p.length > 1,
+    tiktok: (h, p) => (h === 'tiktok.com' || h === 'www.tiktok.com') && p.length > 1,
   };
 
   const rule = rules[platform];

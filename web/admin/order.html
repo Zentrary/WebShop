@@ -23,14 +23,15 @@
       <div class="admin-content">
         <div id="admin-order-detail" class="hidden">
           <div class="admin-head">
-            <div>
-              <span class="eyebrow" data-i18n="admin.order_number">Order</span>
-              <h1 style="font-size: var(--font-size-2xl)">
+            <div class="admin-head-text">
+              <h1 class="admin-page-title">
                 <span data-i18n="admin.orders">คำสั่งซื้อ</span> <span id="admin-order-number" class="text-accent"></span>
               </h1>
-              <p class="text-muted text-sm mt-sm"><span data-i18n="common.date">วันที่สั่งซื้อ</span> <span id="admin-order-date"></span></p>
+              <p class="admin-page-sub"><span data-i18n="common.date">วันที่สั่งซื้อ</span> <span id="admin-order-date"></span></p>
             </div>
-            <a href="/admin/orders.html" class="btn btn-ghost" data-i18n="admin.back_orders">← กลับรายการ</a>
+            <div class="admin-head-actions">
+              <a href="/admin/orders.html" class="btn btn-outline btn-sm" data-i18n="admin.back_orders">← กลับรายการ</a>
+            </div>
           </div>
 
           <div class="cart-grid">

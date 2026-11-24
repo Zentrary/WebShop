@@ -463,13 +463,17 @@ async function initSettings() {
       set('setting-store-description', s.tagline);
       set('setting-contact-email', s.contact_email);
       set('setting-contact-phone', s.contact_phone);
+      set('setting-contact-address', s.contact_address);
       set('setting-contact-line', s.line_url);
       set('setting-contact-facebook', s.facebook_url);
       set('setting-contact-instagram', s.instagram_url);
+      set('setting-contact-tiktok', s.tiktok_url);
       set('setting-shipping-fee', s.shipping_fee);
       set('setting-free-shipping-threshold', s.free_shipping_threshold);
       set('setting-about', s.about_text);
       set('setting-shipping-note', s.shipping_note);
+      const showContact = document.getElementById('setting-show-contact');
+      if (showContact) showContact.checked = s.show_contact !== false;
       currentLogoUrl = s.logo_url || '';
     }
   } catch (err) {
@@ -536,9 +540,12 @@ async function initSettings() {
         tagline: get('setting-store-description'),
         contact_email: get('setting-contact-email'),
         contact_phone: get('setting-contact-phone'),
+        contact_address: get('setting-contact-address').trim(),
         line_url: validateSocialUrl(get('setting-contact-line'), 'line'),
         facebook_url: validateSocialUrl(get('setting-contact-facebook'), 'facebook'),
         instagram_url: validateSocialUrl(get('setting-contact-instagram'), 'instagram'),
+        tiktok_url: validateSocialUrl(get('setting-contact-tiktok'), 'tiktok'),
+        show_contact: document.getElementById('setting-show-contact')?.checked !== false,
 
         shipping_fee: get('setting-shipping-fee').trim(),
         free_shipping_threshold: get('setting-free-shipping-threshold').trim(),
@@ -562,6 +569,8 @@ async function initSettings() {
 async function initPayments() {
   const form = document.getElementById('admin-payments-form');
   const generateBtn = document.getElementById('test-generate-qr-btn');
+  let savedPromptPayId = '';
+  let savedRecipient = '';
 
   try {
     const { data: s } = await supabase
@@ -570,8 +579,10 @@ async function initPayments() {
       .eq('singleton', true)
       .single();
     if (s) {
-      document.getElementById('payment-promptpay-id').value = s.promptpay_id || '';
-      document.getElementById('payment-promptpay-name').value = s.recipient_name || '';
+      savedPromptPayId = s.promptpay_id || '';
+      savedRecipient = s.recipient_name || '';
+      document.getElementById('payment-promptpay-id').value = savedPromptPayId;
+      document.getElementById('payment-promptpay-name').value = savedRecipient;
     }
   } catch (err) {
     console.error(err);
@@ -594,7 +605,11 @@ async function initPayments() {
         })
         .eq('singleton', true);
       if (error) notify(error.message || t('toast.error_generic'), 'error');
-      else notify(t('admin.payments_saved'), 'success');
+      else {
+        savedPromptPayId = checked.value;
+        savedRecipient = document.getElementById('payment-promptpay-name').value.trim();
+        notify(t('admin.payments_saved'), 'success');
+      }
     });
   }
 
@@ -602,16 +617,44 @@ async function initPayments() {
     bindOnce(generateBtn, 'click', async () => {
       const amount = parseFloat(document.getElementById('test-qr-amount').value) || 0;
       const reference = document.getElementById('test-qr-reference').value || 'TEST';
+      // Use whatever is in the form right now so a new account can be tried
+      // before it is saved.
+      const typedId = document.getElementById('payment-promptpay-id').value.trim();
+      const typedName = document.getElementById('payment-promptpay-name').value.trim();
+      const promptpayId = typedId || savedPromptPayId;
+
+      if (!promptpayId) {
+        notify(t('admin.payments_missing_id'), 'error');
+        return;
+      }
+
+      const checked = validatePromptPay(promptpayId);
+      if (!checked.ok) {
+        notify(t(checked.errorKey), 'error');
+        return;
+      }
+
       try {
-        const { data: s } = await supabase.from('store_settings').select('promptpay_id').eq('singleton', true).single();
-        if (!s?.promptpay_id) {
-          notify(t('admin.payments_missing_id'), 'error');
-          return;
-        }
-        const payload = createPromptPayPayload(s.promptpay_id, amount, reference);
-        const qrDataURL = await createPromptPayQRDataURL(payload);
+        const payload = createPromptPayPayload(checked.value, amount, reference);
+        const qrDataURL = await createPromptPayQRDataURL(payload, 320);
         document.getElementById('test-qr-image').innerHTML =
-          `<img src="${qrDataURL}" alt="QR PromptPay" style="width:220px;height:220px">`;
+          `<img src="${qrDataURL}" alt="QR PromptPay" style="width:240px;height:240px">`;
+
+        const download = document.getElementById('test-qr-download');
+        if (download) download.setAttribute('href', qrDataURL);
+
+        const account = document.getElementById('test-qr-account');
+        if (account) {
+          const name = typedName || savedRecipient;
+          account.textContent = name ? `${checked.value} · ${name}` : checked.value;
+        }
+
+        const source = document.getElementById('test-qr-source');
+        if (source) source.textContent = typedId ? '' : t('admin.payments_qr_saved');
+
+        const amountText = document.getElementById('test-qr-amount-text');
+        if (amountText) amountText.textContent = formatTHB(amount);
+
         document.getElementById('test-qr-payload').textContent = payload;
         document.getElementById('test-qr-result').classList.remove('hidden');
       } catch (err) {
