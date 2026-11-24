@@ -16,7 +16,9 @@ export const BUCKETS = {
 };
 
 const MAX_LOGO_BYTES = 1024 * 1024; // 1 MB
-const LOGO_TYPES = ['image/png', 'image/jpeg', 'image/svg+xml', 'image/webp'];
+// ต้องตรงกับ allowed_mime_types ของ bucket store-assets ที่ใช้งานจริง
+// (image/jpeg, image/png, image/webp — ไม่รับ SVG เพื่อกัน XSS ผ่านไฟล์โลโก้)
+const LOGO_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
 
 /**
  * URL สาธารณะของไฟล์ใน bucket ที่เปิดอ่านได้
@@ -121,5 +123,5 @@ export async function uploadShippingImage(supabase, orderId, file) {
   return { path, bucket: BUCKETS.shippingUpdates };
 }
 
-export const LOGO_ACCEPT = 'image/png,image/jpeg,image/svg+xml,image/webp';
+export const LOGO_ACCEPT = 'image/png,image/jpeg,image/webp';
 export { MAX_LOGO_BYTES, LOGO_TYPES };

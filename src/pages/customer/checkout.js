@@ -8,6 +8,7 @@ import { isSignedIn } from '/src/core/audience.js';
 import { translatePage, t, onLanguageChange } from '/src/core/i18n.js';
 import { notify } from '/src/core/ui.js';
 import { formatTHB, escapeHTML, createPromptPayPayload, createPromptPayQRDataURL, getPrivateImageUrl, buildSlipObjectPath, bindOnce } from '/src/core/lib.js';
+import { validateDelivery } from '/src/core/validation.js';
 import { getOrderStatusBadge, getTimelineProgress } from '/src/core/experience.js';
 import { calculateShipping, amountToFreeShipping } from '/src/core/settings.js';
 
@@ -183,11 +184,19 @@ async function initCheckoutPage() {
 
     try {
       const cart = state.cart.map(i => ({ id: i.product_id, quantity: i.quantity }));
-      const delivery = {
-        recipient: document.getElementById('checkout-name').value.trim(),
-        phone: document.getElementById('checkout-phone').value.trim(),
-        address: document.getElementById('checkout-address').value.trim(),
-      };
+
+      const checked = validateDelivery({
+        recipient: document.getElementById('checkout-name').value,
+        phone: document.getElementById('checkout-phone').value,
+        address: document.getElementById('checkout-address').value,
+      });
+      if (!checked.ok) {
+        notify(t(checked.errorKey), 'error');
+        placeOrderBtn.disabled = false;
+        placeOrderBtn.textContent = t('checkout.place_order');
+        return;
+      }
+      const delivery = checked.value;
       const requestKey = crypto.randomUUID();
 
       const { data: order, error } = await state.supabase.rpc('create_order', {

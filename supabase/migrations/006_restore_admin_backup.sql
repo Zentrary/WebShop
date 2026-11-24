@@ -1,15 +1,23 @@
 -- 006: RPC กู้คืนข้อมูลจากไฟล์สำรอง (restore_admin_backup)
 -- ใช้ร่วมกับ RPC get_admin_backup (รูปแบบ zenmarket-data-v1) ที่หน้าแอดมินดาวน์โหลดและเข้ารหัสไว้
 -- เฉพาะเจ้าของร้าน (is_admin) เท่านั้นที่เรียกได้
+--
+-- หมายเหตุ (แก้บั๊กจริงที่พบตอนทดสอบ round-trip):
+--   1. products.image_urls / order_shipping_updates.image_paths เป็น text[]
+--      → ต้องแปลงจาก jsonb ด้วย array(select jsonb_array_elements_text(...)) ไม่ใช่ coalesce(...,'[]'::jsonb)
+--   2. orders.request_id เป็น uuid → ต้อง cast ชัดเจน
+--   3. orders.payment_due_at เป็น NOT NULL → ต้องมี fallback
+--   4. products.sku / profiles.username เป็น UNIQUE → ต้องปลดล็อกค่าของแถวอื่นที่ชนกันก่อน
+--   5. product_reviews(order_id, product_id) และ orders(user_id, request_id) เป็น UNIQUE
+--      → ลบแถวที่ชนกันแต่ id ต่างกันก่อน insert
 
 create or replace function public.restore_admin_backup(p_backup jsonb)
 returns jsonb
 language plpgsql
 security definer
-set search_path to 'public'
+set search_path = 'public'
 as $function$
 declare
-  t jsonb;
   n_products integer := 0;
   n_categories integer := 0;
   n_settings integer := 0;
@@ -39,6 +47,50 @@ begin
   end loop;
   select count(*) into n_categories from jsonb_array_elements(coalesce(p_backup->'tables'->'categories','[]'::jsonb));
 
+  -- ปลดล็อก SKU ของสินค้าอื่นที่ชนกับ SKU ในไฟล์สำรอง (products.sku UNIQUE)
+  update public.products p
+     set sku = null
+   where exists (
+     select 1
+       from jsonb_array_elements(coalesce(p_backup->'tables'->'products','[]'::jsonb)) b
+      where b->>'sku' is not null
+        and b->>'sku' <> ''
+        and p.sku = b->>'sku'
+        and p.id::text <> b->>'id'
+   );
+
+  -- ปลดล็อก username ของโปรไฟล์อื่นที่ชนกับไฟล์สำรอง (profiles.username UNIQUE)
+  update public.profiles p
+     set username = null
+   where exists (
+     select 1
+       from jsonb_array_elements(coalesce(p_backup->'tables'->'profiles','[]'::jsonb)) b
+      where b->>'username' is not null
+        and b->>'username' <> ''
+        and p.username = b->>'username'
+        and p.id::text <> b->>'id'
+   );
+
+  -- ลบรีวิวที่ (order_id, product_id) ซ้ำกับไฟล์สำรองแต่ id ต่างกัน
+  delete from public.product_reviews r
+   where exists (
+     select 1
+       from jsonb_array_elements(coalesce(p_backup->'tables'->'product_reviews','[]'::jsonb)) b
+      where (b->>'order_id')::uuid = r.order_id
+        and (b->>'product_id')::uuid = r.product_id
+        and (b->>'id')::uuid <> r.id
+   );
+
+  -- ลบคำสั่งซื้อที่ (user_id, request_id) ซ้ำกับไฟล์สำรองแต่ id ต่างกัน
+  delete from public.orders o
+   where exists (
+     select 1
+       from jsonb_array_elements(coalesce(p_backup->'tables'->'orders','[]'::jsonb)) b
+      where (b->>'user_id')::uuid = o.user_id
+        and (b->>'request_id')::uuid = o.request_id
+        and (b->>'id')::uuid <> o.id
+   );
+
   -- สินค้า
   for row in select * from jsonb_array_elements(coalesce(p_backup->'tables'->'products','[]'::jsonb)) loop
     insert into public.products(id, name, sku, category, description, price, image_url, stock, active, created_at, image_urls)
@@ -53,7 +105,11 @@ begin
       coalesce((row->>'stock')::integer,0),
       coalesce((row->>'active')::boolean,true),
       coalesce((row->>'created_at')::timestamptz, now()),
-      coalesce(row->'image_urls','[]'::jsonb)
+      case
+        when jsonb_typeof(row->'image_urls') = 'array'
+          then array(select jsonb_array_elements_text(row->'image_urls'))
+        else '{}'::text[]
+      end
     )
     on conflict (id) do update set
       name = excluded.name,
@@ -90,17 +146,17 @@ begin
   end loop;
   select count(*) into n_settings from jsonb_array_elements(coalesce(p_backup->'tables'->'store_settings','[]'::jsonb));
 
-  -- โปรไฟล์ลูกค้า
+  -- โปรไฟล์
   for row in select * from jsonb_array_elements(coalesce(p_backup->'tables'->'profiles','[]'::jsonb)) loop
     insert into public.profiles(id, first_name, last_name, nickname, phone, age, username, created_at)
     values (
       (row->>'id')::uuid,
-      row->>'first_name',
-      row->>'last_name',
-      row->>'nickname',
-      row->>'phone',
-      (row->>'age')::integer,
-      row->>'username',
+      nullif(row->>'first_name',''),
+      nullif(row->>'last_name',''),
+      nullif(row->>'nickname',''),
+      nullif(row->>'phone',''),
+      nullif(row->>'age','')::integer,
+      nullif(row->>'username',''),
       coalesce((row->>'created_at')::timestamptz, now())
     )
     on conflict (id) do update set
@@ -156,13 +212,13 @@ begin
       coalesce(row->>'status','pending'),
       row->>'slip_path',
       row->>'tracking',
-      row->>'request_id',
+      (row->>'request_id')::uuid,
       coalesce((row->>'created_at')::timestamptz, now()),
-      (row->>'paid_at')::timestamptz,
-      (row->>'shipped_at')::timestamptz,
-      (row->>'delivered_at')::timestamptz,
-      (row->>'payment_due_at')::timestamptz,
-      (row->>'expired_at')::timestamptz
+      nullif(row->>'paid_at','')::timestamptz,
+      nullif(row->>'shipped_at','')::timestamptz,
+      nullif(row->>'delivered_at','')::timestamptz,
+      coalesce(nullif(row->>'payment_due_at','')::timestamptz, now()),
+      nullif(row->>'expired_at','')::timestamptz
     )
     on conflict (id) do update set
       items = excluded.items,
@@ -208,7 +264,11 @@ begin
       (row->>'id')::uuid,
       (row->>'order_id')::uuid,
       row->>'message',
-      coalesce(row->'image_paths','[]'::jsonb),
+      case
+        when jsonb_typeof(row->'image_paths') = 'array'
+          then array(select jsonb_array_elements_text(row->'image_paths'))
+        else '{}'::text[]
+      end,
       coalesce((row->>'created_at')::timestamptz, now())
     )
     on conflict (id) do update set
@@ -227,6 +287,7 @@ begin
     'product_reviews', n_reviews,
     'order_shipping_updates', n_updates
   );
-end $function$;
+end
+$function$;
 
 grant execute on function public.restore_admin_backup(jsonb) to authenticated;

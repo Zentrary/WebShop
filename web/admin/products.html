@@ -54,8 +54,13 @@
             <input type="number" id="product-stock" class="form-input" min="0" step="1" required placeholder="10">
           </div>
           <div class="form-group" style="flex:1;min-width:240px">
-            <label class="form-label" for="product-image">URL รูปสินค้า</label>
+            <label class="form-label" for="product-image" data-i18n="admin.product_image">URL รูปสินค้า</label>
             <input type="url" id="product-image" class="form-input" placeholder="https://...">
+            <div class="flex gap-sm mt-sm" style="align-items:center">
+              <input type="file" id="product-image-file" accept="image/png,image/jpeg,image/webp" class="hidden">
+              <button type="button" id="product-image-upload-btn" class="btn btn-outline btn-sm" data-i18n="admin.product_upload">อัปโหลดรูป</button>
+              <span id="product-image-status" class="text-muted text-sm"></span>
+            </div>
           </div>
         </div>
         <div class="form-group">

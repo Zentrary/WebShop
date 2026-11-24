@@ -21,14 +21,38 @@ export function normalizeProductImages(images, max = 8) {
   return arr.filter(Boolean).slice(0, max);
 }
 
-export function validateSocialUrl(url) {
+/**
+ * ตรวจ URL โซเชียลให้ตรงกับ CHECK constraint ของ store_settings
+ *   facebook_url  ~ ^https://(www\.)?(facebook\.com|fb\.com)/...
+ *   instagram_url ~ ^https://(www\.)?instagram\.com/...
+ *   line_url     ~ ^https://(line\.me|lin\.ee)/...
+ * @param {string} url
+ * @param {'facebook'|'instagram'|'line'} [platform]
+ * @returns {string} URL ที่ถูกต้อง หรือ '' ถ้าไม่ผ่าน
+ */
+export function validateSocialUrl(url, platform) {
   if (!url) return '';
+  let u;
   try {
-    const u = new URL(url);
-    return u.protocol === 'https:' ? url : '';
+    u = new URL(url);
   } catch {
     return '';
   }
+  if (u.protocol !== 'https:') return '';
+  if (!platform) return url;
+
+  const host = u.hostname.toLowerCase();
+  const path = u.pathname.replace(/\/+$/, '');
+  if (path === '') return '';
+
+  const rules = {
+    facebook: (h, p) => (h === 'facebook.com' || h === 'www.facebook.com' || h === 'fb.com' || h === 'www.fb.com') && p.length > 1,
+    instagram: (h, p) => (h === 'instagram.com' || h === 'www.instagram.com') && p.length > 1,
+    line: (h, p) => (h === 'line.me' || h === 'lin.ee') && p.length > 1,
+  };
+
+  const rule = rules[platform];
+  return rule && rule(host, path) ? url : '';
 }
 
 import { t } from '/src/core/i18n.js';

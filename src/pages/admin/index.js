@@ -10,9 +10,10 @@ import { validateSocialUrl, getOrderStatusBadge } from '/src/core/experience.js'
 import { initReveal } from '/src/core/reveal.js';
 import { initAdminLayout } from '/src/pages/admin/layout.js';
 import { initI18n, t, translatePage, onLanguageChange } from '/src/core/i18n.js';
-import { uploadStoreLogo, removeStoreLogo, uploadShippingImage, publicAssetUrl, BUCKETS, LOGO_ACCEPT } from '/src/core/storage.js';
+import { uploadStoreLogo, removeStoreLogo, uploadShippingImage, uploadProductImage, publicAssetUrl, BUCKETS, LOGO_ACCEPT } from '/src/core/storage.js';
 import { reportClientError } from '/src/core/errors.js';
 import { mergeStoreSettings } from '/src/core/settings.js';
+import { validateStoreSettings, validateProduct, validateCategory } from '/src/core/validation.js';
 
 let supabase;
 
@@ -235,18 +236,52 @@ async function initProducts() {
     });
   }
 
+  // อัปโหลดรูปสินค้าเข้า bucket product-images
+  const imageUploadBtn = document.getElementById('product-image-upload-btn');
+  const imageFileInput = document.getElementById('product-image-file');
+  const imageStatus = document.getElementById('product-image-status');
+  const imageUrlInput = document.getElementById('product-image');
+
+  if (imageUploadBtn && imageFileInput) {
+    bindOnce(imageUploadBtn, 'click', () => imageFileInput.click());
+    bindOnce(imageFileInput, 'change', async () => {
+      const file = imageFileInput.files?.[0];
+      if (!file) return;
+      imageUploadBtn.disabled = true;
+      if (imageStatus) imageStatus.textContent = t('common.loading');
+      try {
+        const { url } = await uploadProductImage(supabase, file);
+        if (imageUrlInput) imageUrlInput.value = url;
+        if (imageStatus) imageStatus.textContent = t('admin.product_upload_done');
+      } catch (err) {
+        console.error(err);
+        if (imageStatus) imageStatus.textContent = t('toast.error_generic');
+        notify(err.message || t('toast.error_generic'), 'error');
+      } finally {
+        imageUploadBtn.disabled = false;
+        imageFileInput.value = '';
+      }
+    });
+  }
+
   if (form) {
     bindOnce(form, 'submit', async (e) => {
       e.preventDefault();
-      const payload = {
-        name: document.getElementById('product-name').value.trim(),
-        sku: document.getElementById('product-sku').value.trim() || null,
-        category: document.getElementById('product-category').value.trim() || null,
-        price: parseFloat(document.getElementById('product-price').value) || 0,
-        stock: parseInt(document.getElementById('product-stock').value) || 0,
-        image_url: document.getElementById('product-image').value.trim() || null,
-        description: document.getElementById('product-description').value.trim() || null,
+      const checked = validateProduct({
+        name: document.getElementById('product-name').value,
+        sku: document.getElementById('product-sku').value,
+        category: document.getElementById('product-category').value,
+        price: document.getElementById('product-price').value,
+        stock: document.getElementById('product-stock').value,
+        image_url: document.getElementById('product-image').value,
+        description: document.getElementById('product-description').value,
         active: document.getElementById('product-active').checked,
+      });
+      if (!checked.ok) { notify(t(checked.errorKey), 'error'); return; }
+
+      const payload = {
+        ...checked.value,
+        category: checked.value.category?.trim() || null,
       };
       if (!payload.name) { notify(t('admin.product_name_required'), 'error'); return; }
 
@@ -317,8 +352,9 @@ async function initCategories() {
   if (form) {
     bindOnce(form, 'submit', async (e) => {
       e.preventDefault();
-      const name = document.getElementById('admin-category-name').value.trim();
-      if (!name) return;
+      const checked = validateCategory(document.getElementById('admin-category-name').value);
+      if (!checked.ok) { notify(t(checked.errorKey), 'error'); return; }
+      const name = checked.value;
       const { error } = await supabase.from('categories').insert({ name });
       if (error) notify(error.message || t('toast.error_generic'), 'error');
       else { notify(t('admin.category_added'), 'success'); form.reset(); loadCategories(); }
@@ -455,15 +491,22 @@ async function initSettings() {
         tagline: get('setting-store-description'),
         contact_email: get('setting-contact-email'),
         contact_phone: get('setting-contact-phone'),
-        line_url: validateSocialUrl(get('setting-contact-line')),
-        facebook_url: validateSocialUrl(get('setting-contact-facebook')),
-        instagram_url: validateSocialUrl(get('setting-contact-instagram')),
+        line_url: validateSocialUrl(get('setting-contact-line'), 'line'),
+        facebook_url: validateSocialUrl(get('setting-contact-facebook'), 'facebook'),
+        instagram_url: validateSocialUrl(get('setting-contact-instagram'), 'instagram'),
         shipping_fee: parseFloat(get('setting-shipping-fee')) || 50,
         free_shipping_threshold: parseFloat(get('setting-free-shipping-threshold')) || 300,
         about_text: get('setting-about'),
         shipping_note: get('setting-shipping-note'),
       };
-      const { error } = await supabase.from('store_settings').update(payload).eq('singleton', true);
+
+      const checked = validateStoreSettings(payload);
+      if (!checked.ok) {
+        notify(t(checked.errorKey), 'error');
+        return;
+      }
+
+      const { error } = await supabase.from('store_settings').update(checked.value).eq('singleton', true);
       if (error) notify(error.message || t('toast.error_generic'), 'error');
       else notify(t('admin.settings_saved'), 'success');
     });
@@ -486,11 +529,17 @@ async function initPayments() {
   if (form) {
     bindOnce(form, 'submit', async (e) => {
       e.preventDefault();
+      const promptpayId = document.getElementById('payment-promptpay-id').value.trim();
+      const checked = validatePromptPay(promptpayId);
+      if (!checked.ok) {
+        notify(t(checked.errorKey), 'error');
+        return;
+      }
       const { error } = await supabase.from('store_settings').update({
-        promptpay_id: document.getElementById('payment-promptpay-id').value.trim(),
+        promptpay_id: checked.value,
         recipient_name: document.getElementById('payment-promptpay-name').value.trim(),
       }).eq('singleton', true);
-      if (error) notify(error.message || 'เกิดข้อผิดพลาด', 'error');
+      if (error) notify(error.message || t('toast.error_generic'), 'error');
       else notify(t('admin.payments_saved'), 'success');
     });
   }
@@ -588,7 +637,7 @@ async function initAdminOrderDetail() {
           await loadShippingHistory(order.id);
         } catch (err) {
           console.error(err);
-          reportClientError('admin', err?.message || 'shipping-update');
+          reportClientError('admin', err?.message || 'DATABASE');
           notify(err.message || t('toast.error_generic'), 'error');
         }
       });

@@ -10,6 +10,7 @@ import { translatePage, t, onLanguageChange } from '/src/core/i18n.js';
 import { notify } from '/src/core/ui.js';
 import { initCaptcha, hasCaptcha, renderTurnstile } from '/src/core/captcha.js';
 import { formatTHB, escapeHTML, safeImage } from '/src/core/lib.js';
+import { validateAddress, validateProfile, normalizeThaiPhone, USERNAME_PATTERN } from '/src/core/validation.js';
 import { getStockStatusText, getStockStatusClass } from '/src/core/customer.js';
 import { loadFavoriteProducts, toggleFavorite, isFavorite, canUseFavorites } from '/src/core/favorites.js';
 
@@ -122,11 +123,21 @@ function initRegisterPage() {
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const username = document.getElementById('register-username').value.trim();
+    const username = document.getElementById('register-username').value.trim().toLowerCase();
     const email = document.getElementById('register-email').value.trim();
     const phone = document.getElementById('register-phone').value.trim();
     const password = document.getElementById('register-password').value;
     const confirmPassword = document.getElementById('register-confirm-password').value;
+
+    if (!USERNAME_PATTERN.test(username)) {
+      notify(t('validation.username_invalid'), 'error');
+      return;
+    }
+    const normalizedPhone = normalizeThaiPhone(phone);
+    if (!normalizedPhone) {
+      notify(t('validation.phone_invalid'), 'error');
+      return;
+    }
 
     if (password !== confirmPassword) {
       notify(t('auth.password_mismatch'), 'error');
@@ -147,8 +158,8 @@ function initRegisterPage() {
         password,
         options: {
           data: {
-            username: username.toLowerCase(),
-            phone: phone || null,
+            username,
+            phone: normalizedPhone,
           },
         },
       });
@@ -161,9 +172,9 @@ function initRegisterPage() {
           p_first_name: null,
           p_last_name: null,
           p_nickname: null,
-          p_phone: phone || null,
+          p_phone: normalizedPhone,
           p_age: null,
-          p_username: username.toLowerCase(),
+          p_username: username,
         });
       }
 
@@ -257,13 +268,26 @@ async function initAccountPage() {
   document.getElementById('profile-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     try {
+      const checked = validateProfile({
+        first_name: document.getElementById('profile-firstname').value,
+        last_name: document.getElementById('profile-lastname').value,
+        nickname: user.nickname || '',
+        phone: document.getElementById('profile-phone').value,
+        age: user.age ?? null,
+        username: document.getElementById('profile-username').value || user.username,
+      });
+      if (!checked.ok) {
+        notify(t(checked.errorKey), 'error');
+        return;
+      }
+
       const { error } = await state.supabase.rpc('save_profile', {
-        p_first_name: document.getElementById('profile-firstname').value.trim(),
-        p_last_name: document.getElementById('profile-lastname').value.trim(),
-        p_nickname: null,
-        p_phone: document.getElementById('profile-phone').value.trim(),
-        p_age: null,
-        p_username: document.getElementById('profile-username').value.trim().toLowerCase() || user.username,
+        p_first_name: checked.value.first_name,
+        p_last_name: checked.value.last_name,
+        p_nickname: checked.value.nickname,
+        p_phone: checked.value.phone,
+        p_age: checked.value.age,
+        p_username: checked.value.username,
       });
       if (error) throw error;
       notify(t('account.profile_saved'), 'success');
@@ -417,12 +441,23 @@ function initAddressForm(user) {
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     try {
+      const checked = validateAddress({
+        label: document.getElementById('address-label').value,
+        recipient: document.getElementById('address-recipient').value,
+        phone: document.getElementById('address-phone').value,
+        address: document.getElementById('address-address').value,
+      });
+      if (!checked.ok) {
+        notify(t(checked.errorKey), 'error');
+        return;
+      }
+
       const { error } = await state.supabase.rpc('save_address', {
         p_id: form.dataset.addressId || null,
-        p_label: document.getElementById('address-label').value.trim(),
-        p_recipient: document.getElementById('address-recipient').value.trim(),
-        p_phone: document.getElementById('address-phone').value.trim(),
-        p_address: document.getElementById('address-address').value.trim(),
+        p_label: checked.value.label,
+        p_recipient: checked.value.recipient,
+        p_phone: checked.value.phone,
+        p_address: checked.value.address,
         p_default: document.getElementById('address-default').checked,
       });
       if (error) throw error;

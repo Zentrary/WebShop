@@ -186,7 +186,7 @@ async function initBackup() {
       notify(t('admin.backup_restored'), 'success');
     } catch (err) {
       console.error(err);
-      reportClientError('admin', err?.message || 'restore');
+      reportClientError('admin', err?.message || 'DATABASE');
       errorLog.innerHTML = `<div class="badge badge-error">${escapeHTML(err.message || t('toast.error_generic'))}</div>`;
       notify(err.message || t('toast.error_generic'), 'error');
     }
