@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ชำระเงิน - ZenMarket</title>
+  <link rel="icon" href="/public/favicon.svg" type="image/svg+xml">
+  <script type="module" crossorigin src="/assets/modulepreload-polyfill-B5Qt9EMX.js"></script>
+  <script type="module" crossorigin src="/assets/ui-CnCqiM0r.js"></script>
+  <script type="module" crossorigin src="/assets/app-BhP0Ew1d.js"></script>
+  <script type="module" crossorigin src="/assets/preload-helper-ckwbz45p.js"></script>
+  <script type="module" crossorigin src="/assets/lib-CDYbY7wb.js"></script>
+  <script type="module" crossorigin src="/assets/checkout-BLK8_jDi.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/responsive-CDetyTtb.css">
+</head>
+<body>
+  <main class="container pt-lg pb-xl">
+    <h1 data-i18n="checkout.title">ชำระเงิน</h1>
+
+    <div class="checkout-grid grid grid-cols-2 gap-grid-lg">
+      <div class="checkout-form">
+        <h2 data-i18n="checkout.shipping_info">ข้อมูลการจัดส่ง</h2>
+        <form id="checkout-form">
+          <div class="form-group mb-md">
+            <label class="form-label">ชื่อ-นามสกุล</label>
+            <input type="text" id="checkout-name" class="form-input" required placeholder="นายสมชาย ใจดี">
+          </div>
+          <div class="form-group mb-md">
+            <label class="form-label">เบอร์โทรศัพท์</label>
+            <input type="tel" id="checkout-phone" class="form-input" required placeholder="0812345678">
+          </div>
+          <div class="form-group mb-md">
+            <label class="form-label">อีเมล</label>
+            <input type="email" id="checkout-email" class="form-input" required placeholder="you@example.com">
+          </div>
+          <div class="form-group mb-md">
+            <label class="form-label">ที่อยู่</label>
+            <textarea id="checkout-address" class="form-input" rows="3" required placeholder="เลขที่ ถนน ตำบล อำเภอ จังหวัด"></textarea>
+          </div>
+          <div class="form-group mb-md">
+            <label class="form-label">รหัสไปรษณีย์</label>
+            <input type="text" id="checkout-postal" class="form-input" required placeholder="10xxx">
+          </div>
+        </form>
+      </div>
+
+      <div class="checkout-summary card p-lg">
+        <h2>สรุปคำสั่งซื้อ</h2>
+        <div id="checkout-items" class="space-y-sm mb-lg">
+          <!-- Items loaded via JavaScript -->
+        </div>
+        <div class="flex justify-between mb-sm">
+          <span>ยอดรวม</span>
+          <span id="checkout-subtotal" class="font-semibold">฿0.00</span>
+        </div>
+        <div class="flex justify-between mb-sm">
+          <span>ค่าจัดส่ง</span>
+          <span id="checkout-shipping" class="font-semibold">฿0.00</span>
+        </div>
+        <div class="flex justify-between mb-lg border-t pt-md">
+          <span class="font-bold">รวมทั้งหมด</span>
+          <span id="checkout-total" class="font-bold text-primary">฿0.00</span>
+        </div>
+
+        <div class="form-group mb-lg">
+          <label class="form-label">วิธีการชำระเงิน</label>
+          <div class="space-y-sm">
+            <label class="form-checkbox cursor-pointer">
+              <input type="radio" name="payment" value="promptpay" checked>
+              <span data-i18n="checkout.promptpay">พร้อมเพย์ (PromptPay)</span>
+            </label>
+            <label class="form-checkbox cursor-pointer">
+              <input type="radio" name="payment" value="cod">
+              <span data-i18n="checkout.cod">เก็บเงินปลายทาง (COD)</span>
+            </label>
+          </div>
+        </div>
+
+        <button id="place-order-btn" class="btn btn-primary btn-full" data-i18n="checkout.place_order">ยืนยันคำสั่งซื้อ</button>
+      </div>
+    </div>
+
+    <div id="promptpay-qr" class="mt-xl hidden">
+      <div class="card p-lg">
+        <h3 class="text-center mb-md">สแกน QR เพื่อชำระเงิน</h3>
+        <div id="qr-container" class="flex justify-center mb-md"></div>
+        <div id="qr-amount" class="text-center font-bold text-primary mb-lg"></div>
+        <div class="text-center text-secondary text-sm">
+          หลังจากชำระเงินแล้ว กรุณาอัปโหลดสลิปการโอนเงินในขั้นตอนถัดไป
+        </div>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

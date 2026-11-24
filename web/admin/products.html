@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>จัดการสินค้า - ZenMarket Admin</title>
+  <link rel="stylesheet" href="/src/styles/base.css">
+  <link rel="stylesheet" href="/src/styles/spaces.css">
+  <link rel="stylesheet" href="/src/styles/responsive.css">
+  <link rel="icon" href="/public/favicon.svg" type="image/svg+xml">
+  <script type="module" src="/src/pages/admin/navigation.js"></script>
+  <script type="module" src="/src/pages/admin/index.js"></script>
+</head>
+<body>
+  <div class="admin-layout min-h-screen">
+    <aside class="admin-sidebar hidden md:flex">
+      <nav class="admin-nav">
+        <h3 class="p-lg font-semibold text-primary">ZenMarket Admin</h3>
+        <ul class="space-y-xs">
+          <li><a href="/admin/dashboard.html" class="block px-lg py-md rounded-md text-secondary hover:bg-hover hover:text-primary" data-i18n="admin.dashboard">แดชบอร์ด</a></li>
+          <li><a href="/admin/orders.html" class="block px-lg py-md rounded-md text-secondary hover:bg-hover hover:text-primary" data-i18n="admin.orders">คำสั่งซื้อ</a></li>
+          <li><a href="/admin/products.html" class="block px-lg py-md rounded-md bg-primary text-white" data-i18n="admin.products">สินค้า</a></li>
+          <li><a href="/admin/categories.html" class="block px-lg py-md rounded-md text-secondary hover:bg-hover hover:text-primary" data-i18n="admin.categories">หมวดหมู่</a></li>
+          <li><a href="/admin/reviews.html" class="block px-lg py-md rounded-md text-secondary hover:bg-hover hover:text-primary" data-i18n="admin.reviews">รีวิว</a></li>
+          <li><a href="/admin/settings.html" class="block px-lg py-md rounded-md text-secondary hover:bg-hover hover:text-primary" data-i18n="admin.settings">การตั้งค่า</a></li>
+          <li><a href="/admin/payments.html" class="block px-lg py-md rounded-md text-secondary hover:bg-hover hover:text-primary" data-i18n="admin.payments">การชำระเงิน</a></li>
+          <li><a href="/admin/operations.html" class="block px-lg py-md rounded-md text-secondary hover:bg-hover hover:text-primary" data-i18n="admin.operations">การดำเนินงาน</a></li>
+        </ul>
+      </nav>
+    </aside>
+
+    <div class="admin-content flex-1 p-lg">
+      <header class="flex justify-between items-center mb-xl">
+        <div class="flex gap-sm">
+          <h1 data-i18n="admin.products">จัดการสินค้า</h1>
+          <button id="admin-add-product-btn" class="btn btn-primary btn-sm">เพิ่มสินค้า</button>
+        </div>
+      </header>
+
+      <div class="mb-lg">
+        <input type="text" id="admin-product-search" class="form-input w-80" placeholder="ค้นหาสินค้า...">
+      </div>
+
+      <div class="overflow-auto">
+        <table class="w-full border-collapse">
+          <thead>
+            <tr class="text-left text-secondary text-sm border-b">
+              <th class="pb-sm font-semibold">รูปภาพ</th>
+              <th class="pb-sm font-semibold">ชื่อสินค้า</th>
+              <th class="pb-sm font-semibold">หมวดหมู่</th>
+              <th class="pb-sm font-semibold text-right">ราคา</th>
+              <th class="pb-sm font-semibold text-center">สต็อก</th>
+              <th class="pb-sm font-semibold">สถานะ</th>
+              <th class="pb-sm font-semibold">การดำเนินการ</th>
+            </tr>
+          </thead>
+          <tbody id="admin-products-list" class="text-secondary divide-y">
+            <!-- Products loaded via JavaScript -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="admin-mobile-nav hidden">
+      <details class="workspace-mobile-nav">
+        <summary class="flex justify-between items-center p-md border-b border-border">
+          <span class="font-semibold">เมนู</span>
+          <span>▼</span>
+        </summary>
+        <nav class="space-y-xs p-sm">
+          <a href="/admin/dashboard.html" class="block px-sm py-sm rounded-md text-secondary hover:bg-hover hover:text-primary" data-i18n="admin.dashboard">แดชบอร์ด</a>
+          <a href="/admin/orders.html" class="block px-sm py-sm rounded-md text-secondary hover:bg-hover hover:text-primary" data-i18n="admin.orders">คำสั่งซื้อ</a>
+          <a href="/admin/products.html" class="block px-sm py-sm rounded-md text-secondary hover:bg-hover hover:text-primary" data-i18n="admin.products">สินค้า</a>
+          <a href="/admin/categories.html" class="block px-sm py-sm rounded-md text-secondary hover:bg-hover hover:text-primary" data-i18n="admin.categories">หมวดหมู่</a>
+          <a href="/admin/reviews.html" class="block px-sm py-sm rounded-md text-secondary hover:bg-hover hover:text-primary" data-i18n="admin.reviews">รีวิว</a>
+          <a href="/admin/settings.html" class="block px-sm py-sm rounded-md text-secondary hover:bg-hover hover:text-primary" data-i18n="admin.settings">การตั้งค่า</a>
+          <a href="/admin/payments.html" class="block px-sm py-sm rounded-md text-secondary hover:bg-hover hover:text-primary" data-i18n="admin.payments">การชำระเงิน</a>
+          <a href="/admin/operations.html" class="block px-sm py-sm rounded-md text-secondary hover:bg-hover hover:text-primary" data-i18n="admin.operations">การดำเนินงาน</a>
+        </nav>
+      </details>
+    </div>
+  </div>
+</body>
+</html>

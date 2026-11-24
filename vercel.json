@@ -1,0 +1,49 @@
+{
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' https://challenges.cloudflare.com; style-src 'self'; font-src 'self'; img-src 'self' data: blob: https:; frame-src https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com https://*.supabase.co wss://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), microphone=(), geolocation=()"
+        },
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=31536000; includeSubDomains"
+        }
+      ]
+    }
+  ],
+  "redirects": [
+    { "source": "/", "destination": "/home.html", "statusCode": 308 },
+    { "source": "/index.html", "destination": "/home.html", "statusCode": 308 },
+    { "source": "/shop.html", "destination": "/shop/index.html", "statusCode": 308 },
+    { "source": "/product.html", "destination": "/shop/product.html", "statusCode": 308 },
+    { "source": "/categories.html", "destination": "/shop/categories.html", "statusCode": 308 },
+    { "source": "/cart.html", "destination": "/shop/cart.html", "statusCode": 308 },
+    { "source": "/checkout.html", "destination": "/shop/checkout.html", "statusCode": 308 },
+    { "source": "/account.html", "destination": "/account/index.html", "statusCode": 308 },
+    { "source": "/orders.html", "destination": "/account/orders.html", "statusCode": 308 },
+    { "source": "/order.html", "destination": "/account/order.html", "statusCode": 308 },
+    { "source": "/favorites.html", "destination": "/account/favorites.html", "statusCode": 308 },
+    { "source": "/login.html", "destination": "/auth/login.html", "statusCode": 308 },
+    { "source": "/register.html", "destination": "/auth/register.html", "statusCode": 308 },
+    { "source": "/reset-password.html", "destination": "/auth/reset-password.html", "statusCode": 308 },
+    { "source": "/about.html", "destination": "/pages/about.html", "statusCode": 308 },
+    { "source": "/help.html", "destination": "/pages/help.html", "statusCode": 308 },
+    { "source": "/privacy.html", "destination": "/pages/privacy.html", "statusCode": 308 },
+    { "source": "/contact.html", "destination": "/pages/contact.html", "statusCode": 308 }
+  ]
+}

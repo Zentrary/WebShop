@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>การตั้งค่าร้าน - ZenMarket Admin</title>
+  <link rel="icon" href="/public/favicon.svg" type="image/svg+xml">
+  <script type="module" crossorigin src="/assets/modulepreload-polyfill-B5Qt9EMX.js"></script>
+  <script type="module" crossorigin src="/assets/ui-CnCqiM0r.js"></script>
+  <script type="module" crossorigin src="/assets/navigation-B5AlsBm3.js"></script>
+  <script type="module" crossorigin src="/assets/preload-helper-ckwbz45p.js"></script>
+  <script type="module" crossorigin src="/assets/lib-CDYbY7wb.js"></script>
+  <script type="module" crossorigin src="/assets/index-Bm8Ijb20.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/responsive-CDetyTtb.css">
+</head>
+<body>
+  <div class="admin-layout min-h-screen">
+    <aside class="admin-sidebar hidden md:flex">
+      <nav class="admin-nav">
+        <h3 class="p-lg font-semibold text-primary">ZenMarket Admin</h3>
+        <ul class="space-y-xs">
+          <li><a href="/admin/dashboard.html" class="block px-lg py-md rounded-md text-secondary hover:bg-hover hover:text-primary" data-i18n="admin.dashboard">แดชบอร์ด</a></li>
+          <li><a href="/admin/orders.html" class="block px-lg py-md rounded-md text-secondary hover:bg-hover hover:text-primary" data-i18n="admin.orders">คำสั่งซื้อ</a></li>
+          <li><a href="/admin/products.html" class="block px-lg py-md rounded-md text-secondary hover:bg-hover hover:text-primary" data-i18n="admin.products">สินค้า</a></li>
+          <li><a href="/admin/categories.html" class="block px-lg py-md rounded-md text-secondary hover:bg-hover hover:text-primary" data-i18n="admin.categories">หมวดหมู่</a></li>
+    <div class="admin-content flex-1 p-lg">
+      <header class="mb-xl">
+        <h1 data-i18n="admin.settings">การตั้งค่าร้านค้า</h1>
+      </header>
+
+      <form id="admin-settings-form" class="space-y-lg">
+        <div class="card p-lg">
+          <h2 class="font-semibold mb-md">ข้อมูลร้านค้า</h2>
+          <div class="grid grid-cols-2 gap-grid-lg">
+            <div class="form-group">
+              <label class="form-label">ชื่อร้านค้า</label>
+              <input type="text" id="setting-store-name" class="form-input" value="ZenMarket" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">URL โลโก้</label>
+              <input type="url" id="setting-store-logo" class="form-input" placeholder="/public/images/placeholder.svg">
+            </div>
+            <div class="form-group col-span-2">
+              <label class="form-label">คำอธิบายร้านค้า</label>
+              <textarea id="setting-store-description" class="form-input" rows="3"></textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label">อีเมลติดต่อ</label>
+              <input type="email" id="setting-contact-email" class="form-input">
+            </div>
+            <div class="form-group">
+              <label class="form-label">เบอร์โทรศัพท์</label>
+              <input type="tel" id="setting-contact-phone" class="form-input">
+            </div>
+            <div class="form-group">
+              <label class="form-label">LINE ID</label>
+              <input type="text" id="setting-contact-line" class="form-input">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Facebook</label>
+              <input type="url" id="setting-contact-facebook" class="form-input">
+        <div class="card p-lg">
+          <h2 class="font-semibold mb-md">ค่าจัดส่ง</h2>
+          <div class="grid grid-cols-2 gap-grid-lg">
+            <div class="form-group">
+              <label class="form-label">ค่าจัดส่ง (บาท)</label>
+              <input type="number" id="setting-shipping-fee" class="form-input" value="50">
+            </div>
+            <div class="form-group">
+              <label class="form-label">ส่งฟรีเมื่อซื้อครบ (บาท)</label>
+              <input type="number" id="setting-free-shipping-threshold" class="form-input" value="500">
+            </div>
+          </div>
+        </div>
+
+        <div class="card p-lg">
+          <h2 class="font-semibold mb-md">นโยบาย</h2>
+          <div class="space-y-md">
+            <div class="form-group">
+              <label class="form-label">ข้อกำหนดและเงื่อนไข</label>
+              <textarea id="setting-terms" class="form-input" rows="4"></textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label">นโยบายความเป็นส่วนตัว</label>
+              <textarea id="setting-privacy" class="form-input" rows="4"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-full">บันทึกการตั้งค่า</button>
+      </form>
+    </div>
+
+    <div class="admin-mobile-nav hidden">
+      <details class="workspace-mobile-nav">
+        <summary class="flex justify-between items-center p-md border-b border-border">
+          <span class="font-semibold">เมนู</span>
+          <span>▼</span>
+        </summary>
+        <nav class="space-y-xs p-sm">
+          <a href="/admin/dashboard.html" class="block px-sm py-sm rounded-md text-secondary hover:bg-hover hover:text-primary" data-i18n="admin.dashboard">แดชบอร์ด</a>
+          <a href="/admin/orders.html" class="block px-sm py-sm rounded-md text-secondary hover:bg-hover hover:text-primary" data-i18n="admin.orders">คำสั่งซื้อ</a>
+          <a href="/admin/products.html" class="block px-sm py-sm rounded-md text-secondary hover:bg-hover hover:text-primary" data-i18n="admin.products">สินค้า</a>
+          <a href="/admin/categories.html" class="block px-sm py-sm rounded-md text-secondary hover:bg-hover hover:text-primary" data-i18n="admin.categories">หมวดหมู่</a>
+          <a href="/admin/reviews.html" class="block px-sm py-sm rounded-md text-secondary hover:bg-hover hover:text-primary" data-i18n="admin.reviews">รีวิว</a>
+          <a href="/admin/settings.html" class="block px-sm py-sm rounded-md text-secondary hover:bg-hover hover:text-primary" data-i18n="admin.settings">การตั้งค่า</a>
+          <a href="/admin/payments.html" class="block px-sm py-sm rounded-md text-secondary hover:bg-hover hover:text-primary" data-i18n="admin.payments">การชำระเงิน</a>
+          <a href="/admin/operations.html" class="block px-sm py-sm rounded-md text-secondary hover:bg-hover hover:text-primary" data-i18n="admin.operations">การดำเนินงาน</a>
+        </nav>
+      </details>
+    </div>
+  </div>
+</body>
+</html>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Instagram</label>
+              <input type="url" id="setting-contact-instagram" class="form-input">
+            </div>
+            <div class="form-group">
+              <label class="form-label">TikTok</label>
+              <input type="url" id="setting-contact-tiktok" class="form-input">
+            </div>
+          </div>
+        </div>
+          <li><a href="/admin/reviews.html" class="block px-lg py-md rounded-md text-secondary hover:bg-hover hover:text-primary" data-i18n="admin.reviews">รีวิว</a></li>
+          <li><a href="/admin/settings.html" class="block px-lg py-md rounded-md bg-primary text-white" data-i18n="admin.settings">การตั้งค่า</a></li>
+          <li><a href="/admin/payments.html" class="block px-lg py-md rounded-md text-secondary hover:bg-hover hover:text-primary" data-i18n="admin.payments">การชำระเงิน</a></li>
+          <li><a href="/admin/operations.html" class="block px-lg py-md rounded-md text-secondary hover:bg-hover hover:text-primary" data-i18n="admin.operations">การดำเนินงาน</a></li>
+        </ul>
+      </nav>
+    </aside>

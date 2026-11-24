@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>รายละเอียดสินค้า - ZenMarket</title>
+  <link rel="icon" href="/public/favicon.svg" type="image/svg+xml">
+  <script type="module" crossorigin src="/assets/modulepreload-polyfill-B5Qt9EMX.js"></script>
+  <script type="module" crossorigin src="/assets/ui-CnCqiM0r.js"></script>
+  <script type="module" crossorigin src="/assets/app-BhP0Ew1d.js"></script>
+  <script type="module" crossorigin src="/assets/preload-helper-ckwbz45p.js"></script>
+  <script type="module" crossorigin src="/assets/lib-CDYbY7wb.js"></script>
+  <script type="module" crossorigin src="/assets/store-Ba0uVktP.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/responsive-CDetyTtb.css">
+</head>
+<body>
+  <main class="container pt-lg pb-xl">
+    <div class="product-layout grid grid-cols-2 gap-grid-lg">
+      <div class="product-gallery">
+        <div id="main-image" class="bg-elevated rounded-lg h-96 flex items-center justify-center mb-md">
+          <img src="/public/images/placeholder.svg" alt="สินค้า" id="main-product-img" class="max-h-full max-w-full object-contain">
+        </div>
+        <div id="thumbnail-list" class="flex gap-sm overflow-auto">
+          <!-- Thumbnails loaded via JavaScript -->
+        </div>
+      </div>
+
+      <div class="product-info">
+        <h1 id="product-title" class="text-2xl mb-sm">ชื่อสินค้า</h1>
+        <div id="product-price" class="text-xl font-bold text-primary mb-md">฿0.00</div>
+        <div id="product-stock" class="mb-md"></div>
+
+        <h3 class="text-lg mb-md">รายละเอียดสินค้า</h3>
+        <div id="product-description" class="text-secondary mb-lg"></div>
+
+        <div class="mb-lg">
+          <label class="form-label">จำนวน</label>
+          <div class="flex items-center gap-sm w-32">
+            <button id="qty-decrease" class="btn-outline w-10 h-auto">−</button>
+            <input type="number" id="qty-input" class="form-input text-center w-12" value="1" min="1">
+            <button id="qty-increase" class="btn-outline w-10 h-auto">+</button>
+          </div>
+        </div>
+
+        <button id="add-to-cart-btn" class="btn btn-primary btn-full mb-lg" data-add-to-cart>
+          หยิบใส่ตะกร้า
+        </button>
+
+        <button id="buy-now-btn" class="btn btn-outline btn-full mb-lg">
+          ซื้อเลย
+        </button>
+
+        <div id="share-social" class="flex gap-sm mt-lg">
+          <a href="#" class="text-muted hover:text-primary"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.262 1.784 4.316 4.21 4.692-.453.196-.899.514-1.376.919-.346.306-.685.657-.989 1.048-.225.561-.358 1.176-.358 1.826 0 .697.22 1.364.602 1.964-.615-.207-1.195-.46-1.733-.705-.188.593.114 1.253.656 1.565-.896-.373-1.72-.997-2.448-1.746.534 1.678 2.107 2.903 3.886 3.01-2.138 1.678-4.834 2.676-7.72 2.438 1.323.684 2.738 1.06 4.224 1.06 5.075 0 7.848-4.203 7.848-7.774 0-.118-.007-.234-.014-.351.678.223 1.362.35 2.058.398-.647-1.435-1.01-3.076-1.01-4.84 0-1.066.225-2.094.632-3.036"/></svg></a>
+          <a href="#" class="text-muted hover:text-primary"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.04C6.5 2.04 2 6.53 2 12.06c0 4.32 2.73 7.97 6.5 9.31-.21-.09-.44-.21-.69-.35-.12-.22-.19-.48-.19-.75 0-.25.02-.5.06-.74.11-.77.53-2.44 1.37-3.86-1.18-.23-2.3-.59-3.35-.59-3.91 0-.87.31-1.59.85-2.15-.32-.09-.64-.15-.99-.15-.21 0-.41.09-.61.21-.22.25-.34.57-.34.91 0 .59.31 1.12.8 1.48-.36-.12-.74-.21-1.14-.27-.14.44-.22.91-.22 1.41 0 .98.61 1.84 1.43 2.38-.29-.09-.58-.15-.87-.15-.21 0-.42.11-.61.29-.35.77-.54 1.59-.54 2.47 0 1.84 1.38 3.36 3.18 3.61-.44 1.25-.68 2.61-.68 4.04 0 2.98 2.24 5.42 5.13 5.42-.61.17-1.21.27-1.84.27-.45 0-.89-.06-1.31-.16.36 1.16 1.22 2.01 2.35 2.01-1.07.82-2.47 1.31-4.02 1.31-.26 0-.52-.02-.77-.09 2.37 1.45 5.24 2.32 8.31 2.32 9.97 0 15.42-8.49 15.42-15.42 0-.24 0-.49-.01-.74 4.59-3.36 8.26-7.73 8.26-14.52 0-4.18-2.67-7.72-6.5-9.09"/></svg></a>
+          <a href="#" class="text-muted hover:text-primary"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231 5.45-6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a>
+        </div>
+
+        <div id="product-reviews" class="mt-xl">
+          <h3 class="mb-md">รีวิวจากลูกค้า</h3>
+          <div id="reviews-list" class="space-y-md">
+            <!-- Reviews loaded via JavaScript -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="related-products" class="mt-xl">
+      <h2 class="mb-md">สินค้าที่เกี่ยวข้อง</h2>
+      <div id="related-grid" class="grid grid-cols-4 gap-grid-lg"></div>
+    </div>
+  </main>
+</body>
+</html>

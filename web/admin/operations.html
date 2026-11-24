@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>การดำเนินงาน - ZenMarket Admin</title>
+  <link rel="stylesheet" href="/src/styles/base.css">
+  <link rel="stylesheet" href="/src/styles/spaces.css">
+  <link rel="stylesheet" href="/src/styles/responsive.css">
+  <link rel="icon" href="/public/favicon.svg" type="image/svg+xml">
+  <script type="module" src="/src/pages/admin/navigation.js"></script>
+  <script type="module" src="/src/pages/admin/operations.js"></script>
+</head>
+<body>
+  <div class="admin-layout min-h-screen">
+    <aside class="admin-sidebar hidden md:flex">
+      <nav class="admin-nav">
+        <h3 class="p-lg font-semibold text-primary">ZenMarket Admin</h3>
+        <ul class="space-y-xs">
+          <li><a href="/admin/dashboard.html" class="block px-lg py-md rounded-md text-secondary hover:bg-hover hover:text-primary" data-i18n="admin.dashboard">แดชบอร์ด</a></li>
+          <li><a href="/admin/orders.html" class="block px-lg py-md rounded-md text-secondary hover:bg-hover hover:text-primary" data-i18n="admin.orders">คำสั่งซื้อ</a></li>
+          <li><a href="/admin/products.html" class="block px-lg py-md rounded-md text-secondary hover:bg-hover hover:text-primary" data-i18n="admin.products">สินค้า</a></li>
+          <li><a href="/admin/categories.html" class="block px-lg py-md rounded-md text-secondary hover:bg-hover hover:text-primary" data-i18n="admin.categories">หมวดหมู่</a></li>
+    <div class="admin-content flex-1 p-lg">
+      <header class="mb-xl">
+        <h1 data-i18n="admin.operations">การดำเนินงาน</h1>
+        <p class="text-secondary">ศูนย์แจ้งเตือน, สถานะงานคืนสต็อก, บันทึกข้อผิดพลาด และสำรองข้อมูลเข้ารหัส</p>
+      </header>
+
+      <div class="grid grid-cols-2 gap-grid-lg mb-xl">
+        <div class="card p-lg">
+          <h2 class="font-semibold mb-md">การแจ้งเตือนร้านค้า</h2>
+          <div id="operations-notifications" class="space-y-sm">
+            <!-- Notifications loaded via JavaScript -->
+          </div>
+        </div>
+
+        <div class="card p-lg">
+          <h2 class="font-semibold mb-md">สถานะงานคืนสต็อก</h2>
+          <div id="operations-restock-status" class="space-y-sm">
+            <!-- Restock status loaded via JavaScript -->
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-grid-lg mb-xl">
+        <div class="card p-lg">
+          <h2 class="font-semibold mb-md">บันทึกข้อผิดพลาด</h2>
+          <div id="operations-error-log" class="space-y-xs text-xs font-mono text-secondary">
+            <!-- Error log loaded via JavaScript -->
+          </div>
+        </div>
+
+        <div class="card p-lg">
+          <h2 class="font-semibold mb-md">สำรองข้อมูลเข้ารหัส</h2>
+          <p class="text-secondary mb-md">สำรองข้อมูลร้านค้าทั้งหมดในเบราว์เซอร์ด้วยการเข้ารหัส AES-256-GCM</p>
+          <div class="space-y-sm">
+            <div class="form-group">
+              <label class="form-label">รหัสผ่านสำหรับเข้ารหัส</label>
+              <input type="password" id="backup-password" class="form-input" placeholder="ตั้งรหัสผ่านเพื่อเข้ารหัสไฟล์สำรอง">
+            </div>
+            <div class="flex gap-sm">
+              <button id="backup-download-btn" class="btn btn-primary btn-full">ดาวน์โหลดไฟล์สำรอง</button>
+              <button id="backup-upload-btn" class="btn btn-outline btn-full">อัปโหลดและกู้คืน</button>
+            </div>
+            <input type="file" id="backup-file-input" class="hidden" accept=".zenbackup">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="admin-mobile-nav hidden">
+      <details class="workspace-mobile-nav">
+        <summary class="flex justify-between items-center p-md border-b border-border">
+          <span class="font-semibold">เมนู</span>
+          <span>▼</span>
+        </summary>
+        <nav class="space-y-xs p-sm">
+          <a href="/admin/dashboard.html" class="block px-sm py-sm rounded-md text-secondary hover:bg-hover hover:text-primary" data-i18n="admin.dashboard">แดชบอร์ด</a>
+          <a href="/admin/orders.html" class="block px-sm py-sm rounded-md text-secondary hover:bg-hover hover:text-primary" data-i18n="admin.orders">คำสั่งซื้อ</a>
+          <a href="/admin/products.html" class="block px-sm py-sm rounded-md text-secondary hover:bg-hover hover:text-primary" data-i18n="admin.products">สินค้า</a>
+          <a href="/admin/categories.html" class="block px-sm py-sm rounded-md text-secondary hover:bg-hover hover:text-primary" data-i18n="admin.categories">หมวดหมู่</a>
+          <a href="/admin/reviews.html" class="block px-sm py-sm rounded-md text-secondary hover:bg-hover hover:text-primary" data-i18n="admin.reviews">รีวิว</a>
+          <a href="/admin/settings.html" class="block px-sm py-sm rounded-md text-secondary hover:bg-hover hover:text-primary" data-i18n="admin.settings">การตั้งค่า</a>
+          <a href="/admin/payments.html" class="block px-sm py-sm rounded-md text-secondary hover:bg-hover hover:text-primary" data-i18n="admin.payments">การชำระเงิน</a>
+          <a href="/admin/operations.html" class="block px-sm py-sm rounded-md text-secondary hover:bg-hover hover:text-primary" data-i18n="admin.operations">การดำเนินงาน</a>
+        </nav>
+      </details>
+    </div>
+  </div>
+</body>
+</html>
+          <li><a href="/admin/reviews.html" class="block px-lg py-md rounded-md text-secondary hover:bg-hover hover:text-primary" data-i18n="admin.reviews">รีวิว</a></li>
+          <li><a href="/admin/settings.html" class="block px-lg py-md rounded-md text-secondary hover:bg-hover hover:text-primary" data-i18n="admin.settings">การตั้งค่า</a></li>
+          <li><a href="/admin/payments.html" class="block px-lg py-md rounded-md text-secondary hover:bg-hover hover:text-primary" data-i18n="admin.payments">การชำระเงิน</a></li>
+          <li><a href="/admin/operations.html" class="block px-lg py-md rounded-md bg-primary text-white" data-i18n="admin.operations">การดำเนินงาน</a></li>
+        </ul>
+      </nav>
+    </aside>

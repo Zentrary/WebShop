@@ -1,0 +1,1 @@
+import{i as o,l as t}from"./ui-CnCqiM0r.js";document.addEventListener("DOMContentLoaded",()=>{if(!o()){window.location.href="/admin/login.html";return}const n=document.getElementById("admin-logout");n&&n.addEventListener("click",()=>{t(),window.location.href="/admin/login.html"})});

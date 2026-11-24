@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ตะกร้าสินค้า - ZenMarket</title>
+  <link rel="stylesheet" href="/src/styles/base.css">
+  <link rel="stylesheet" href="/src/styles/spaces.css">
+  <link rel="stylesheet" href="/src/styles/responsive.css">
+  <link rel="icon" href="/public/favicon.svg" type="image/svg+xml">
+  <script type="module" src="/src/pages/customer/checkout.js"></script>
+</head>
+<body>
+  <main class="container pt-lg pb-xl">
+    <h1 data-i18n="cart.title">ตะกร้าสินค้า</h1>
+
+    <div id="cart-empty" class="text-center py-xl hidden">
+      <div class="text-muted font-medium mb-lg" data-i18n="cart.empty">ตะกร้าสินค้าของคุณว่างเปล่า</div>
+      <a href="/shop/index.html" class="btn btn-primary" data-i18n="nav.shop">ไปยังร้านค้า</a>
+    </div>
+
+    <div id="cart-content" class="hidden">
+      <div id="cart-items" class="space-y-md mb-xl">
+        <!-- Cart items loaded via JavaScript -->
+      </div>
+
+      <div class="order-summary card p-lg">
+        <div class="flex justify-between mb-sm">
+          <span data-i18n="cart.subtotal">ยอดรวมสินค้า</span>
+          <span id="cart-subtotal" class="font-semibold">฿0.00</span>
+        </div>
+        <div class="flex justify-between mb-sm">
+          <span data-i18n="cart.shipping">ค่าจัดส่ง</span>
+          <span id="cart-shipping" class="font-semibold">฿0.00</span>
+        </div>
+        <div class="flex justify-between mb-lg border-t pt-md">
+          <span data-i18n="cart.total" class="font-bold">รวมทั้งหมด</span>
+          <span id="cart-total" class="font-bold text-primary">฿0.00</span>
+        </div>
+
+        <a href="/shop/checkout.html" class="btn btn-primary btn-full" data-i18n="cart.checkout">ไปยังหน้าชำระเงิน</a>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

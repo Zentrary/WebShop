@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>การชำระเงิน - ZenMarket Admin</title>
+  <link rel="icon" href="/public/favicon.svg" type="image/svg+xml">
+  <script type="module" crossorigin src="/assets/modulepreload-polyfill-B5Qt9EMX.js"></script>
+  <script type="module" crossorigin src="/assets/ui-CnCqiM0r.js"></script>
+  <script type="module" crossorigin src="/assets/navigation-B5AlsBm3.js"></script>
+  <script type="module" crossorigin src="/assets/preload-helper-ckwbz45p.js"></script>
+  <script type="module" crossorigin src="/assets/lib-CDYbY7wb.js"></script>
+  <script type="module" crossorigin src="/assets/index-Bm8Ijb20.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/responsive-CDetyTtb.css">
+</head>
+<body>
+  <div class="admin-layout min-h-screen">
+    <aside class="admin-sidebar hidden md:flex">
+      <nav class="admin-nav">
+        <h3 class="p-lg font-semibold text-primary">ZenMarket Admin</h3>
+        <ul class="space-y-xs">
+          <li><a href="/admin/dashboard.html" class="block px-lg py-md rounded-md text-secondary hover:bg-hover hover:text-primary" data-i18n="admin.dashboard">แดชบอร์ด</a></li>
+          <li><a href="/admin/orders.html" class="block px-lg py-md rounded-md text-secondary hover:bg-hover hover:text-primary" data-i18n="admin.orders">คำสั่งซื้อ</a></li>
+          <li><a href="/admin/products.html" class="block px-lg py-md rounded-md text-secondary hover:bg-hover hover:text-primary" data-i18n="admin.products">สินค้า</a></li>
+          <li><a href="/admin/categories.html" class="block px-lg py-md rounded-md text-secondary hover:bg-hover hover:text-primary" data-i18n="admin.categories">หมวดหมู่</a></li>
+    <div class="admin-content flex-1 p-lg">
+      <header class="mb-xl">
+        <h1 data-i18n="admin.payments">การชำระเงิน</h1>
+        <p class="text-secondary">ตั้งค่าบัญชีรับเงิน PromptPay (แยกจากข้อมูลสาธารณะ)</p>
+      </header>
+
+      <div class="card p-lg">
+        <h2 class="font-semibold mb-md">บัญชี PromptPay</h2>
+        <form id="admin-payments-form" class="space-y-md">
+          <div class="form-group">
+            <label class="form-label">หมายเลขโทรศัพท์ หรือ เลขบัตรประชาชน</label>
+            <input type="text" id="payment-promptpay-id" class="form-input" placeholder="0812345678 หรือ 1234567890123">
+            <p class="text-xs text-muted">รองรับเบอร์มือถือ 10 หลัก หรือเลขบัตรประชาชน 13 หลัก</p>
+          </div>
+          <div class="form-group">
+            <label class="form-label">ชื่อเจ้าของบัญชี</label>
+            <input type="text" id="payment-promptpay-name" class="form-input">
+          </div>
+          <div class="form-group">
+            <label class="form-label">เปิดใช้งานพร้อมเพย์</label>
+            <label class="form-checkbox">
+              <input type="checkbox" id="payment-promptpay-enabled" checked>
+              <span>เปิดใช้งานการชำระเงินผ่านพร้อมเพย์</span>
+            </label>
+          </div>
+          <div class="form-group">
+      <div class="card p-lg mt-lg">
+        <h2 class="font-semibold mb-md">ทดสอบสร้าง QR Code</h2>
+        <div class="space-y-md">
+          <div class="form-group">
+            <label class="form-label">จำนวนเงิน (บาท)</label>
+            <input type="number" id="test-qr-amount" class="form-input" placeholder="0">
+          </div>
+          <div class="form-group">
+            <label class="form-label">เลขอ้างอิง</label>
+            <input type="text" id="test-qr-reference" class="form-input" placeholder="ORD123456">
+          </div>
+          <button id="test-generate-qr-btn" class="btn btn-outline btn-full">สร้าง QR Code ทดสอบ</button>
+          <div id="test-qr-result" class="mt-md hidden">
+            <div id="test-qr-image" class="flex justify-center"></div>
+            <p id="test-qr-payload" class="text-xs text-muted text-center break-all mt-sm"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="admin-mobile-nav hidden">
+      <details class="workspace-mobile-nav">
+        <summary class="flex justify-between items-center p-md border-b border-border">
+          <span class="font-semibold">เมนู</span>
+          <span>▼</span>
+        </summary>
+        <nav class="space-y-xs p-sm">
+          <a href="/admin/dashboard.html" class="block px-sm py-sm rounded-md text-secondary hover:bg-hover hover:text-primary" data-i18n="admin.dashboard">แดชบอร์ด</a>
+          <a href="/admin/orders.html" class="block px-sm py-sm rounded-md text-secondary hover:bg-hover hover:text-primary" data-i18n="admin.orders">คำสั่งซื้อ</a>
+          <a href="/admin/products.html" class="block px-sm py-sm rounded-md text-secondary hover:bg-hover hover:text-primary" data-i18n="admin.products">สินค้า</a>
+          <a href="/admin/categories.html" class="block px-sm py-sm rounded-md text-secondary hover:bg-hover hover:text-primary" data-i18n="admin.categories">หมวดหมู่</a>
+          <a href="/admin/reviews.html" class="block px-sm py-sm rounded-md text-secondary hover:bg-hover hover:text-primary" data-i18n="admin.reviews">รีวิว</a>
+          <a href="/admin/settings.html" class="block px-sm py-sm rounded-md text-secondary hover:bg-hover hover:text-primary" data-i18n="admin.settings">การตั้งค่า</a>
+          <a href="/admin/payments.html" class="block px-sm py-sm rounded-md text-secondary hover:bg-hover hover:text-primary" data-i18n="admin.payments">การชำระเงิน</a>
+          <a href="/admin/operations.html" class="block px-sm py-sm rounded-md text-secondary hover:bg-hover hover:text-primary" data-i18n="admin.operations">การดำเนินงาน</a>
+        </nav>
+      </details>
+    </div>
+  </div>
+</body>
+</html>
+            <label class="form-label">เปิดใช้งานเก็บเงินปลายทาง (COD)</label>
+            <label class="form-checkbox">
+              <input type="checkbox" id="payment-cod-enabled" checked>
+              <span>เปิดใช้งานการเก็บเงินปลายทาง</span>
+            </label>
+          </div>
+          <button type="submit" class="btn btn-primary btn-full">บันทึกการตั้งค่าการชำระเงิน</button>
+        </form>
+      </div>
+          <li><a href="/admin/reviews.html" class="block px-lg py-md rounded-md text-secondary hover:bg-hover hover:text-primary" data-i18n="admin.reviews">รีวิว</a></li>
+          <li><a href="/admin/settings.html" class="block px-lg py-md rounded-md text-secondary hover:bg-hover hover:text-primary" data-i18n="admin.settings">การตั้งค่า</a></li>
+          <li><a href="/admin/payments.html" class="block px-lg py-md rounded-md bg-primary text-white" data-i18n="admin.payments">การชำระเงิน</a></li>
+          <li><a href="/admin/operations.html" class="block px-lg py-md rounded-md text-secondary hover:bg-hover hover:text-primary" data-i18n="admin.operations">การดำเนินงาน</a></li>
+        </ul>
+      </nav>
+    </aside>
