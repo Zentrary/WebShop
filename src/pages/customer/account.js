@@ -185,12 +185,12 @@ function initResetPasswordPage() {
 
 /* ================= บัญชีของฉัน ================= */
 async function initAccountPage() {
-  if (!isMember()) {
+  if (!isMember() || !state.user) {
     window.location.href = '/auth/login.html';
     return;
   }
 
-  const user = state.user || {};
+  const user = state.user;
   const displayName = [user.first_name, user.last_name].filter(Boolean).join(' ') || user.username || user.email || 'ผู้ใช้งาน';
   document.getElementById('account-name').textContent = displayName;
   document.getElementById('account-email').textContent = user.email || '';
@@ -273,7 +273,7 @@ async function initAccountPage() {
 
 /* ================= รายการโปรด ================= */
 async function initFavoritesPage() {
-  if (!isMember()) {
+  if (!isMember() || !state.user) {
     window.location.href = '/auth/login.html';
     return;
   }

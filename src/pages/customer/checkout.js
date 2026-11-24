@@ -213,7 +213,7 @@ async function showQR(amount) {
 
 /* ================= รายการคำสั่งซื้อ ================= */
 async function initCustomerOrdersPage() {
-  if (!isMember()) {
+  if (!isMember() || !state.user?.id) {
     window.location.href = '/auth/login.html';
     return;
   }
@@ -254,7 +254,7 @@ async function initCustomerOrdersPage() {
 
 /* ================= รายละเอียดคำสั่งซื้อ ================= */
 async function initCustomerOrderDetailPage() {
-  if (!isMember()) {
+  if (!isMember() || !state.user?.id) {
     window.location.href = '/auth/login.html';
     return;
   }
