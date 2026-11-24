@@ -358,6 +358,24 @@ const THAI = /[\u0E00-\u0E7F]/;
     (vercel.redirects || []).some((r) => r.source === '/index.html' && r.destination === '/home'),
   );
 
+  // cleanUrls ตัด .html ให้ก่อนถึง redirects จึงต้องมีกฎสำหรับ path ที่ตัดแล้วด้วย
+  const redirectMap = new Map((vercel.redirects || []).map((r) => [r.source, r.destination]));
+  const legacyPairs = [
+    ['/about', '/pages/about'],
+    ['/contact', '/pages/contact'],
+    ['/help', '/pages/help'],
+    ['/privacy', '/pages/privacy'],
+    ['/login', '/auth/login'],
+    ['/register', '/auth/register'],
+    ['/cart', '/shop/cart'],
+    ['/checkout', '/shop/checkout'],
+    ['/product', '/shop/product'],
+    ['/orders', '/account/orders'],
+    ['/favorites', '/account/favorites'],
+  ];
+  const missing = legacyPairs.filter(([src, dst]) => redirectMap.get(src) !== dst);
+  A.eq('url: ลิงก์เก่าที่ไม่มี .html ก็ถูกส่งไปหน้าที่ถูกต้อง', missing, []);
+
   const viteConfig = fs.readFileSync(path.join(ROOT, 'vite.config.js'), 'utf8');
   A.ok('url: dev server แปลง clean URL ให้', /zenmarket-clean-urls/.test(viteConfig));
 
