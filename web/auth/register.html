@@ -12,15 +12,30 @@
   </head>
   <body>
     <main class="auth-wrap">
-      <div class="auth-card auth-card-compact reveal">
-        <div class="auth-head">
+      <div class="auth-card auth-card-compact auth-card-wide reveal">
+        <div class="auth-head auth-head-inline">
           <img class="auth-logo" id="auth-logo" src="/images/placeholder.svg" alt="ZenMarket" hidden />
-          <div class="mark" id="auth-mark">Z</div>
-          <h1 data-i18n="auth.register_title">สมัครสมาชิก</h1>
-          <p class="text-sm mt-sm" data-i18n="auth.register_sub">สร้างบัญชีเพื่อสั่งซื้อและติดตามคำสั่งซื้อ</p>
+          <div class="mark" id="auth-mark" aria-hidden="true">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.7"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M4.5 8h15l-1.1 10.6A2 2 0 0 1 16.4 20.5H7.6a2 2 0 0 1-2-1.9L4.5 8Z" />
+              <path d="M9 8V6.2a3 3 0 0 1 6 0V8" />
+            </svg>
+          </div>
+          <div class="auth-head-text">
+            <h1 data-i18n="auth.register_title">สมัครสมาชิก</h1>
+            <p class="text-sm mt-sm" data-i18n="auth.register_sub">สร้างบัญชีเพื่อสั่งซื้อและติดตามคำสั่งซื้อ</p>
+          </div>
         </div>
 
-        <form id="register-form" novalidate>
+        <form id="register-form" class="auth-grid" novalidate>
           <div class="form-group">
             <label class="form-label" for="register-username" data-i18n="auth.username">ชื่อผู้ใช้</label>
             <input
@@ -68,75 +83,72 @@
               maxlength="10"
               inputmode="numeric"
               title="0 ตามด้วยตัวเลข 9 หลัก"
+              data-i18n-title="common.phone_hint"
               placeholder="0812345678"
               data-i18n-placeholder="auth.phone_ph"
             />
           </div>
 
-          <div class="auth-row">
-            <div class="form-group">
-              <label class="form-label" for="register-first-name" data-i18n="auth.first_name">ชื่อจริง</label>
-              <input
-                type="text"
-                id="register-first-name"
-                class="form-input"
-                required
-                autocomplete="given-name"
-                maxlength="80"
-                autocorrect="off"
-                placeholder="สมชาย"
-                data-i18n-placeholder="auth.first_name_ph"
-              />
-            </div>
-
-            <div class="form-group">
-              <label class="form-label" for="register-last-name" data-i18n="auth.last_name">นามสกุล</label>
-              <input
-                type="text"
-                id="register-last-name"
-                class="form-input"
-                required
-                autocomplete="family-name"
-                maxlength="80"
-                autocorrect="off"
-                placeholder="ใจดี"
-                data-i18n-placeholder="auth.last_name_ph"
-              />
-            </div>
+          <div class="form-group">
+            <label class="form-label" for="register-age" data-i18n="auth.age">อายุ</label>
+            <input
+              type="number"
+              id="register-age"
+              class="form-input"
+              required
+              autocomplete="off"
+              min="13"
+              max="120"
+              step="1"
+              inputmode="numeric"
+              placeholder="20"
+              data-i18n-placeholder="auth.age_ph"
+            />
           </div>
 
-          <div class="auth-row">
-            <div class="form-group">
-              <label class="form-label" for="register-age" data-i18n="auth.age">อายุ</label>
-              <input
-                type="number"
-                id="register-age"
-                class="form-input"
-                required
-                autocomplete="off"
-                min="13"
-                max="120"
-                step="1"
-                inputmode="numeric"
-                placeholder="20"
-                data-i18n-placeholder="auth.age_ph"
-              />
-            </div>
+          <div class="form-group">
+            <label class="form-label" for="register-first-name" data-i18n="auth.first_name">ชื่อจริง</label>
+            <input
+              type="text"
+              id="register-first-name"
+              class="form-input"
+              required
+              autocomplete="given-name"
+              maxlength="80"
+              autocorrect="off"
+              placeholder="สมชาย"
+              data-i18n-placeholder="auth.first_name_ph"
+            />
+          </div>
 
-            <div class="form-group">
-              <label class="form-label" for="register-password" data-i18n="auth.password">รหัสผ่าน</label>
-              <input
-                type="password"
-                id="register-password"
-                class="form-input"
-                required
-                minlength="8"
-                maxlength="128"
-                autocomplete="new-password"
-                placeholder="อย่างน้อย 8 ตัวอักษร"
-                data-i18n-placeholder="auth.password_ph"
-              />
-            </div>
+          <div class="form-group">
+            <label class="form-label" for="register-last-name" data-i18n="auth.last_name">นามสกุล</label>
+            <input
+              type="text"
+              id="register-last-name"
+              class="form-input"
+              required
+              autocomplete="family-name"
+              maxlength="80"
+              autocorrect="off"
+              placeholder="ใจดี"
+              data-i18n-placeholder="auth.last_name_ph"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="register-password" data-i18n="auth.password">รหัสผ่าน</label>
+            <input
+              type="password"
+              id="register-password"
+              class="form-input"
+              required
+              minlength="8"
+              maxlength="128"
+              autocomplete="new-password"
+              placeholder="อย่างน้อย 8 ตัวอักษร"
+              data-i18n-placeholder="auth.password_ph"
+            />
           </div>
 
           <div class="form-group">
@@ -154,9 +166,11 @@
             />
           </div>
 
-          <p class="auth-hint" id="register-password-hint" data-i18n="auth.password_hint">อย่างน้อย 8 ตัวอักษร และมีตัวเลขอย่างน้อย 1 ตัว</p>
+          <p class="auth-hint auth-grid-full" id="register-password-hint" data-i18n="auth.password_hint">
+            อย่างน้อย 8 ตัวอักษร และมีตัวเลขอย่างน้อย 1 ตัว
+          </p>
 
-          <button type="submit" class="btn btn-primary btn-full" data-i18n="auth.submit_register">สมัครสมาชิก</button>
+          <button type="submit" class="btn btn-primary btn-full auth-grid-full" data-i18n="auth.submit_register">สมัครสมาชิก</button>
         </form>
 
         <p class="auth-switch">

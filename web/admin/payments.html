@@ -41,13 +41,20 @@
                 maxlength="13"
                 inputmode="numeric"
                 title="เบอร์มือถือ 10 หลัก หรือเลขพร้อมเพย์ 13 หลัก"
+                data-i18n-title="admin.payments_promptpay_hint"
                 placeholder="0812345678"
               />
               <div class="form-hint" data-i18n="admin.payments_hint">เบอร์มือถือ 10 หลัก หรือเลขบัตรประชาชน 13 หลัก</div>
             </div>
             <div class="form-group">
               <label class="form-label" for="payment-promptpay-name" data-i18n="admin.payments_recipient">ชื่อผู้รับเงิน</label>
-              <input type="text" id="payment-promptpay-name" class="form-input" placeholder="ชื่อ-นามสกุล ผู้รับเงิน" />
+              <input
+                type="text"
+                id="payment-promptpay-name"
+                class="form-input"
+                placeholder="ชื่อ-นามสกุล ผู้รับเงิน"
+                data-i18n-placeholder="admin.payments_recipient_ph"
+              />
             </div>
             <button type="submit" class="btn btn-primary" data-i18n="common.save">บันทึกการตั้งค่า</button>
           </form>

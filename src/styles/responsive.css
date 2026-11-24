@@ -177,6 +177,12 @@
   .auth-card-compact {
     padding: var(--space-lg) var(--space-md);
   }
+  .auth-card-wide {
+    max-width: 560px;
+  }
+  .auth-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
   .toast-stack {
     left: var(--space-md);
     right: var(--space-md);
@@ -219,6 +225,12 @@
   .auth-row {
     grid-template-columns: 1fr;
     gap: 0;
+  }
+  .auth-grid {
+    grid-template-columns: 1fr;
+  }
+  .auth-head-inline {
+    align-items: flex-start;
   }
   .summary .sum-row {
     font-size: var(--font-size-sm);

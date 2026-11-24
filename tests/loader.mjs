@@ -21,6 +21,11 @@ export async function resolve(specifier, context, nextResolve) {
     const mock = pathToFileURL(path.join(HERE, 'supabase-mock.mjs')).href;
     return { url: withGen(mock, gen), shortCircuit: true };
   }
+  // Absolute file URL that already carries a generation marker: keep it as-is
+  // so that a test can import the exact same module instance the page uses.
+  if (specifier.startsWith('file:') && /[?&]g=/.test(specifier)) {
+    return { url: specifier, shortCircuit: true };
+  }
   if (specifier.startsWith('/src/') || specifier.startsWith('/web/')) {
     let p = path.join(ROOT, specifier);
     if (!fs.existsSync(p) && fs.existsSync(p + '.js')) p += '.js';

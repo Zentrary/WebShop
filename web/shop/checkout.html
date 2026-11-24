@@ -56,6 +56,7 @@
                 maxlength="10"
                 inputmode="numeric"
                 title="0 ตามด้วยตัวเลข 9 หลัก"
+                data-i18n-title="common.phone_hint"
                 placeholder="0812345678"
                 data-i18n-placeholder="checkout.phone_ph"
               />
@@ -78,7 +79,9 @@
               <input type="radio" name="payment" value="promptpay" checked />
               <span>
                 <b style="color: var(--color-text)" data-i18n="checkout.promptpay">พร้อมเพย์ (PromptPay)</b>
-                <br /><span class="text-muted" style="font-size: var(--font-size-sm)">สแกน QR ด้านล่างเพื่อชำระเงิน</span>
+                <br /><span class="text-muted" style="font-size: var(--font-size-sm)" data-i18n="checkout.qr_scan_hint"
+                  >สแกน QR ด้านล่างเพื่อชำระเงิน</span
+                >
               </span>
             </label>
           </form>
@@ -86,7 +89,9 @@
           <div id="promptpay-qr" class="panel qr-box hidden reveal" data-delay="1">
             <h2 style="font-size: var(--font-size-lg); margin-bottom: var(--space-md)" data-i18n="checkout.qr_title">สแกนเพื่อชำระเงิน</h2>
             <div id="qr-container"></div>
-            <p class="text-sm text-secondary">ยอดชำระ <b id="qr-amount" class="text-accent"></b></p>
+            <p class="text-sm text-secondary">
+              <span data-i18n="checkout.amount_due">ยอดชำระ</span> <b id="qr-amount" class="text-accent"></b>
+            </p>
             <p class="text-muted" style="font-size: var(--font-size-xs)" data-i18n="checkout.qr_note">
               เมื่อชำระเงินแล้ว กรุณาอัปโหลดสลิปในหน้าคำสั่งซื้อเพื่อให้ร้านตรวจสอบ
             </p>
@@ -96,9 +101,9 @@
         <aside class="summary reveal" data-delay="1">
           <h2 data-i18n="checkout.summary">สรุปคำสั่งซื้อ</h2>
           <div id="checkout-items"></div>
-          <div class="sum-row"><span>ยอดรวมสินค้า</span><span id="checkout-subtotal">฿0.00</span></div>
-          <div class="sum-row"><span>ค่าจัดส่ง</span><span id="checkout-shipping">฿0.00</span></div>
-          <div class="sum-row total"><span>รวมทั้งหมด</span><span id="checkout-total">฿0.00</span></div>
+          <div class="sum-row"><span data-i18n="cart.subtotal">ยอดรวมสินค้า</span><span id="checkout-subtotal">฿0.00</span></div>
+          <div class="sum-row"><span data-i18n="cart.shipping">ค่าจัดส่ง</span><span id="checkout-shipping">฿0.00</span></div>
+          <div class="sum-row total"><span data-i18n="cart.total">รวมทั้งหมด</span><span id="checkout-total">฿0.00</span></div>
           <button id="place-order-btn" class="btn btn-primary btn-full mt-lg" data-i18n="checkout.place_order">ยืนยันคำสั่งซื้อ</button>
           <p class="text-muted text-center mt-sm" style="font-size: var(--font-size-xs)" data-i18n="checkout.agree">
             กดยืนยันถือว่ายินยอมตามเงื่อนไขการจัดส่ง

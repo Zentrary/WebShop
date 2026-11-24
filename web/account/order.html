@@ -28,7 +28,7 @@
       <div id="order-detail" class="hidden">
         <div class="page-head reveal">
           <span class="eyebrow" data-i18n="nav.orders">คำสั่งซื้อ</span>
-          <h1 class="page-title">คำสั่งซื้อ <span id="order-number" class="text-accent"></span></h1>
+          <h1 class="page-title"><span data-i18n="nav.orders">คำสั่งซื้อ</span> <span id="order-number" class="text-accent"></span></h1>
           <p class="page-sub"><span data-i18n="common.date">วันที่</span> <span id="order-date"></span></p>
         </div>
 
@@ -47,7 +47,7 @@
             <div class="panel reveal" data-delay="2">
               <h2 data-i18n="order.payment">การชำระเงิน</h2>
               <div class="flex gap-md items-center" style="flex-wrap: wrap">
-                <span class="badge badge-info" id="order-payment">พร้อมเพย์ (PromptPay)</span>
+                <span class="badge badge-info" id="order-payment" data-i18n="checkout.promptpay">พร้อมเพย์ (PromptPay)</span>
               </div>
               <hr class="divider" />
               <div id="receipt-upload">
@@ -60,6 +60,7 @@
                   id="receipt-preview"
                   src=""
                   alt="สลิปการชำระเงิน"
+                  data-i18n-alt="common.receipt_alt"
                   style="max-width: 320px; border-radius: var(--radius-md); border: 1px solid var(--color-border)"
                 />
               </div>
@@ -78,9 +79,9 @@
 
           <aside class="summary reveal" data-delay="1">
             <h2 data-i18n="checkout.summary">สรุป</h2>
-            <div class="sum-row"><span>ยอดรวมสินค้า</span><span id="order-subtotal">฿0.00</span></div>
-            <div class="sum-row"><span>ค่าจัดส่ง</span><span id="order-shipping">฿0.00</span></div>
-            <div class="sum-row total"><span>รวมทั้งหมด</span><span id="order-total">฿0.00</span></div>
+            <div class="sum-row"><span data-i18n="cart.subtotal">ยอดรวมสินค้า</span><span id="order-subtotal">฿0.00</span></div>
+            <div class="sum-row"><span data-i18n="cart.shipping">ค่าจัดส่ง</span><span id="order-shipping">฿0.00</span></div>
+            <div class="sum-row total"><span data-i18n="cart.total">รวมทั้งหมด</span><span id="order-total">฿0.00</span></div>
             <div class="mt-lg">
               <div class="flex items-center justify-between mb-sm">
                 <span class="text-muted text-sm" data-i18n="common.status">สถานะ</span>

@@ -81,12 +81,19 @@ export function validateProduct(product = {}) {
   };
 }
 
+/**
+ * Category names that collide with the storefront's "all categories" filter.
+ * The list is language-independent on purpose: a shop should not be able to
+ * create a category named "All" in English mode and "ทั้งหมด" in Thai mode.
+ */
+const RESERVED_CATEGORY_NAMES = new Set(['ทั้งหมด', 'ทุกหมวดหมู่', 'all', 'all categories']);
+
 export function validateCategory(name) {
   const clean = String(name || '').trim();
   if (clean.length < 1 || clean.length > 80) {
     return { ok: false, errorKey: 'validation.category_name_length' };
   }
-  if (clean === 'ทั้งหมด' || clean.toLowerCase() === 'all') {
+  if (RESERVED_CATEGORY_NAMES.has(clean.toLowerCase())) {
     return { ok: false, errorKey: 'validation.category_reserved' };
   }
   return { ok: true, value: clean };

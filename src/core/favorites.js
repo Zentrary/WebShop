@@ -1,4 +1,4 @@
-import { state } from '/src/app.js';
+import { state } from '/src/core/state.js';
 import { isSignedIn } from '/src/core/audience.js';
 import { notify } from '/src/core/ui.js';
 import { t } from '/src/core/i18n.js';

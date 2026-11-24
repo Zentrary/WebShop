@@ -8,7 +8,6 @@ import {
   logout,
   setAudience,
   clearStaleRole,
-  AUDIENCE_GUEST,
 } from '/src/core/audience.js';
 import {
   initI18n,
@@ -28,15 +27,9 @@ import { initReveal } from '/src/core/reveal.js';
 import { installGlobalErrorHandlers } from '/src/core/errors.js';
 import { applyBrandAssets } from '/src/core/brand.js';
 import { escapeHTML, safeImage, safeLink } from '/src/core/lib.js';
+import { state } from '/src/core/state.js';
 
-export const state = {
-  audience: AUDIENCE_GUEST,
-  user: null,
-  cart: [],
-  storeSettings: {},
-  supabase: null,
-  initialized: false,
-};
+export { state };
 
 export function initSupabase() {
   const url = import.meta.env.VITE_SUPABASE_URL;
@@ -154,6 +147,9 @@ export function requireMember(nextPath = window.location.pathname + window.locat
   return false;
 }
 
+const BRAND_MARK_SVG =
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 8h15l-1.1 10.6A2 2 0 0 1 16.4 20.5H7.6a2 2 0 0 1-2-1.9L4.5 8Z"/><path d="M9 8V6.2a3 3 0 0 1 6 0V8"/></svg>';
+
 const ICONS = {
   menu: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>',
   close:
@@ -179,7 +175,7 @@ function brandMarkup() {
 
   const mark = logo
     ? `<img class="header-logo-img" src="${escapeHTML(logo)}" alt="${escapeHTML(name)}">`
-    : `<span class="header-logo-mark">${escapeHTML((name[0] || 'Z').toUpperCase())}</span>`;
+    : `<span class="header-logo-mark">${BRAND_MARK_SVG}</span>`;
 
   return `
     ${mark}
@@ -276,7 +272,7 @@ function renderHeader(header) {
   const actions = header.querySelector('#header-actions');
   if (actions) {
     actions.innerHTML = `
-      <button id="lang-toggle" class="btn btn-ghost btn-sm" aria-label="เปลี่ยนภาษา">${getLanguage() === 'th' ? 'TH/EN' : 'EN/TH'}</button>
+      <button id="lang-toggle" class="btn btn-ghost btn-sm" aria-label="${escapeHTML(t('common.change_lang'))}" data-i18n-aria-label="common.change_lang">${getLanguage() === 'th' ? 'TH/EN' : 'EN/TH'}</button>
       ${
         member
           ? `<a href="/shop/cart.html" class="btn btn-ghost btn-sm header-cart" aria-label="${t('nav.cart')}" data-i18n-aria-label="nav.cart">
@@ -350,7 +346,7 @@ function renderFooter(footer) {
   const name = escapeHTML(shopName());
   const mark = logo
     ? `<img class="footer-logo-img" src="${escapeHTML(logo)}" alt="${name}">`
-    : `<span class="header-logo-mark">${escapeHTML((shopName()[0] || 'Z').toUpperCase())}</span>`;
+    : `<span class="header-logo-mark">${BRAND_MARK_SVG}</span>`;
 
   footer.innerHTML = `
     <div class="footer-inner">
@@ -390,14 +386,26 @@ function renderFooter(footer) {
   `;
 }
 
-export async function loadStoreSettings() {
+export async function loadStoreSettings(attempt = 0) {
   if (!state.supabase) return;
   try {
-    const { data } = await state.supabase.rpc('get_storefront');
+    const { data, error } = await state.supabase.rpc('get_storefront');
+    if (error) throw error;
     if (data) state.storeSettings = mergeStoreSettings(data);
-  } catch {}
+  } catch (err) {
+    console.warn('[ZenMarket] load store settings failed', err);
+    if (attempt < 2) {
+      await new Promise((r) => setTimeout(r, 400 * (attempt + 1)));
+      return loadStoreSettings(attempt + 1);
+    }
+  }
   setBrandName(state.storeSettings?.shop_name || 'ZenMarket');
   applyBrandAssets(state.storeSettings || {});
+  if (document.querySelector('#brand-link')) {
+    const header = document.querySelector('.site-header');
+    if (header) renderHeader(header);
+  }
+  if (document.querySelector('.site-footer')) renderFooter(document.querySelector('.site-footer'));
 }
 
 export function requireSupabase() {

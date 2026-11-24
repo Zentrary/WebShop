@@ -313,11 +313,7 @@ async function initAccountPage() {
   }
 
   const user = state.user;
-  const displayName =
-    [user.first_name, user.last_name].filter(Boolean).join(' ') || user.username || user.email || t('common.user');
-  document.getElementById('account-name').textContent = displayName;
-  document.getElementById('account-email').textContent = user.email || '';
-  document.getElementById('account-avatar').textContent = (displayName[0] || 'ผ').toUpperCase();
+  renderAccountIdentity(user);
 
   document.getElementById('profile-username').value = user.username || '';
   document.getElementById('profile-firstname').value = user.first_name || '';
@@ -370,9 +366,27 @@ async function initAccountPage() {
   await loadAddresses(user);
 
   onLanguageChange(() => {
+    renderAccountIdentity(user);
     loadRecentOrders(user);
     loadAddresses(user);
   });
+}
+
+function renderAccountIdentity(user) {
+  if (!user) return;
+  const nameEl = document.getElementById('account-name');
+  const emailEl = document.getElementById('account-email');
+  const avatarEl = document.getElementById('account-avatar');
+  if (!nameEl) return;
+
+  const displayName =
+    [user.first_name, user.last_name].filter(Boolean).join(' ') || user.username || user.email || t('common.user');
+  nameEl.textContent = displayName;
+  if (emailEl) emailEl.textContent = user.email || '';
+  if (avatarEl) {
+    const initial = (displayName[0] || t('common.user')[0] || '?').toUpperCase();
+    avatarEl.textContent = initial;
+  }
 }
 
 async function loadRecentOrders(user) {
