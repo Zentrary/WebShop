@@ -377,4 +377,109 @@ const CART = [{ product_id: 'p1', name: 'กาแฟ', price: 120, quantity: 2 
   A.ok('account: กดโปรไฟล์แล้วซ่อนที่อยู่', addresses.classList.contains('hidden'));
 }
 
+{
+  // ที่อยู่ที่บันทึกไว้: แตะครั้งเดียวก็เติมข้อมูลจัดส่งให้
+  const supabase = await makeSupabaseMock({
+    session: MEMBER_SESSION,
+    user: MEMBER,
+    tableData: {
+      profiles: { id: 'member-1', username: 'tester', phone: '0812345678' },
+      customer_addresses: [
+        {
+          id: 'a1',
+          label: 'บ้าน',
+          recipient: 'สมชาย ใจดี',
+          phone: '0899999999',
+          address: 'ที่อยู่ทดสอบ 1',
+          is_default: true,
+        },
+      ],
+    },
+  });
+  const { document } = await loadPage({
+    htmlPath: '/home/user/WebShop/web/shop/checkout.html',
+    scripts: ['src/pages/customer/checkout.js'],
+    supabase,
+    storage: { zenmarket_cart: JSON.stringify(CART) },
+  });
+  await wait(200);
+
+  const saved = el(document, 'checkout-saved');
+  A.ok('checkout: แสดงที่อยู่ที่บันทึกไว้', !!saved && !saved.classList.contains('hidden'));
+  const addrBtn = saved.querySelector('[data-address-index]');
+  A.ok('checkout: มีปุ่มเลือกที่อยู่', !!addrBtn);
+
+  addrBtn.dispatchEvent(new document.defaultView.MouseEvent('click', { bubbles: true }));
+  await wait(80);
+  A.eq('checkout: เลือกที่อยู่แล้วเติมชื่อผู้รับ', el(document, 'checkout-name').value, 'สมชาย ใจดี');
+  A.eq('checkout: เลือกที่อยู่แล้วเติมเบอร์', el(document, 'checkout-phone').value, '0899999999');
+  A.eq('checkout: เลือกที่อยู่แล้วเติมที่อยู่', el(document, 'checkout-address').value, 'ที่อยู่ทดสอบ 1');
+}
+
+{
+  // คูปอง: ตรวจกับเซิร์ฟเวอร์ แล้วเอายอดลดมาแสดงและส่งไปตอนสร้างออเดอร์
+  const supabase = await makeSupabaseMock({
+    session: MEMBER_SESSION,
+    user: MEMBER,
+    rpcResults: {
+      check_coupon: { ok: true, code: 'SAVE10', kind: 'percent', value: 10, discount: 24 },
+      create_order: { id: 'order-2' },
+    },
+    tableData: { profiles: { id: 'member-1', username: 'tester' } },
+  });
+  const { document } = await loadPage({
+    htmlPath: '/home/user/WebShop/web/shop/checkout.html',
+    scripts: ['src/pages/customer/checkout.js'],
+    supabase,
+    storage: { zenmarket_cart: JSON.stringify(CART) },
+  });
+  await wait(200);
+
+  setVal(document, 'coupon-input', 'save10');
+  fire(document, 'coupon-apply', 'click');
+  await wait(120);
+
+  const couponCall = supabase.calls.rpc.find((r) => r.name === 'check_coupon');
+  A.ok('checkout: กดใช้โค้ดแล้วเรียก check_coupon', !!couponCall);
+  A.eq('checkout: ส่งยอดรวมปัจจุบันไปตรวจ', couponCall?.params?.p_subtotal, 240);
+
+  const discountRow = el(document, 'checkout-discount-row');
+  A.ok('checkout: แถวส่วนลดแสดงขึ้น', !discountRow.classList.contains('hidden'));
+  A.eq('checkout: ยอดส่วนลดถูกต้อง', el(document, 'checkout-discount').textContent.replace(/\s/g, ''), '−฿24.00');
+  A.eq('checkout: สถานะคูปองแจ้งว่าสำเร็จ', el(document, 'coupon-status').classList.contains('is-ok'), true);
+
+  setVal(document, 'checkout-name', 'สมชาย ใจดี');
+  setVal(document, 'checkout-phone', '0812345678');
+  setVal(document, 'checkout-address', 'บ้านเลขที่ 123 ซอยสุขใจ ถนนสุขุมวิท แขวงบางนา เขตบางนา กรุงเทพมหานคร 10260');
+  fire(document, 'place-order-btn', 'click');
+  await wait(200);
+
+  const orderCall = supabase.calls.rpc.find((r) => r.name === 'create_order');
+  A.eq('checkout: ส่งโค้ดส่วนลดไปกับคำสั่งซื้อ', orderCall?.params?.p_coupon, 'SAVE10');
+}
+
+{
+  // คูปองที่ใช้ไม่ได้ ต้องไม่ทำให้ยอดรวมเพี้ยน
+  const supabase = await makeSupabaseMock({
+    session: MEMBER_SESSION,
+    user: MEMBER,
+    rpcResults: { check_coupon: { ok: false, reason: 'invalid' } },
+    tableData: { profiles: { id: 'member-1', username: 'tester' } },
+  });
+  const { document } = await loadPage({
+    htmlPath: '/home/user/WebShop/web/shop/checkout.html',
+    scripts: ['src/pages/customer/checkout.js'],
+    supabase,
+    storage: { zenmarket_cart: JSON.stringify(CART) },
+  });
+  await wait(200);
+
+  setVal(document, 'coupon-input', 'BADCODE');
+  fire(document, 'coupon-apply', 'click');
+  await wait(120);
+
+  A.ok('checkout: โค้ดผิดไม่แสดงแถวส่วนลด', el(document, 'checkout-discount-row').classList.contains('hidden'));
+  A.ok('checkout: โค้ดผิดแจ้งข้อผิดพลาด', el(document, 'coupon-status').classList.contains('is-error'));
+}
+
 process.exit(A.report('customer') ? 1 : 0);

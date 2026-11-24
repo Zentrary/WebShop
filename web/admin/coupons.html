@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ZenMarket | คูปองส่วนลด</title>
+    <link rel="stylesheet" href="/src/styles/base.css" />
+    <link rel="stylesheet" href="/src/styles/spaces.css" />
+    <link rel="stylesheet" href="/src/styles/responsive.css" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <script type="module" src="/src/pages/admin/index.js"></script>
+    <noscript
+      ><style>
+        .reveal {
+          opacity: 1 !important;
+          transform: none !important;
+        }
+      </style></noscript
+    >
+  </head>
+  <body>
+    <div class="admin-layout">
+      <div class="admin-content">
+        <div class="admin-head">
+          <div class="admin-head-text">
+            <h1 class="admin-page-title" data-i18n="admin.page_coupons">คูปองส่วนลด</h1>
+            <p class="admin-page-sub" data-i18n="admin.coupons_sub">สร้างโค้ดส่วนลดให้ลูกค้าใช้ตอนชำระเงิน</p>
+          </div>
+          <button type="button" id="admin-coupon-add" class="btn btn-primary" data-i18n="admin.coupon_new">เพิ่มคูปอง</button>
+        </div>
+
+        <form id="admin-coupon-form" class="panel mb-lg hidden reveal" novalidate>
+          <h2 data-i18n="admin.coupon_new">เพิ่มคูปอง</h2>
+
+          <div class="flex gap-md" style="flex-wrap: wrap">
+            <div class="form-group" style="flex: 1 1 200px">
+              <label class="form-label" for="coupon-code" data-i18n="admin.coupon_code">โค้ด</label>
+              <input type="text" id="coupon-code" class="form-input" maxlength="32" required placeholder="WELCOME10" />
+            </div>
+            <div class="form-group" style="flex: 0 1 190px">
+              <label class="form-label" for="coupon-kind" data-i18n="admin.coupon_kind">รูปแบบ</label>
+              <select id="coupon-kind" class="form-input">
+                <option value="percent" data-i18n="admin.coupon_percent">เปอร์เซ็นต์ (%)</option>
+                <option value="amount" data-i18n="admin.coupon_amount">จำนวนเงิน (บาท)</option>
+              </select>
+            </div>
+            <div class="form-group" style="flex: 0 1 150px">
+              <label class="form-label" for="coupon-value" data-i18n="admin.coupon_value">ส่วนลด</label>
+              <input type="number" id="coupon-value" class="form-input" min="1" step="1" required placeholder="10" />
+            </div>
+            <div class="form-group" style="flex: 0 1 170px">
+              <label class="form-label" for="coupon-min" data-i18n="admin.coupon_min">ยอดซื้อขั้นต่ำ</label>
+              <input type="number" id="coupon-min" class="form-input" min="0" step="1" placeholder="0" />
+            </div>
+            <div class="form-group" style="flex: 0 1 170px">
+              <label class="form-label" for="coupon-max-uses" data-i18n="admin.coupon_max_uses">ใช้ได้สูงสุด (ครั้ง)</label>
+              <input type="number" id="coupon-max-uses" class="form-input" min="1" step="1" placeholder="-" />
+            </div>
+            <div class="form-group" style="flex: 0 1 190px">
+              <label class="form-label" for="coupon-ends" data-i18n="admin.coupon_ends">วันหมดอายุ</label>
+              <input type="date" id="coupon-ends" class="form-input" />
+            </div>
+          </div>
+
+          <label class="flex items-center gap-sm mt-md">
+            <input type="checkbox" id="coupon-active" checked />
+            <span data-i18n="admin.coupon_active">เปิดใช้</span>
+          </label>
+
+          <div class="flex gap-sm mt-lg">
+            <button type="submit" class="btn btn-primary" data-i18n="common.save">บันทึก</button>
+            <button type="button" id="admin-coupon-cancel" class="btn btn-outline" data-i18n="common.cancel">ยกเลิก</button>
+          </div>
+        </form>
+
+        <div class="table-wrap reveal">
+          <table class="data">
+            <thead>
+              <tr>
+                <th data-i18n="admin.coupon_code">โค้ด</th>
+                <th data-i18n="admin.coupon_value">ส่วนลด</th>
+                <th data-i18n="admin.coupon_min">ยอดซื้อขั้นต่ำ</th>
+                <th data-i18n="admin.coupon_uses">ใช้แล้ว</th>
+                <th data-i18n="admin.coupon_ends">วันหมดอายุ</th>
+                <th data-i18n="common.status">สถานะ</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="admin-coupons-list"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

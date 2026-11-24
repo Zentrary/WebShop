@@ -71,6 +71,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       '/admin/settings': '/admin/settings',
       '/admin/payments': '/admin/payments',
       '/admin/operations': '/admin/operations',
+      '/admin/coupons': '/admin/coupons',
+      '/admin/reports': '/admin/reports',
       '/admin/order': '/admin/orders',
       '/admin/orders': '/admin/orders',
     }[path] || '/admin/dashboard';
@@ -93,6 +95,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   else if (path === '/admin/payments') renderer = initPayments;
   else if (path === '/admin/orders') renderer = initAdminOrders;
   else if (path === '/admin/order') renderer = initAdminOrderDetail;
+  else if (path === '/admin/coupons') renderer = initCoupons;
+  else if (path === '/admin/reports') renderer = initReports;
 
   if (renderer) await renderer();
 
@@ -118,19 +122,38 @@ async function initDashboard() {
 
     renderSalesChart(Array.isArray(d.daily_revenue) ? d.daily_revenue : []);
 
-    const { data: products } = await supabase.from('products').select('*').order('stock', { ascending: true }).limit(5);
+    // แจ้งเตือนสต็อกตามเกณฑ์ที่ร้านตั้งไว้ (ไม่ใช่ค่าคงที่ในโค้ด)
+    const { data: cfg } = await supabase
+      .from('store_settings')
+      .select('low_stock_threshold')
+      .eq('singleton', true)
+      .maybeSingle();
+    const threshold = Number(cfg?.low_stock_threshold ?? 5);
+
+    const { data: products } = await supabase
+      .from('products')
+      .select('*')
+      .eq('active', true)
+      .lte('stock', threshold)
+      .order('stock', { ascending: true })
+      .limit(8);
     const lowStockList = document.getElementById('low-stock-list');
-    if (lowStockList && products) {
-      lowStockList.innerHTML = products
-        .map(
-          (p) => `
+    if (lowStockList) {
+      lowStockList.innerHTML =
+        products && products.length
+          ? products
+              .map(
+                (p) => `
         <div class="flex justify-between items-center text-sm" style="padding:0.5rem 0;border-bottom:1px solid var(--color-border-soft)">
           <span>${escapeHTML(p.name)}</span>
-          <span class="${p.stock <= 3 ? 'text-warning' : 'text-muted'} font-bold">${p.stock} ${t('common.pieces')}</span>
+          <span class="${p.stock <= 0 ? 'text-danger' : 'text-warning'} font-bold">${
+            p.stock <= 0 ? t('product.out_of_stock') : t('admin.low_stock_left', { n: p.stock })
+          }</span>
         </div>
       `,
-        )
-        .join('');
+              )
+              .join('')
+          : `<p class="text-muted text-sm">${t('admin.low_stock_empty')}</p>`;
     }
 
     const { data: reviews } = await supabase
@@ -261,7 +284,9 @@ async function initProducts() {
         `<td data-label="${t('admin.product_image')}"><img class="cell-thumb" src="${p.image_url || '/images/placeholder.svg'}" alt=""></td>` +
         `<td data-label="${t('admin.product_name')}" class="font-semibold" style="color:var(--color-text)">${escapeHTML(p.name)}</td>` +
         `<td data-label="${t('admin.product_category')}">${escapeHTML(p.category || '-')}</td>` +
-        `<td data-label="${t('common.price')}" class="num">${formatTHB(p.price)}</td>` +
+        `<td data-label="${t('common.price')}" class="num">${formatTHB(p.price)}${
+          p.sale_price ? ` <s class="price-was">${formatTHB(p.sale_price)}</s>` : ''
+        }</td>` +
         `<td data-label="${t('admin.product_stock')}" class="num">${p.stock}</td>` +
         `<td data-label="${t('common.status')}"><span class="badge badge-${p.active ? 'success' : 'error'}">${p.active ? t('admin.active') : t('admin.hidden')}</span></td>` +
         `<td class="cell-actions"><button class="btn btn-outline btn-sm" data-edit="${p.id}">${t('common.edit')}</button> ` +
@@ -289,6 +314,7 @@ async function initProducts() {
       document.getElementById('product-sku').value = p.sku || '';
       document.getElementById('product-category').value = p.category || '';
       document.getElementById('product-price').value = p.price || 0;
+      document.getElementById('product-sale-price').value = p.sale_price ?? '';
       document.getElementById('product-stock').value = p.stock || 0;
       document.getElementById('product-image').value = p.image_url || '';
       document.getElementById('product-description').value = p.description || '';
@@ -361,6 +387,7 @@ async function initProducts() {
         stock: document.getElementById('product-stock').value,
         image_url: document.getElementById('product-image').value,
         description: document.getElementById('product-description').value,
+        sale_price: document.getElementById('product-sale-price')?.value ?? '',
         active: document.getElementById('product-active').checked,
       });
       if (!checked.ok) {
@@ -678,6 +705,7 @@ async function initSettings() {
       set('setting-contact-tiktok', s.tiktok_url);
       set('setting-shipping-fee', s.shipping_fee);
       set('setting-free-shipping-threshold', s.free_shipping_threshold);
+      set('setting-low-stock', s.low_stock_threshold);
       set('setting-about', s.about_text);
       set('setting-shipping-note', s.shipping_note);
       const showContact = document.getElementById('setting-show-contact');
@@ -757,6 +785,7 @@ async function initSettings() {
 
         shipping_fee: get('setting-shipping-fee').trim(),
         free_shipping_threshold: get('setting-free-shipping-threshold').trim(),
+        low_stock_threshold: get('setting-low-stock').trim(),
         about_text: get('setting-about'),
         shipping_note: get('setting-shipping-note'),
       };
@@ -772,6 +801,354 @@ async function initSettings() {
       else notify(t('admin.settings_saved'), 'success');
     });
   }
+
+  initPageEditor();
+}
+
+/**
+ * ตัวแก้ข้อความหน้า About / Help / Privacy
+ * เก็บในตาราง site_pages แยกภาษาไทย/อังกฤษ เว้นว่าง = ใช้ข้อความเริ่มต้นในโค้ด
+ */
+function initPageEditor() {
+  const slugSelect = document.getElementById('pages-slug');
+  const langSelect = document.getElementById('pages-lang');
+  const titleInput = document.getElementById('pages-title');
+  const bodyInput = document.getElementById('pages-body');
+  const saveBtn = document.getElementById('pages-save');
+  if (!slugSelect || !langSelect || !titleInput || !bodyInput || !saveBtn) return;
+
+  let rows = [];
+
+  const keyOf = (slug, lang) => (lang === 'en' ? `title_en` : `title_th`);
+  const bodyOf = (slug, lang) => (lang === 'en' ? `body_en` : `body_th`);
+
+  const paint = () => {
+    const slug = slugSelect.value;
+    const lang = langSelect.value;
+    const row = rows.find((r) => r.slug === slug) || {};
+    titleInput.value = row[keyOf(slug, lang)] || '';
+    bodyInput.value = row[bodyOf(slug, lang)] || '';
+  };
+
+  const load = async () => {
+    const { data, error } = await supabase.from('site_pages').select('*');
+    if (error) {
+      console.warn('[ZenMarket] site pages unavailable', error);
+      return;
+    }
+    rows = data || [];
+    paint();
+  };
+
+  slugSelect.addEventListener('change', paint);
+  langSelect.addEventListener('change', paint);
+
+  saveBtn.addEventListener('click', async () => {
+    const slug = slugSelect.value;
+    const lang = langSelect.value;
+    const payload = {
+      slug,
+      [keyOf(slug, lang)]: titleInput.value.trim() || null,
+      [bodyOf(slug, lang)]: bodyInput.value.trim() || null,
+      updated_at: new Date().toISOString(),
+    };
+    const { error } = await supabase.from('site_pages').upsert(payload, { onConflict: 'slug' });
+    if (error) {
+      notify(error.message || t('toast.error_generic'), 'error');
+      return;
+    }
+    notify(t('admin.pages_saved'), 'success');
+    await load();
+  });
+
+  load();
+}
+
+/* ------------------------------------------------------------------ *
+ * คูปองส่วนลด
+ * ------------------------------------------------------------------ */
+async function initCoupons() {
+  const tbody = document.getElementById('admin-coupons-list');
+  const form = document.getElementById('admin-coupon-form');
+  const addBtn = document.getElementById('admin-coupon-add');
+  const cancelBtn = document.getElementById('admin-coupon-cancel');
+  if (!tbody || !form) return;
+
+  let editingId = null;
+
+  const paint = async () => {
+    const { data, error } = await supabase.from('coupons').select('*').order('created_at', { ascending: false });
+    if (error) {
+      notify(t('admin.system_error'), 'error');
+      return;
+    }
+    if (!data || data.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:2rem" class="text-muted">${escapeHTML(
+        t('admin.coupon_empty'),
+      )}</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = data
+      .map((c) => {
+        const value = c.kind === 'percent' ? `${Number(c.value)}%` : formatTHB(c.value);
+        const uses = c.max_uses ? `${c.used_count}/${c.max_uses}` : `${c.used_count} · ${t('admin.coupon_unlimited')}`;
+        const ends = c.ends_at ? new Date(c.ends_at).toLocaleDateString('th-TH') : '-';
+        return `<tr>
+          <td data-label="${t('admin.coupon_code')}" class="font-semibold">${escapeHTML(c.code)}</td>
+          <td data-label="${t('admin.coupon_value')}">${escapeHTML(value)}</td>
+          <td data-label="${t('admin.coupon_min')}" class="num">${c.min_subtotal ? formatTHB(c.min_subtotal) : '-'}</td>
+          <td data-label="${t('admin.coupon_uses')}" class="num">${escapeHTML(uses)}</td>
+          <td data-label="${t('admin.coupon_ends')}">${escapeHTML(ends)}</td>
+          <td data-label="${t('common.status')}"><span class="badge badge-${c.active ? 'success' : 'error'}">${
+            c.active ? t('admin.active') : t('admin.hidden')
+          }</span></td>
+          <td class="cell-actions">
+            <button class="btn btn-outline btn-sm" data-edit-coupon="${c.id}">${t('common.edit')}</button>
+            <button class="btn btn-danger btn-sm" data-del-coupon="${c.id}">${t('admin.coupon_delete')}</button>
+          </td>
+        </tr>`;
+      })
+      .join('');
+  };
+
+  await paint();
+
+  if (addBtn) {
+    addBtn.addEventListener('click', () => {
+      editingId = null;
+      form.reset();
+      document.getElementById('coupon-active').checked = true;
+      form.classList.remove('hidden');
+      form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+  }
+
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', () => {
+      editingId = null;
+      form.classList.add('hidden');
+    });
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const code = document.getElementById('coupon-code').value.trim().toUpperCase();
+    const kind = document.getElementById('coupon-kind').value;
+    const value = Number(document.getElementById('coupon-value').value);
+    const minSubtotal = Number(document.getElementById('coupon-min').value || 0);
+    const maxUsesRaw = document.getElementById('coupon-max-uses').value;
+    const endsRaw = document.getElementById('coupon-ends').value;
+
+    if (!code || code.length < 2) return notify(t('coupon.invalid'), 'error');
+    if (!Number.isFinite(value) || value <= 0) return notify(t('coupon.invalid'), 'error');
+    if (kind === 'percent' && value > 100) return notify(t('coupon.invalid'), 'error');
+
+    const payload = {
+      code,
+      kind,
+      value,
+      min_subtotal: Number.isFinite(minSubtotal) ? minSubtotal : 0,
+      max_uses: maxUsesRaw ? Number(maxUsesRaw) : null,
+      ends_at: endsRaw ? new Date(`${endsRaw}T23:59:59`).toISOString() : null,
+      active: document.getElementById('coupon-active').checked,
+    };
+
+    const { error } = editingId
+      ? await supabase.from('coupons').update(payload).eq('id', editingId)
+      : await supabase.from('coupons').insert(payload);
+
+    if (error) {
+      notify(error.message || t('toast.error_generic'), 'error');
+      return;
+    }
+    notify(t('admin.coupon_saved'), 'success');
+    editingId = null;
+    form.reset();
+    form.classList.add('hidden');
+    await paint();
+  });
+
+  tbody.addEventListener('click', async (e) => {
+    const edit = e.target.closest('[data-edit-coupon]');
+    const del = e.target.closest('[data-del-coupon]');
+
+    if (edit) {
+      const { data: c } = await supabase
+        .from('coupons')
+        .select('*')
+        .eq('id', edit.getAttribute('data-edit-coupon'))
+        .single();
+      if (!c) return;
+      editingId = c.id;
+      document.getElementById('coupon-code').value = c.code || '';
+      document.getElementById('coupon-kind').value = c.kind || 'percent';
+      document.getElementById('coupon-value').value = c.value ?? '';
+      document.getElementById('coupon-min').value = c.min_subtotal ?? 0;
+      document.getElementById('coupon-max-uses').value = c.max_uses ?? '';
+      document.getElementById('coupon-ends').value = c.ends_at ? new Date(c.ends_at).toISOString().slice(0, 10) : '';
+      document.getElementById('coupon-active').checked = !!c.active;
+      form.classList.remove('hidden');
+      form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    if (del && confirm(t('admin.coupon_confirm_delete'))) {
+      const { error } = await supabase.from('coupons').delete().eq('id', del.getAttribute('data-del-coupon'));
+      if (error) notify(error.message || t('toast.error_generic'), 'error');
+      else notify(t('admin.coupon_deleted'), 'success');
+      await paint();
+    }
+  });
+}
+
+/* ------------------------------------------------------------------ *
+ * รายงานยอดขาย + ดาวน์โหลด CSV
+ * ------------------------------------------------------------------ */
+async function initReports() {
+  const form = document.getElementById('admin-report-form');
+  const kpis = document.getElementById('report-kpis');
+  const tbody = document.getElementById('report-top-list');
+  if (!form || !kpis) return;
+
+  const toISO = (d) => d.toISOString().slice(0, 10);
+  const today = new Date();
+  const monthAgo = new Date(today.getTime() - 29 * 86400000);
+
+  const fromInput = document.getElementById('report-from');
+  const toInput = document.getElementById('report-to');
+  fromInput.value = toISO(monthAgo);
+  toInput.value = toISO(today);
+
+  let lastReport = null;
+
+  const paint = (report) => {
+    lastReport = report;
+    const cards = [
+      ['admin.reports_revenue', formatTHB(report.revenue || 0)],
+      ['admin.reports_orders', String(report.orders || 0)],
+      ['admin.reports_units', String(report.units || 0)],
+      ['admin.reports_discount', formatTHB(report.discount || 0)],
+    ];
+    kpis.innerHTML = cards
+      .map(
+        ([key, value], index) => `
+        <div class="kpi${index === 0 ? ' is-accent' : ''}">
+          <div class="k-label" data-i18n="${key}">${t(key)}</div>
+          <div class="k-value${index === 0 ? ' accent' : ''}">${escapeHTML(value)}</div>
+        </div>`,
+      )
+      .join('');
+
+    if (!tbody) return;
+    const top = Array.isArray(report.top_products) ? report.top_products : [];
+    tbody.innerHTML = top.length
+      ? top
+          .map(
+            (row) => `<tr>
+              <td data-label="${t('admin.product')}" class="font-semibold">${escapeHTML(row.name || '-')}</td>
+              <td data-label="${t('admin.reports_units')}" class="num">${row.units || 0}</td>
+              <td data-label="${t('admin.reports_revenue')}" class="num">${formatTHB(row.revenue || 0)}</td>
+            </tr>`,
+          )
+          .join('')
+      : `<tr><td colspan="3" style="text-align:center;padding:2rem" class="text-muted">${escapeHTML(
+          t('admin.reports_empty'),
+        )}</td></tr>`;
+  };
+
+  const load = async () => {
+    const from = fromInput.value;
+    const to = toInput.value;
+    if (!from || !to) return;
+    const { data, error } = await supabase.rpc('get_sales_report', { p_from: from, p_to: to });
+    if (error) {
+      notify(error.message || t('admin.system_error'), 'error');
+      return;
+    }
+    paint(data || {});
+  };
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    load();
+  });
+
+  const exportBtn = document.getElementById('report-export');
+  if (exportBtn) {
+    exportBtn.addEventListener('click', async () => {
+      const from = fromInput.value;
+      const to = toInput.value;
+      const { data, error } = await supabase
+        .from('orders')
+        .select(
+          'id, created_at, paid_at, status, recipient, phone, address, subtotal, discount, shipping, total, coupon_code, tracking',
+        )
+        .in('status', ['paid', 'shipped', 'delivered'])
+        .gte('created_at', `${from}T00:00:00`)
+        .lte('created_at', `${to}T23:59:59`)
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        notify(error.message || t('admin.system_error'), 'error');
+        return;
+      }
+
+      const rows = data || [];
+      const header = [
+        'order_id',
+        'created_at',
+        'paid_at',
+        'status',
+        'recipient',
+        'phone',
+        'address',
+        'subtotal',
+        'discount',
+        'coupon_code',
+        'shipping',
+        'total',
+        'tracking',
+      ];
+      const csvCell = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
+      const body = rows.map((r) =>
+        [
+          r.id,
+          r.created_at,
+          r.paid_at,
+          r.status,
+          r.recipient,
+          r.phone,
+          r.address,
+          r.subtotal,
+          r.discount,
+          r.coupon_code,
+          r.shipping,
+          r.total,
+          r.tracking,
+        ]
+          .map(csvCell)
+          .join(','),
+      );
+      const csv = `\uFEFF${header.join(',')}\n${body.join('\n')}`;
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `zenmarket-sales-${from}-to-${to}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      notify(t('admin.reports_exported'), 'success');
+    });
+  }
+
+  await load();
+
+  // แปลภาษาใหม่เมื่อสลับภาษา โดยใช้ข้อมูลที่โหลดไว้แล้ว
+  onLanguageChange(() => {
+    if (lastReport) paint(lastReport);
+  });
 }
 
 async function initPayments() {
@@ -918,6 +1295,8 @@ async function initAdminOrderDetail() {
         : `<p class="text-muted text-sm">${t('order.slip_unavailable')}</p>`;
     }
 
+    renderSlipReview(order);
+
     const shippingForm = document.getElementById('admin-shipping-update-form');
     if (shippingForm) {
       bindOnce(shippingForm, 'submit', async (e) => {
@@ -980,6 +1359,56 @@ async function initAdminOrderDetail() {
   } catch (err) {
     console.error(err);
   }
+}
+
+/** แผงตรวจสลิป: เจ้าของร้านกดอนุมัติ/ตีกลับทีละใบ */
+function renderSlipReview(order) {
+  const box = document.getElementById('admin-slip-review');
+  const status = document.getElementById('admin-slip-status');
+  if (!box) return;
+
+  const widgets = () => {
+    const approve = document.getElementById('admin-slip-approve');
+    const reject = document.getElementById('admin-slip-reject');
+    const run = async (isApprove) => {
+      let note = null;
+      if (!isApprove) {
+        note = prompt(t('admin.slip_reject_prompt'));
+        if (note === null) return;
+      }
+      const { error } = await supabase.rpc('review_slip', {
+        p_order_id: order.id,
+        p_approve: isApprove,
+        p_note: note,
+      });
+      if (error) {
+        notify(error.message || t('toast.error_generic'), 'error');
+        return;
+      }
+      notify(t(isApprove ? 'admin.slip_approved' : 'admin.slip_rejected'), 'success');
+      setTimeout(() => location.reload(), 700);
+    };
+    if (approve) approve.addEventListener('click', () => run(true));
+    if (reject) reject.addEventListener('click', () => run(false));
+  };
+
+  const waiting = order.status === 'review';
+  box.classList.toggle('hidden', !waiting);
+
+  if (status) {
+    if (order.slip_status === 'approved') {
+      status.textContent = t('admin.slip_approved_badge');
+      status.className = 'slip-status is-ok';
+    } else if (order.slip_status === 'rejected') {
+      status.textContent = order.slip_note || t('admin.slip_rejected_badge');
+      status.className = 'slip-status is-error';
+    } else {
+      status.className = 'slip-status hidden';
+      status.textContent = '';
+    }
+  }
+
+  if (waiting) widgets();
 }
 
 async function loadShippingHistory(orderId) {

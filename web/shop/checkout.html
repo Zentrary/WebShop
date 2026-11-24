@@ -32,6 +32,8 @@
           <form id="checkout-form" class="panel reveal" novalidate>
             <h2 data-i18n="checkout.shipping_info">ข้อมูลการจัดส่ง</h2>
 
+            <div id="checkout-saved" class="checkout-saved hidden"></div>
+
             <div class="form-group">
               <label class="form-label" for="checkout-name" data-i18n="checkout.recipient">ชื่อผู้รับ</label>
               <input
@@ -100,7 +102,28 @@
         <aside class="summary reveal" data-delay="1">
           <h2 data-i18n="checkout.summary">สรุปคำสั่งซื้อ</h2>
           <div id="checkout-items"></div>
+
+          <div class="coupon-box">
+            <label class="form-label" for="coupon-input" data-i18n="coupon.title">โค้ดส่วนลด</label>
+            <div class="coupon-row">
+              <input
+                type="text"
+                id="coupon-input"
+                class="form-input"
+                autocomplete="off"
+                autocapitalize="characters"
+                placeholder="กรอกโค้ดส่วนลด"
+                data-i18n-placeholder="coupon.placeholder"
+              />
+              <button type="button" id="coupon-apply" class="btn btn-outline btn-sm" data-i18n="coupon.apply">ใช้โค้ด</button>
+            </div>
+            <p id="coupon-status" class="coupon-status" role="status"></p>
+          </div>
+
           <div class="sum-row"><span data-i18n="cart.subtotal">ยอดรวมสินค้า</span><span id="checkout-subtotal">฿0.00</span></div>
+          <div class="sum-row hidden" id="checkout-discount-row">
+            <span data-i18n="cart.discount">ส่วนลด</span><span id="checkout-discount" class="text-accent">−฿0.00</span>
+          </div>
           <div class="sum-row"><span data-i18n="cart.shipping">ค่าจัดส่ง</span><span id="checkout-shipping">฿0.00</span></div>
           <div class="sum-row total"><span data-i18n="cart.total">รวมทั้งหมด</span><span id="checkout-total">฿0.00</span></div>
           <button id="place-order-btn" class="btn btn-primary btn-full mt-lg" data-i18n="checkout.place_order">ยืนยันคำสั่งซื้อ</button>
