@@ -98,6 +98,7 @@ const DICT = {
 
     'shop.eyebrow': 'รายการสินค้า',
     'shop.title': 'รายการสินค้า',
+    'shop.product_title': 'รายละเอียดสินค้า',
     'shop.sub': 'สินค้าทั้งหมดของร้าน คัดสรรด้วยความใส่ใจ',
     'shop.search': 'ค้นหาสินค้า...',
     'shop.filter_all': 'ทุกหมวดหมู่',
@@ -690,6 +691,7 @@ const DICT = {
 
     'shop.eyebrow': 'Products',
     'shop.title': 'Products',
+    'shop.product_title': 'Product details',
     'shop.sub': 'Everything in the store, carefully selected.',
     'shop.search': 'Search products...',
     'shop.filter_all': 'All categories',
