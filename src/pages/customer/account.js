@@ -119,7 +119,8 @@ function initLoginPage() {
       state.audience = 'member';
 
       notify(t('toast.login_success'), 'success');
-      const returnPath = safeReturnPath(sessionStorage.getItem('zenmarket_return_path'), '/account/index.html');
+      // Signing in lands on the storefront, not on the account page.
+      const returnPath = safeReturnPath(sessionStorage.getItem('zenmarket_return_path'), '/home.html');
       sessionStorage.removeItem('zenmarket_return_path');
       window.location.href = returnPath;
     } catch (err) {

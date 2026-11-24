@@ -51,6 +51,8 @@
 | `add_shipping_update(p_order_id, p_message, p_images)` | uuid (admin เท่านั้น, ≤ 4 รูป, ข้อความ ≤ 1,000 ตัว) |
 | `restore_admin_backup(p_backup)` | jsonb (admin เท่านั้น, กู้คืนจากไฟล์ `zenmarket-data-v1`) |
 | `expire_unpaid_orders()` | void (คืนสต็อกคำสั่งซื้อที่หมดเวลา) |
+| `admin_rename_category(p_old, p_new)` | void (admin เท่านั้น, สินค้าในหมวดถูกเปลี่ยนชื่อตาม) |
+| `admin_delete_category(p_name)` | void (admin เท่านั้น, สินค้าในหมวดถูกย้ายไป “ไม่ระบุหมวดหมู่”) |
 
 ## ฟีเจอร์ที่เพิ่มล่าสุด
 

@@ -10,7 +10,7 @@ import {
 import { isSignedIn } from '/src/core/audience.js';
 import { translatePage } from '/src/core/i18n.js';
 import { notify } from '/src/core/ui.js';
-import { formatTHB, safeImage, escapeHTML, bindOnce } from '/src/core/lib.js';
+import { formatTHB, safeImage, escapeHTML, bindOnce, ratingStars } from '/src/core/lib.js';
 import { getStockStatusText, getStockStatusClass } from '/src/core/customer.js';
 import { observeReveals } from '/src/core/reveal.js';
 import { loadFavorites, toggleFavorite, isFavorite, canUseFavorites } from '/src/core/favorites.js';
@@ -374,7 +374,7 @@ async function initProductPage() {
         const el = document.createElement('div');
         el.className = 'review-card';
         el.innerHTML = `
-          <div class="stars">${'★'.repeat(review.rating)}${'☆'.repeat(5 - review.rating)}</div>
+          ${ratingStars(review.rating)}
           <blockquote>“${escapeHTML(review.comment || '')}”</blockquote>
           <div class="who">— ${escapeHTML(review.reviewer_name || t('common.customer'))}</div>
         `;

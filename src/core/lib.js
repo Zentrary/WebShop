@@ -57,7 +57,7 @@ export function safeLink(url) {
   }
 }
 
-export function safeReturnPath(path, fallback = '/account/index.html') {
+export function safeReturnPath(path, fallback = '/home.html') {
   if (!path || typeof path !== 'string') return fallback;
   const value = path.trim();
   if (!value.startsWith('/') || value.startsWith('//') || value.startsWith('/\\')) return fallback;
@@ -223,4 +223,20 @@ export async function getPrivateImageUrl(supabase, bucket, objectPath, expiresIn
 export function buildSlipObjectPath(userId, orderId, fileName) {
   const safeName = String(fileName).replace(/[^\w.\-]/g, '_');
   return `${userId}/${orderId}/${Date.now()}_${safeName}`;
+}
+
+/**
+ * A five-star rating drawn as inline SVG.
+ *
+ * Text glyphs (★ / ☆) depend on the font actually containing them — they
+ * vanished on some devices — so the rating is vector art instead. The label
+ * stays readable for screen readers.
+ */
+export function ratingStars(rating, size = 14) {
+  const value = Math.max(0, Math.min(5, Number(rating) || 0));
+  const path = 'm12 2.6 2.9 5.9 6.5.9-4.7 4.6 1.1 6.4L12 17.4 6.2 20.4l1.1-6.4L2.6 9.4l6.5-.9L12 2.6Z';
+  const star = (filled) =>
+    `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="${filled ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" aria-hidden="true"><path d="${path}"/></svg>`;
+  const stars = Array.from({ length: 5 }, (_, i) => star(i < Math.round(value))).join('');
+  return `<span class="stars" role="img" aria-label="${value} / 5">${stars}</span>`;
 }

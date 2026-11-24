@@ -17,10 +17,6 @@
   .kpi-grid {
     grid-template-columns: repeat(2, 1fr);
   }
-  .hero-meta {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: var(--space-lg);
-  }
   .cart-grid {
     grid-template-columns: 1fr;
   }
@@ -34,8 +30,9 @@
   .footer-inner {
     grid-template-columns: 1fr 1fr;
   }
-  .admin-layout {
-    grid-template-columns: 1fr;
+  .admin-layout,
+  .admin-layout:has(.admin-sidebar) {
+    grid-template-columns: minmax(0, 1fr);
   }
   .admin-sidebar {
     display: none;
@@ -94,8 +91,11 @@
   :root {
     --header-height: 64px;
   }
+  /* Only the sides: a shorthand `padding: 0 …` here used to wipe the top
+     padding of every `.container.section` block below the hero. */
   .container {
-    padding: 0 var(--space-md);
+    padding-left: max(var(--space-md), env(safe-area-inset-left));
+    padding-right: max(var(--space-md), env(safe-area-inset-right));
   }
   .header-nav {
     display: none;
@@ -177,6 +177,18 @@
   .hero {
     padding: var(--space-2xl) 0 var(--space-xl);
   }
+  /* Below the desktop breakpoint the shop facts drop under the headline and
+     the divider moves from the left edge to the top edge. */
+  .hero-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-xl);
+  }
+  .hero-facts {
+    border-left: none;
+    padding-left: 0;
+    padding-top: var(--space-lg);
+    border-top: 1px solid var(--color-border);
+  }
   .hero-cta .btn {
     flex: 1 1 auto;
   }
@@ -194,8 +206,7 @@
     max-width: 26vw;
   }
   .hero-meta {
-    grid-template-columns: 1fr;
-    gap: var(--space-lg);
+    gap: var(--space-md);
   }
   .hero-meta .stat {
     flex-direction: row;

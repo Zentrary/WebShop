@@ -264,16 +264,43 @@ const THAI = /[\u0E00-\u0E7F]/;
   const base = fs.readFileSync(path.join(ROOT, 'src/styles/base.css'), 'utf8');
   A.ok('home: CSS มี masthead', /\.hero-masthead\s*\{/.test(base));
   A.ok('home: CSS มีเส้นคั่น masthead', /\.hero-masthead-rule\s*\{/.test(base));
-  A.ok('home: CSS ข้อมูลร้านเป็น 3 คอลัมน์', /\.hero-meta\s*\{[^}]*grid-template-columns:\s*repeat\(3/.test(base));
+  A.ok(
+    'home: ข้อมูลร้านกลับไปอยู่คอลัมน์ขวาของ hero',
+    /\.hero-grid\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1\.25fr\)/.test(base),
+  );
+  A.ok('home: ข้อมูลร้านเรียงเป็นคอลัมน์เดียวชิดขวา', /\.hero-meta\s*\{[^}]*flex-direction:\s*column/.test(base));
+  A.ok('home: มีเส้นคั่นด้านซ้ายของข้อมูลร้าน', /\.hero-facts\s*\{[^}]*border-left/.test(base));
   A.ok(
     'home: ชื่อร้านใน hero ไม่ใช้ eyebrow จึงไม่มีขีดนำหน้า',
     !/class="[^"]*eyebrow[^"]*"[^>]*id="hero-shop-name"/.test(html) &&
       !/id="hero-shop-name"[^>]*class="[^"]*eyebrow/.test(html),
   );
-  A.ok('home: คลาส eyebrow ยังมีขีดนำหน้าเหมือนทั้งเว็บ', /\.eyebrow::before/.test(base));
+  A.ok('home: ไม่มีสไตล์ eyebrow เหลือทั้งเว็บ', !/\.eyebrow/.test(base));
+  A.ok('home: ไม่มีป้าย eyebrow ในหน้าแรกแล้ว', !html.includes('class="eyebrow"'));
+  A.ok('home: ไม่มีปุ่ม "ดูหมวดหมู่" แล้ว', !html.includes('home.cta_categories'));
+  A.ok('home: ไม่มีส่วนติดต่อท้ายหน้าแล้ว (ใช้คอลัมน์ติดต่อในท้ายเว็บ)', !html.includes('data-contact-band'));
+  A.ok('home: ไม่มีรีวิวตัวอย่างที่เขียนตายตัว', !html.includes('home.review_1_quote'));
+
+  // หน้า admin/reviews เคยว่างเปล่าทั้งที่มีรีวิว เพราะตารางไม่มี GRANT ให้ role ของ PostgREST
+  const grantMigration = fs.readFileSync(
+    path.join(ROOT, 'supabase/migrations/010_grant_product_reviews_privileges.sql'),
+    'utf8',
+  );
+  A.ok(
+    'reviews: product_reviews ให้สิทธิ์ SELECT กับ anon/authenticated',
+    /grant select on table public\.product_reviews to anon, authenticated/i.test(grantMigration),
+  );
+  A.ok(
+    'reviews: admin ลบรีวิวได้ (มีสิทธิ์ DELETE สำหรับ authenticated)',
+    /grant insert, update, delete on table public\.product_reviews to authenticated/i.test(grantMigration),
+  );
 
   const responsive = fs.readFileSync(path.join(ROOT, 'src/styles/responsive.css'), 'utf8');
   A.ok('home: บนมือถือข้อมูลร้านซ้อนเป็นบรรทัดเดียว', /\.hero-meta \.stat\s*\{[^}]*flex-direction:\s*row/.test(responsive));
+  A.ok(
+    'layout: .container บนมือถือไม่ทับ padding-top ของ .section',
+    !/\.container\s*\{\s*padding:\s*0 var\(--space-md\)/.test(responsive),
+  );
 }
 
 /* ------------------------------------------------------------------ *

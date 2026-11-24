@@ -58,7 +58,9 @@ export function makeSupabaseMock(opts = {}) {
         return self;
       },
       neq: () => self,
+      gt: () => self,
       gte: () => self,
+      lt: () => self,
       lte: () => self,
       order: () => self,
       limit: () => self,
@@ -97,7 +99,14 @@ export function makeSupabaseMock(opts = {}) {
         return { data: { user: cfg.user }, error: null };
       },
       onAuthStateChange: () => ({ data: { subscription: { unsubscribe() {} } } }),
-      signInWithPassword: async () => ({ data: null, error: null }),
+      // A successful sign-in hands back the configured user so tests can follow
+      // what happens after the form submits.
+      signInWithPassword: async () => {
+        calls.auth.push({ m: 'signInWithPassword' });
+        if (opts.authError) return { data: { user: null, session: null }, error: { message: opts.authError } };
+        const user = cfg.user || { id: 'mock-user', email: 'user@test.shop' };
+        return { data: { user, session: { user, access_token: 'mock' } }, error: null };
+      },
       signUp: async () => ({ data: null, error: null }),
       signOut: async () => ({ error: null }),
     },

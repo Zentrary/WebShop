@@ -163,8 +163,10 @@ const HTML_FILES = walk(WEB);
   const faqQ = document.querySelector('.faq-item .faq-q span[data-i18n]');
   A.ok('i18n: คำถาม FAQ ผูกกับ data-i18n', !!faqQ);
 
-  const reviewQuote = document.querySelector('.review-card blockquote[data-i18n]');
-  A.ok('i18n: รีวิวตัวอย่างผูกกับ data-i18n', !!reviewQuote);
+  // Reviews come from the database, never from hard-coded copy: with an empty
+  // table the home page has to say so honestly.
+  const emptyReviews = document.querySelector('#home-reviews .empty-state');
+  A.eq('i18n: ยังไม่มีรีวิวในฐานข้อมูลจึงแสดงข้อความว่าง', emptyReviews?.textContent.trim(), 'ยังไม่มีรีวิว');
 
   const { setLanguage, t } = await importPage('/src/core/i18n.js');
   setLanguage('en');
@@ -172,7 +174,11 @@ const HTML_FILES = walk(WEB);
 
   A.eq('i18n: สถิติการจัดส่งเปลี่ยนเป็นอังกฤษ', statShip?.textContent.trim(), '2–5 days');
   A.ok('i18n: คำถาม FAQ เปลี่ยนเป็นอังกฤษ', (faqQ?.textContent || '').includes('When will'));
-  A.ok('i18n: รีวิวตัวอย่างเปลี่ยนเป็นอังกฤษ', !THAI.test(reviewQuote?.textContent || ''));
+  A.eq(
+    'i18n: ข้อความว่างของรีวิวเปลี่ยนเป็นอังกฤษ',
+    document.querySelector('#home-reviews .empty-state')?.textContent.trim(),
+    'No reviews yet',
+  );
   A.ok('i18n: เนื้อหาอังกฤษไม่เหลืออักขระไทยค้างในหน้าแรก', !THAI.test(document.querySelector('.hero-meta').textContent));
 
   setLanguage('th');
@@ -293,7 +299,7 @@ const HTML_FILES = walk(WEB);
   A.ok('css: หน้า auth ไม่มีสไตล์แยกเอง', !/\.auth-topbar|\.auth-aside|\.auth-lang\b/.test(base));
   A.ok('css: ซ่อนปุ่มเลื่อนของช่องตัวเลข', /input\[type='number'\]::\-webkit\-outer\-spin\-button/.test(base));
   A.ok('css: ช่องตัวเลขใช้ appearance textfield', /input\[type='number'\]\s*\{[^}]*appearance:\s*textfield/.test(base));
-  A.ok('css: eyebrow ยังมีขีดนำหน้าเหมือนเดิม', /\.eyebrow::before/.test(base));
+  A.ok('css: ไม่มีสไตล์ eyebrow เหลือแล้ว', !/\.eyebrow/.test(base));
 
   const responsive = fs.readFileSync(path.join(ROOT, 'src/styles/responsive.css'), 'utf8');
   A.ok('css: ฟอร์มสมัครสมาชิกยุบเป็น 1 คอลัมน์บนมือถือ', /\.auth-grid\s*\{\s*grid-template-columns:\s*1fr/.test(responsive));
@@ -324,14 +330,14 @@ const HTML_FILES = walk(WEB);
     tableData: { products: [], categories: [], reviews: [] },
   });
   const { document } = await loadPage({
-    htmlPath: path.join(WEB, 'home.html'),
-    scripts: ['src/pages/storefront/home.js'],
+    htmlPath: path.join(WEB, 'pages/contact.html'),
+    scripts: ['src/app.js'],
     supabase,
   });
   await wait(300);
 
   const band = document.querySelector('[data-contact-band]');
-  A.ok('contact: หน้าแรกมีส่วนติดต่อ', !!band);
+  A.ok('contact: หน้าร้านมีส่วนติดต่อ', !!band);
   A.ok('contact: ส่วนติดต่อไม่ถูกซ่อน', !band.classList.contains('hidden'));
 
   const channels = [...band.querySelectorAll('.contact-channel-name')].map((e) => e.textContent.trim());
@@ -369,8 +375,8 @@ const HTML_FILES = walk(WEB);
     tableData: { products: [], categories: [], reviews: [] },
   });
   const { document } = await loadPage({
-    htmlPath: path.join(WEB, 'home.html'),
-    scripts: ['src/pages/storefront/home.js'],
+    htmlPath: path.join(WEB, 'pages/contact.html'),
+    scripts: ['src/app.js'],
     supabase,
   });
   await wait(300);
