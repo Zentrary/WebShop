@@ -1,5 +1,5 @@
 import { initApp, state, requireSupabase } from '/src/app.js';
-import { translatePage, t } from '/src/core/i18n.js';
+import { translatePage, t, onLanguageChange } from '/src/core/i18n.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   await initApp();
@@ -23,13 +23,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   });
 
-  try {
+  // The hero shows the shop's own name and tagline. They are plain text (no
+  // data-i18n) so a language switch must not overwrite them with a generic
+  // translation — re-apply them whenever the language changes.
+  const paintHeroCopy = () => {
     const s = state.storeSettings || {};
-    const el = document.getElementById('hero-shop-name');
-    if (el && s.shop_name) el.textContent = s.shop_name;
-    const tag = document.getElementById('hero-tagline');
-    if (tag && s.tagline) tag.textContent = s.tagline;
-  } catch {}
+    const nameEl = document.getElementById('hero-shop-name');
+    if (nameEl) nameEl.textContent = s.shop_name || t('home.eyebrow');
+    const tagEl = document.getElementById('hero-tagline');
+    if (tagEl) tagEl.textContent = s.tagline || t('home.hero_lead');
+  };
+  paintHeroCopy();
+  onLanguageChange(paintHeroCopy);
 
   try {
     const { data: reviews, error } = await state.supabase.rpc('get_home_reviews');

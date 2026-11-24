@@ -13,16 +13,11 @@ import {
 } from '/src/core/validation.js';
 import { getStockStatusText, getStockStatusClass } from '/src/core/customer.js';
 import { loadFavoriteProducts, toggleFavorite, isFavorite, canUseFavorites } from '/src/core/favorites.js';
-import { initAuthShell } from '/src/core/auth-shell.js';
-
-const isAuthPage = () => window.location.pathname.includes('/auth/');
 
 document.addEventListener('DOMContentLoaded', async () => {
-  // The authentication pages are standalone: no site header, no site footer.
-  await initApp({ shell: !isAuthPage() });
+  await initApp();
   translatePage();
   initCaptcha();
-  if (isAuthPage()) initAuthShell();
 
   if (!requireSupabase()) return;
 
