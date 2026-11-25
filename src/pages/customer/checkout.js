@@ -414,6 +414,23 @@ async function loadSavedAddresses() {
     if (data.length === 1) {
       host.querySelector('.checkout-saved-list')?.classList.add('is-single');
     }
+
+    const syncActiveCard = () => {
+      const active = host.querySelector('.saved-address.is-active');
+      if (!active) return;
+      const addr = data[Number(active.getAttribute('data-address-index'))] || {};
+      const same =
+        (document.getElementById('checkout-name')?.value || '').trim() === (addr.recipient || '').trim() &&
+        (document.getElementById('checkout-phone')?.value || '').trim() === (addr.phone || '').trim() &&
+        (document.getElementById('checkout-address')?.value || '').trim() === (addr.address || '').trim();
+      if (same) return;
+      host.querySelectorAll('.saved-address').forEach((el) => el.classList.remove('is-active'));
+      const hint = document.getElementById('checkout-saved-hint');
+      if (hint) hint.textContent = `${t('checkout.saved_addresses')} · ${t('checkout.saved_addresses_hint')}`;
+    };
+    ['checkout-name', 'checkout-phone', 'checkout-address'].forEach((id) =>
+      document.getElementById(id)?.addEventListener('input', syncActiveCard),
+    );
   } catch (err) {
     console.warn('[ZenMarket] saved addresses unavailable', err);
     host.classList.add('hidden');
@@ -698,6 +715,9 @@ async function initCustomerOrderDetailPage() {
         slipStatus.textContent = '';
       }
     }
+
+    const canUploadSlip = ['pending', 'review'].includes(order.status || '') && !order.slip_path;
+    if (!canUploadSlip) document.getElementById('receipt-upload').classList.add('hidden');
 
     if (order.slip_path) {
       const slipUrl = await getPrivateImageUrl(state.supabase, 'payment-slips', order.slip_path);

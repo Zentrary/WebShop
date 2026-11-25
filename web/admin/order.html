@@ -34,6 +34,10 @@
             </div>
           </div>
 
+          <div id="admin-order-locked" class="order-locked hidden" role="status">
+            <span data-i18n="admin.order_locked">คำสั่งซื้อนี้ปิดแล้ว — ดูข้อมูลได้อย่างเดียว ไม่สามารถแก้ไขหรือเปลี่ยนสถานะได้</span>
+          </div>
+
           <div class="cart-grid">
             <div class="flex flex-col gap-lg">
               <div class="panel reveal">
@@ -59,7 +63,7 @@
               </div>
 
               <div class="panel reveal" data-delay="2">
-                <h2 data-i18n="admin.shipping_updates">อัปเดตการจัดส่ง</h2>
+                <h2 id="admin-shipping-title" data-i18n="admin.shipping_updates">อัปเดตการจัดส่ง</h2>
                 <form id="admin-shipping-update-form">
                   <div class="form-group">
                     <label class="form-label" for="admin-shipping-message" data-i18n="admin.shipping_message">ข้อความถึงลูกค้า</label>
@@ -82,7 +86,7 @@
                   </div>
                   <button type="submit" class="btn btn-primary" data-i18n="admin.shipping_add">เพิ่มอัปเดตการจัดส่ง</button>
                 </form>
-                <hr class="divider" />
+                <hr class="divider" id="admin-shipping-divider" />
                 <div id="admin-shipping-history"></div>
               </div>
             </div>
