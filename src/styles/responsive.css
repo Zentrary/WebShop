@@ -759,7 +759,9 @@
     grid-template-columns: minmax(0, 1fr);
   }
   .settings-row,
-  .settings-row--pages {
+  .settings-row--3,
+  .settings-row--pages,
+  .settings-fields {
     grid-template-columns: minmax(0, 1fr);
   }
   .settings-card {

@@ -12,6 +12,8 @@ export const DEFAULT_STORE_SETTINGS = {
   about_text: '',
   shipping_note: '',
   shipping_fee: 50,
+  delivery_days_min: 2,
+  delivery_days_max: 5,
   free_shipping_threshold: 300,
   facebook_url: '',
   instagram_url: '',
@@ -34,6 +36,17 @@ export function amountToFreeShipping(subtotal, settings = DEFAULT_STORE_SETTINGS
   const threshold = Number(settings.free_shipping_threshold ?? DEFAULT_STORE_SETTINGS.free_shipping_threshold);
   if (threshold <= 0) return 0;
   return Math.max(0, threshold - subtotal);
+}
+
+export function deliveryWindow(settings = DEFAULT_STORE_SETTINGS) {
+  const toDays = (value, fallback) => {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return fallback;
+    return Math.min(Math.max(Math.round(n), 1), 60);
+  };
+  const min = toDays(settings.delivery_days_min, DEFAULT_STORE_SETTINGS.delivery_days_min);
+  const max = Math.max(min, toDays(settings.delivery_days_max, DEFAULT_STORE_SETTINGS.delivery_days_max));
+  return { min, max };
 }
 
 export function mergeStoreSettings(data) {

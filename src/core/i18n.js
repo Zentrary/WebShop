@@ -69,6 +69,10 @@ const DICT = {
     'home.eyebrow': 'ร้านค้าออนไลน์',
     'home.stat_payment_value': 'PromptPay',
     'home.stat_ship_value': '2–5 วัน',
+    'eta.short': '{min}–{max} วัน',
+    'eta.product': '• จัดส่งภายใน {min}–{max} วันทำการ',
+    'eta.faq': 'ปกติแล้วสินค้าจะถูกจัดส่งภายใน {min}–{max} วันทำการหลังจากยืนยันการชำระเงินแล้ว',
+    'eta.help': 'ระยะเวลาจัดส่ง {min}–{max} วันทำการหลังยืนยันการชำระเงิน สินค้าที่มีสต็อกน้อยอาจใช้เวลานานกว่าปกติ',
     'home.stat_care_value': 'ใส่ใจทุกออเดอร์',
     'home.hero_facts_title': 'ข้อมูลร้าน',
     'home.hero_1': 'คัดมาเอง',
@@ -300,6 +304,7 @@ const DICT = {
     'validation.tagline_too_long': 'คำอธิบายร้านยาวเกิน 200 ตัวอักษร',
     'validation.about_too_long': 'ข้อมูลเกี่ยวกับร้านยาวเกิน 3,000 ตัวอักษร',
     'validation.shipping_note_too_long': 'หมายเหตุการจัดส่งยาวเกิน 500 ตัวอักษร',
+    'validation.delivery_days_invalid': 'ระยะเวลาจัดส่งต้องอยู่ระหว่าง 1–60 วัน และวันสิ้นสุดต้องไม่น้อยกว่าวันเริ่มต้น',
     'validation.contact_email_invalid': 'อีเมลติดต่อไม่ถูกต้อง',
     'validation.contact_phone_invalid': 'เบอร์โทรศัพท์ติดต่อไม่ถูกต้อง',
     'validation.contact_address_invalid': 'ที่อยู่ยาวเกิน 300 ตัวอักษร',
@@ -487,6 +492,9 @@ const DICT = {
     'admin.settings_store_hint': 'ชื่อร้าน คำโปรย และโลโก้ที่แสดงบนหัวเว็บ',
     'admin.settings_contact_hint': 'ช่องทางที่ลูกค้าใช้ติดต่อร้าน',
     'admin.settings_shipping_hint': 'ค่าส่ง เกณฑ์ส่งฟรี และการแจ้งเตือนสต็อก',
+    'admin.settings_show_contact_label': 'การแสดงผล',
+    'admin.settings_delivery_days': 'ระยะเวลาจัดส่ง (วันทำการ)',
+    'admin.settings_delivery_days_hint': 'ใช้แสดงบนหน้าแรก หน้าสินค้า และหน้าช่วยเหลือ',
     'admin.settings_about_hint': 'ข้อความแนะนำร้านที่แสดงในหน้าแรก',
     'admin.settings_save_hint': 'บันทึกแล้วข้อมูลจะแสดงบนหน้าร้านทันที',
     'admin.payments_sub': 'บัญชีรับเงินพร้อมเพย์และการทดสอบ QR',
@@ -797,6 +805,11 @@ const DICT = {
     'home.eyebrow': 'Online store',
     'home.stat_payment_value': 'PromptPay',
     'home.stat_ship_value': '2–5 days',
+    'eta.short': '{min}–{max} days',
+    'eta.product': '• Ships within {min}–{max} business days',
+    'eta.faq': 'Orders are usually delivered within {min}–{max} business days after payment is confirmed.',
+    'eta.help':
+      'Delivery takes {min}–{max} business days after payment is confirmed. Items with low stock may take a little longer.',
     'home.stat_care_value': 'Every order matters',
     'home.hero_facts_title': 'Store details',
     'home.hero_1': 'Picked by hand',
@@ -1029,6 +1042,8 @@ const DICT = {
     'validation.tagline_too_long': 'Tagline is too long (max 200 characters)',
     'validation.about_too_long': 'About text is too long (max 3,000 characters)',
     'validation.shipping_note_too_long': 'Shipping note is too long (max 500 characters)',
+    'validation.delivery_days_invalid':
+      'Delivery time must be 1–60 days and the end day cannot be before the start day',
     'validation.contact_email_invalid': 'Contact email is not valid',
     'validation.contact_phone_invalid': 'Contact phone is not valid',
     'validation.contact_address_invalid': 'The address is longer than 300 characters',
@@ -1216,6 +1231,9 @@ const DICT = {
     'admin.settings_store_hint': 'Store name, tagline and the logo shown in the header',
     'admin.settings_contact_hint': 'How customers reach your store',
     'admin.settings_shipping_hint': 'Shipping fee, free-shipping threshold and stock alerts',
+    'admin.settings_show_contact_label': 'Visibility',
+    'admin.settings_delivery_days': 'Delivery time (business days)',
+    'admin.settings_delivery_days_hint': 'Shown on the home page, product page and help page',
     'admin.settings_about_hint': 'Short story about your store on the home page',
     'admin.settings_save_hint': 'Changes go live on the storefront right after saving',
     'admin.payments_sub': 'PromptPay payout account and QR testing.',
@@ -1572,6 +1590,20 @@ function setText(node, str) {
   node.textContent = str;
 }
 
+const postTranslateListeners = [];
+
+export function onTranslate(fn) {
+  if (typeof fn === 'function') postTranslateListeners.push(fn);
+}
+
+function runPostTranslate(root) {
+  postTranslateListeners.forEach((fn) => {
+    try {
+      fn(root);
+    } catch {}
+  });
+}
+
 export function translatePage(root = document) {
   const strings = DICT[currentLang] || DICT.th;
 
@@ -1604,4 +1636,6 @@ export function translatePage(root = document) {
     const key = node.getAttribute('data-i18n-alt');
     if (key && strings[key]) node.setAttribute('alt', strings[key]);
   });
+
+  runPostTranslate(root);
 }
