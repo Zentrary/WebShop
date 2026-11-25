@@ -285,12 +285,13 @@ async function initProducts() {
     tbody.innerHTML = '';
     products?.forEach((p) => {
       const tr = document.createElement('tr');
+      const saleOn = Number(p.sale_price) > 0 && Number(p.sale_price) < Number(p.price);
       tr.innerHTML =
         `<td class="cell-thumb-cell" data-label="${t('admin.product_image')}"><img class="cell-thumb" src="${p.image_url || '/images/placeholder.svg'}" alt=""></td>` +
         `<td data-label="${t('admin.product_name')}" class="font-semibold" style="color:var(--color-text)">${escapeHTML(p.name)}</td>` +
         `<td data-label="${t('admin.product_category')}">${escapeHTML(p.category || '-')}</td>` +
-        `<td data-label="${t('common.price')}" class="num">${formatTHB(p.price)}${
-          p.sale_price ? ` <s class="price-was">${formatTHB(p.sale_price)}</s>` : ''
+        `<td data-label="${t('common.price')}" class="num">${formatTHB(saleOn ? p.sale_price : p.price)}${
+          saleOn ? ` <s class="price-was">${formatTHB(p.price)}</s>` : ''
         }</td>` +
         `<td data-label="${t('admin.product_stock')}" class="num">${p.stock}</td>` +
         `<td data-label="${t('common.status')}"><span class="badge badge-${p.active ? 'success' : 'error'}">${p.active ? t('admin.active') : t('admin.hidden')}</span></td>` +
@@ -900,8 +901,11 @@ async function initCoupons() {
 
     tbody.innerHTML = data
       .map((c) => {
-        const value = c.kind === 'percent' ? `${Number(c.value)}%` : formatTHB(c.value);
-        const uses = c.max_uses ? `${c.used_count}/${c.max_uses}` : `${c.used_count} · ${t('admin.coupon_unlimited')}`;
+        const amount = Number(c.value) || 0;
+        const value = c.kind === 'percent' ? `${amount}%` : formatTHB(amount);
+        const uses = c.max_uses
+          ? `${Number(c.used_count) || 0}/${c.max_uses}`
+          : `${Number(c.used_count) || 0} · ${t('admin.coupon_unlimited')}`;
         const ends = c.ends_at ? new Date(c.ends_at).toLocaleDateString('th-TH') : '-';
         return `<tr>
           <td data-label="${t('admin.coupon_code')}" class="font-semibold">${escapeHTML(c.code)}</td>
@@ -1420,7 +1424,12 @@ function renderSlipReview(order) {
   };
 
   const waiting = order.status === 'review';
+  const hasSlip = !!order.slip_path;
   box.classList.toggle('hidden', !waiting);
+  const approveBtn = document.getElementById('admin-slip-approve');
+  const rejectBtn = document.getElementById('admin-slip-reject');
+  if (approveBtn) approveBtn.classList.toggle('hidden', !hasSlip);
+  if (rejectBtn) rejectBtn.classList.toggle('hidden', !hasSlip);
 
   if (status) {
     if (order.slip_status === 'approved') {
@@ -1435,7 +1444,7 @@ function renderSlipReview(order) {
     }
   }
 
-  if (waiting) widgets();
+  if (waiting && hasSlip) widgets();
 }
 
 async function loadShippingHistory(orderId) {

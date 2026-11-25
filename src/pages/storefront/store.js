@@ -341,6 +341,7 @@ async function initProductPage() {
     const images = productImages(product);
     const mainImg = document.getElementById('main-product-img');
     const thumbs = document.getElementById('thumbnail-list');
+    if (thumbs) thumbs.hidden = images.length < 2;
     if (images.length > 0) {
       mainImg.src = safeImage(images[0]);
       thumbs.innerHTML = '';

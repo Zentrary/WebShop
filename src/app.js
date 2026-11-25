@@ -217,6 +217,7 @@ export function initHeader() {
     renderContactBands(state.storeSettings || {});
     applyMemberGating();
     applyShippingEta();
+    applyShippingFees();
   });
 }
 
@@ -418,7 +419,10 @@ function renderFooter(footer) {
   }
 }
 
-onTranslate(() => applyShippingEta());
+onTranslate(() => {
+  applyShippingEta();
+  applyShippingFees();
+});
 
 export function applyShippingEta() {
   if (typeof document === 'undefined') return;
@@ -427,6 +431,22 @@ export function applyShippingEta() {
     const kind = node.getAttribute('data-shipping-eta') || 'short';
     node.textContent = t(`eta.${kind}`, { min, max });
   });
+}
+
+export function applyShippingFees() {
+  if (typeof document === 'undefined') return;
+  const settings = state.storeSettings || {};
+  const paint = (id, value) => {
+    const el = document.getElementById(id);
+    const amount = Number(value);
+    if (!el || !Number.isFinite(amount)) return;
+    const formatted = new Intl.NumberFormat(getLanguage() === 'en' ? 'en-US' : 'th-TH', {
+      maximumFractionDigits: amount % 1 === 0 ? 0 : 2,
+    }).format(amount);
+    el.textContent = t('page.help_amount', { amount: formatted });
+  };
+  paint('help-shipping-fee', settings.shipping_fee);
+  paint('help-free-threshold', settings.free_shipping_threshold);
 }
 
 export async function loadStoreSettings(attempt = 0) {
@@ -451,6 +471,7 @@ export async function loadStoreSettings(attempt = 0) {
   if (document.querySelector('.site-footer')) renderFooter(document.querySelector('.site-footer'));
   renderContactBands(state.storeSettings || {});
   applyShippingEta();
+  applyShippingFees();
 }
 
 export function requireSupabase() {

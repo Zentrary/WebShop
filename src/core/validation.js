@@ -61,6 +61,9 @@ export function validateProduct(product = {}) {
   if (imageUrl.length > 1000) {
     return { ok: false, errorKey: 'validation.product_image_too_long' };
   }
+  if (imageUrl && !/^(https?:\/\/|\/)/i.test(imageUrl)) {
+    return { ok: false, errorKey: 'validation.product_image_invalid' };
+  }
 
   const imageUrls = Array.isArray(product.image_urls) ? product.image_urls : [];
   if (imageUrls.length > 8) {

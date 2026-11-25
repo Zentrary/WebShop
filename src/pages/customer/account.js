@@ -3,7 +3,7 @@ import { setAudience, isSignedIn } from '/src/core/audience.js';
 import { translatePage, t, onLanguageChange } from '/src/core/i18n.js';
 import { notify } from '/src/core/ui.js';
 import { initCaptcha, hasCaptcha, renderTurnstile } from '/src/core/captcha.js';
-import { formatTHB, escapeHTML, safeImage, safeReturnPath } from '/src/core/lib.js';
+import { formatTHB, escapeHTML, safeImage, safeReturnPath, effectivePrice, hasSalePrice } from '/src/core/lib.js';
 import {
   validateAddress,
   validateProfile,
@@ -78,6 +78,10 @@ function initLoginPage() {
     e.preventDefault();
     const identifier = document.getElementById('login-identifier').value.trim();
     const password = document.getElementById('login-password').value;
+    if (!identifier || !password) {
+      notify(t('validation.login_required'), 'error');
+      return;
+    }
     const btn = form.querySelector('button[type="submit"]');
     btn.disabled = true;
     btn.textContent = t('common.loading');
@@ -692,6 +696,7 @@ async function initFavoritesPage() {
         card.className = 'card product-card reveal';
         const image = product.image_url ? safeImage(product.image_url) : '/images/placeholder.svg';
         const favActive = isFavorite(product.id);
+        const onSale = hasSalePrice(product);
         card.innerHTML = `
           <div class="thumb">
             <img src="${image}" alt="${escapeHTML(product.name)}" loading="lazy" decoding="async">
@@ -704,7 +709,9 @@ async function initFavoritesPage() {
             <span class="cat">${escapeHTML(product.category || '')}</span>
             <h3 class="name">${escapeHTML(product.name)}</h3>
             <div class="foot">
-              <span class="price">${formatTHB(product.price)}</span>
+              <span class="price">${formatTHB(effectivePrice(product))}${
+                onSale ? `<s class="price-was">${formatTHB(product.price)}</s>` : ''
+              }</span>
               <span class="stock-tag ${getStockStatusClass(product.stock)}">${getStockStatusText(product.stock)}</span>
             </div>
           </div>
