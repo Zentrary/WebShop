@@ -213,6 +213,41 @@ async function initBackup() {
   });
 }
 
+const EMPTY_ICON =
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9 12h6"/></svg>';
+
+function emptyBlock(message) {
+  return `<div class="log-empty">${EMPTY_ICON}<p>${escapeHTML(message)}</p></div>`;
+}
+
+function logRow({ dot = 'info', title = '', sub = '', meta = '' }) {
+  return `<div class="log-row">
+    <span class="log-dot ${dot}"></span>
+    <div class="log-main"><b>${escapeHTML(title || '-')}</b>${sub ? `<span>${escapeHTML(sub)}</span>` : ''}</div>
+    <span class="log-meta">${escapeHTML(meta || '-')}</span>
+  </div>`;
+}
+
+function timeText(value) {
+  if (!value) return '-';
+  try {
+    return new Date(value).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' });
+  } catch {
+    return '-';
+  }
+}
+
+function setText(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = value;
+}
+
+function withinDay(value, hours = 24) {
+  if (!value) return false;
+  const diff = Date.now() - new Date(value).getTime();
+  return diff >= 0 && diff <= hours * 3600 * 1000;
+}
+
 async function loadAudit() {
   const errorsEl = document.getElementById('operations-client-errors');
   const attemptsEl = document.getElementById('operations-login-attempts');
@@ -227,19 +262,21 @@ async function loadAudit() {
       errorsEl.innerHTML =
         errors && errors.length
           ? errors
-              .map(
-                (e) => `
-            <div class="flex justify-between items-center" style="padding:0.5rem 0;border-bottom:1px solid var(--color-border-soft)">
-              <span class="text-sm">${escapeHTML(e.area || '-')} · ${escapeHTML(e.code || '-')}</span>
-              <span class="text-muted text-xs">${e.created_at ? new Date(e.created_at).toLocaleString('th-TH') : '-'}</span>
-            </div>
-          `,
+              .map((e) =>
+                logRow({
+                  dot: 'error',
+                  title: e.area || '-',
+                  sub: e.code || '-',
+                  meta: timeText(e.created_at),
+                }),
               )
               .join('')
-          : `<p class="text-muted text-sm">${t('admin.no_client_errors')}</p>`;
+          : emptyBlock(t('admin.no_client_errors'));
     }
+    setText('ops-errors-badge', String(errors?.length || 0));
+    setText('ops-errors-value', String((errors || []).filter((e) => withinDay(e.created_at)).length));
   } catch (err) {
-    if (errorsEl) errorsEl.innerHTML = `<p class="text-muted text-sm">${escapeHTML(err.message)}</p>`;
+    if (errorsEl) errorsEl.innerHTML = emptyBlock(err.message);
   }
 
   try {
@@ -252,19 +289,21 @@ async function loadAudit() {
       attemptsEl.innerHTML =
         attempts && attempts.length
           ? attempts
-              .map(
-                (a) => `
-            <div class="attempt-row">
-              <span class="attempt-key">${escapeHTML(a.key || '-')}</span>
-              <span class="attempt-meta">${a.hits || 0} · ${a.expires ? new Date(a.expires).toLocaleString('th-TH') : '-'}</span>
-            </div>
-          `,
+              .map((a) =>
+                logRow({
+                  dot: a.hits > 3 ? 'error' : 'warn',
+                  title: a.key || '-',
+                  sub: `${a.hits || 0} ครั้ง`,
+                  meta: timeText(a.expires),
+                }),
               )
               .join('')
-          : `<p class="text-muted text-sm">${t('admin.no_login_attempts')}</p>`;
+          : emptyBlock(t('admin.no_login_attempts'));
     }
+    setText('ops-attempts-badge', String(attempts?.length || 0));
+    setText('ops-attempts-value', String(attempts?.length || 0));
   } catch (err) {
-    if (attemptsEl) attemptsEl.innerHTML = `<p class="text-muted text-sm">${escapeHTML(err.message)}</p>`;
+    if (attemptsEl) attemptsEl.innerHTML = emptyBlock(err.message);
   }
 }
 
@@ -282,18 +321,19 @@ async function loadStatus() {
     notificationsEl.innerHTML =
       notifications && notifications.length
         ? notifications
-            .map(
-              (n) => `
-          <div class="flex justify-between items-center" style="padding:0.5rem 0;border-bottom:1px solid var(--color-border-soft)">
-            <span class="text-sm">${escapeHTML(n.kind || t('admin.notifications'))}</span>
-            <span class="text-muted text-sm">${n.created_at ? new Date(n.created_at).toLocaleString('th-TH') : '-'}</span>
-          </div>
-        `,
+            .map((n) =>
+              logRow({
+                dot: n.kind === 'new_slip' ? 'warn' : 'info',
+                title: n.kind || t('admin.notifications'),
+                sub: withinDay(n.created_at) ? t('admin.ops_today') : '',
+                meta: timeText(n.created_at),
+              }),
             )
             .join('')
-        : `<p class="text-muted text-sm">${t('admin.no_notifications')}</p>`;
+        : emptyBlock(t('admin.no_notifications'));
+    setText('ops-notifications-value', String(notifications?.length || 0));
   } catch (err) {
-    notificationsEl.innerHTML = `<p class="text-muted text-sm">${escapeHTML(err.message)}</p>`;
+    notificationsEl.innerHTML = emptyBlock(err.message);
   }
 
   try {
@@ -302,17 +342,27 @@ async function loadStatus() {
     restockEl.innerHTML =
       status && status.length
         ? status
-            .map(
-              (s) => `
-          <div class="flex justify-between items-center" style="padding:0.5rem 0;border-bottom:1px solid var(--color-border-soft)">
-            <span class="text-sm">${escapeHTML(s.name || '-')}</span>
-            <span class="text-muted text-sm">${s.last_success ? new Date(s.last_success).toLocaleString('th-TH') : t('admin.no_data')}</span>
-          </div>
-        `,
+            .map((s) =>
+              logRow({
+                dot: s.last_success ? (withinDay(s.last_success, 48) ? 'ok' : 'warn') : 'warn',
+                title: s.name || '-',
+                sub: s.last_success ? '' : t('admin.no_data'),
+                meta: timeText(s.last_success),
+              }),
             )
             .join('')
-        : `<p class="text-muted text-sm">${t('admin.no_data')}</p>`;
+        : emptyBlock(t('admin.no_data'));
+
+    const healthy = (status || []).length > 0 && (status || []).every((s) => withinDay(s.last_success, 48));
+    setText('ops-health-value', t(healthy ? 'admin.ops_healthy' : 'admin.ops_attention'));
+    setText('ops-health-note', `${(status || []).length} ${t('admin.ops_services')}`);
+    const card = document.getElementById('ops-stat-health');
+    if (card) {
+      card.classList.toggle('is-ok', healthy);
+      card.classList.toggle('is-warn', !healthy);
+    }
   } catch (err) {
-    restockEl.innerHTML = `<p class="text-muted text-sm">${escapeHTML(err.message)}</p>`;
+    restockEl.innerHTML = emptyBlock(err.message);
+    setText('ops-health-value', t('admin.ops_attention'));
   }
 }
