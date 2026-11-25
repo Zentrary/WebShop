@@ -549,6 +549,9 @@
     border-radius: var(--radius-sm);
     object-fit: cover;
   }
+  table.data td.cell-thumb-cell {
+    width: auto;
+  }
 }
 
 /* หัวหน้าหลังบ้านบนมือถือ: หัวข้อเต็มบรรทัด แล้วค่อยตามด้วยค้นหา + ปุ่ม */

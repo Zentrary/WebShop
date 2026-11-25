@@ -2052,6 +2052,9 @@ table.data .num {
   height: 100%;
   object-fit: cover;
 }
+.pd-thumbs[hidden] {
+  display: none;
+}
 .pd-thumbs {
   display: flex;
   gap: var(--space-sm);
