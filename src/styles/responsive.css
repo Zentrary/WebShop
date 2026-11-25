@@ -238,6 +238,32 @@
   }
 }
 
+@media (max-width: 900px) {
+  .ops-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .ops-stats {
+    gap: var(--space-sm);
+  }
+  .ops-stat {
+    padding: var(--space-md);
+  }
+  .ops-stat-value {
+    font-size: 1.25rem;
+  }
+  .log-row {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .log-meta {
+    margin-left: calc(8px + var(--space-md));
+    width: 100%;
+  }
+}
+
 @media (max-width: 520px) {
   .attempt-row {
     flex-direction: column;

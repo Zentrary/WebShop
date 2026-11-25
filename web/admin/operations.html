@@ -28,36 +28,91 @@
           </div>
         </div>
 
+        <section class="ops-stats reveal">
+          <article class="ops-stat" id="ops-stat-health">
+            <span class="ops-stat-label" data-i18n="admin.ops_health">สถานะระบบ</span>
+            <b class="ops-stat-value" id="ops-health-value">—</b>
+            <span class="ops-stat-note" id="ops-health-note">—</span>
+          </article>
+          <article class="ops-stat">
+            <span class="ops-stat-label" data-i18n="admin.ops_errors">ข้อผิดพลาดจากผู้ใช้</span>
+            <b class="ops-stat-value" id="ops-errors-value">—</b>
+            <span class="ops-stat-note" data-i18n="admin.ops_last_24h">24 ชั่วโมงล่าสุด</span>
+          </article>
+          <article class="ops-stat">
+            <span class="ops-stat-label" data-i18n="admin.ops_attempts">ความพยายามเข้าสู่ระบบ</span>
+            <b class="ops-stat-value" id="ops-attempts-value">—</b>
+            <span class="ops-stat-note" data-i18n="admin.ops_keys">คีย์ที่ถูกบันทึก</span>
+          </article>
+          <article class="ops-stat">
+            <span class="ops-stat-label" data-i18n="admin.ops_notifications">การแจ้งเตือน</span>
+            <b class="ops-stat-value" id="ops-notifications-value">—</b>
+            <span class="ops-stat-note" data-i18n="admin.ops_pending">รายการล่าสุด</span>
+          </article>
+        </section>
+
         <div class="admin-grid admin-grid-2 admin-two-col">
           <div class="panel reveal">
-            <h2 data-i18n="admin.backup_title">สำรองและกู้คืนข้อมูล</h2>
-            <p class="text-sm mb-md" data-i18n="admin.backup_desc">ดาวน์โหลดข้อมูลร้านทั้งหมด (สินค้า คำสั่งซื้อ รีวิว) เข้ารหัสด้วยรหัสผ่านของคุณ</p>
-            <div class="form-group">
-              <label class="form-label" for="backup-password" data-i18n="admin.backup_password">รหัสผ่านสำหรับเข้ารหัส</label>
-              <input type="password" id="backup-password" class="form-input" placeholder="••••••••" />
+            <div class="admin-card-head">
+              <div>
+                <h2 class="admin-card-title" data-i18n="admin.ops_events">บันทึกข้อผิดพลาด</h2>
+                <p class="admin-card-hint" data-i18n="admin.ops_events_sub">ข้อผิดพลาดที่ผู้ใช้พบระหว่างใช้งานหน้าเว็บ</p>
+              </div>
+              <span class="ops-badge" id="ops-errors-badge">0</span>
             </div>
-            <div class="flex gap-sm" style="flex-wrap: wrap">
-              <button id="backup-download-btn" class="btn btn-primary" data-i18n="admin.backup_download">ดาวน์โหลดข้อมูล</button>
-              <button id="backup-upload-btn" class="btn btn-outline" data-i18n="admin.backup_restore">กู้คืนจากไฟล์</button>
-            </div>
-            <input type="file" id="backup-file-input" accept=".zenbackup,application/json" class="hidden" />
-            <div id="operations-error-log" class="mt-lg"></div>
+            <div id="operations-client-errors" class="log-list"></div>
           </div>
 
           <div class="panel reveal" data-delay="1">
-            <h2 data-i18n="admin.status_title">สถานะระบบ</h2>
-            <div id="operations-notifications"></div>
-            <hr class="divider" />
-            <h2 style="font-size: var(--font-size-base)" data-i18n="admin.restock_status">สถานะการคืนสต็อก</h2>
-            <div id="operations-restock-status"></div>
+            <div class="admin-card-head">
+              <div>
+                <h2 class="admin-card-title" data-i18n="admin.login_attempts">ความพยายามเข้าสู่ระบบ</h2>
+                <p class="admin-card-hint" data-i18n="admin.ops_attempts_sub">คีย์ที่มีการล็อกอินผิดหรือถูกจำกัดจำนวนครั้ง</p>
+              </div>
+              <span class="ops-badge" id="ops-attempts-badge">0</span>
+            </div>
+            <div id="operations-login-attempts" class="log-list"></div>
           </div>
 
           <div class="panel reveal" data-delay="2">
-            <h2 data-i18n="admin.client_errors">ข้อผิดพลาดจากผู้ใช้</h2>
-            <div id="operations-client-errors"></div>
-            <hr class="divider" />
-            <h2 style="font-size: var(--font-size-base)" data-i18n="admin.login_attempts">ความพยายามเข้าสู่ระบบ</h2>
-            <div id="operations-login-attempts"></div>
+            <div class="admin-card-head">
+              <div>
+                <h2 class="admin-card-title" data-i18n="admin.notifications">การแจ้งเตือนร้านค้า</h2>
+                <p class="admin-card-hint" data-i18n="admin.ops_notifications_sub">ออเดอร์ใหม่และสลิปที่รอตรวจสอบ</p>
+              </div>
+            </div>
+            <div id="operations-notifications" class="log-list"></div>
+          </div>
+
+          <div class="panel reveal" data-delay="3">
+            <div class="admin-card-head">
+              <div>
+                <h2 class="admin-card-title" data-i18n="admin.restock_status">สถานะการคืนสต็อก</h2>
+                <p class="admin-card-hint" data-i18n="admin.ops_restock_sub">รอบการคืนสต็อกออเดอร์ที่ไม่ได้ชำระเงิน</p>
+              </div>
+            </div>
+            <div id="operations-restock-status" class="log-list"></div>
+          </div>
+
+          <div class="panel reveal admin-span-all">
+            <div class="admin-card-head">
+              <div>
+                <h2 class="admin-card-title" data-i18n="admin.backup_title">สำรองและกู้คืนข้อมูล</h2>
+                <p class="admin-card-hint" data-i18n="admin.backup_desc">ดาวน์โหลดข้อมูลร้านทั้งหมด (สินค้า คำสั่งซื้อ รีวิว) เข้ารหัสด้วยรหัสผ่านของคุณ</p>
+              </div>
+            </div>
+            <div class="ops-backup-row">
+              <div class="form-group" style="flex: 1 1 260px; margin-bottom: 0">
+                <label class="form-label" for="backup-password" data-i18n="admin.backup_password">รหัสผ่านสำหรับเข้ารหัส</label>
+                <input type="password" id="backup-password" class="form-input" placeholder="••••••••" />
+              </div>
+              <div class="flex gap-sm" style="flex-wrap: wrap">
+                <button id="backup-download-btn" class="btn btn-primary" data-i18n="admin.backup_download">ดาวน์โหลดข้อมูล</button>
+                <button id="backup-upload-btn" class="btn btn-outline" data-i18n="admin.backup_restore">กู้คืนจากไฟล์</button>
+              </div>
+            </div>
+            <input type="file" id="backup-file-input" accept=".zenbackup,application/json" class="hidden" />
+            <div id="operations-error-log" class="mt-md"></div>
           </div>
         </div>
       </div>

@@ -12,7 +12,7 @@ import {
 import { validateSocialUrl, getOrderStatusBadge } from '/src/core/experience.js';
 import { normalizePath } from '/src/core/routes.js';
 import { initReveal } from '/src/core/reveal.js';
-import { promptPayCardHTML } from '/src/core/payment.js';
+import { promptPayCardHTML, promptPayCardDataURL } from '/src/core/payment.js';
 import { initAdminLayout } from '/src/pages/admin/layout.js';
 import { initI18n, t, translatePage, onLanguageChange, getLanguage } from '/src/core/i18n.js';
 import {
@@ -286,7 +286,7 @@ async function initProducts() {
     products?.forEach((p) => {
       const tr = document.createElement('tr');
       tr.innerHTML =
-        `<td data-label="${t('admin.product_image')}"><img class="cell-thumb" src="${p.image_url || '/images/placeholder.svg'}" alt=""></td>` +
+        `<td class="cell-thumb-cell" data-label="${t('admin.product_image')}"><img class="cell-thumb" src="${p.image_url || '/images/placeholder.svg'}" alt=""></td>` +
         `<td data-label="${t('admin.product_name')}" class="font-semibold" style="color:var(--color-text)">${escapeHTML(p.name)}</td>` +
         `<td data-label="${t('admin.product_category')}">${escapeHTML(p.category || '-')}</td>` +
         `<td data-label="${t('common.price')}" class="num">${formatTHB(p.price)}${
@@ -1235,7 +1235,19 @@ async function initPayments() {
         });
 
         const download = document.getElementById('test-qr-download');
-        if (download) download.setAttribute('href', qrDataURL);
+        if (download) {
+          download.setAttribute('href', qrDataURL);
+          download.setAttribute('download', 'promptpay-qr.png');
+          const name = typedName || savedRecipient;
+          promptPayCardDataURL({
+            qrDataURL,
+            amount,
+            recipient: name,
+            target: checked.value,
+          })
+            .then((cardUrl) => download.setAttribute('href', cardUrl))
+            .catch(() => {});
+        }
 
         const account = document.getElementById('test-qr-account');
         if (account) {
