@@ -12,6 +12,7 @@ import {
   passwordStrength,
 } from '/src/core/validation.js';
 import { getStockStatusText, getStockStatusClass } from '/src/core/customer.js';
+import { uploadAvatar, removeAvatar, avatarPublicUrl } from '/src/core/storage.js';
 import { loadFavoriteProducts, toggleFavorite, isFavorite, canUseFavorites } from '/src/core/favorites.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -308,6 +309,7 @@ async function initAccountPage() {
 
   const user = state.user;
   renderAccountIdentity(user);
+  initAvatarControls(user);
 
   const profileForm = document.getElementById('profile-form');
   if (!profileForm) return; // หน้านี้ไม่ใช่หน้าฟอร์มโปรไฟล์
@@ -383,7 +385,7 @@ async function initAccountPage() {
   await loadAddresses(user);
 
   onLanguageChange(() => {
-    renderAccountIdentity(user);
+    renderAccountIdentity(state.user || user);
     loadRecentOrders(user);
     loadAddresses(user);
   });
@@ -393,17 +395,107 @@ function renderAccountIdentity(user) {
   if (!user) return;
   const nameEl = document.getElementById('account-name');
   const emailEl = document.getElementById('account-email');
-  const avatarEl = document.getElementById('account-avatar');
   if (!nameEl) return;
 
   const displayName =
     [user.first_name, user.last_name].filter(Boolean).join(' ') || user.username || user.email || t('common.user');
   nameEl.textContent = displayName;
   if (emailEl) emailEl.textContent = user.email || '';
-  if (avatarEl) {
-    const initial = (displayName[0] || t('common.user')[0] || '?').toUpperCase();
+  paintAvatar(user, displayName);
+}
+
+function paintAvatar(user, displayName) {
+  const avatarEl = document.getElementById('account-avatar');
+  if (!avatarEl) return;
+  const name = displayName || user?.username || user?.email || t('common.user');
+  const initial = (String(name).trim()[0] || '?').toUpperCase();
+  const url = user?.avatar_url ? safeImage(avatarPublicUrl(user.avatar_url)) : '';
+
+  avatarEl.innerHTML = '';
+  if (url) {
+    const img = document.createElement('img');
+    img.className = 'avatar-img';
+    img.alt = '';
+    img.loading = 'lazy';
+    img.src = url;
+    img.addEventListener('error', () => {
+      avatarEl.textContent = initial;
+    });
+    avatarEl.appendChild(img);
+  } else {
     avatarEl.textContent = initial;
   }
+
+  const removeBtn = document.getElementById('avatar-remove-btn');
+  if (removeBtn) removeBtn.classList.toggle('hidden', !url && !user?.avatar_url);
+}
+
+function initAvatarControls(user) {
+  const photoBtn = document.getElementById('avatar-photo-btn');
+  const uploadBtn = document.getElementById('avatar-upload-btn');
+  const photoInput = document.getElementById('avatar-photo-input');
+  const uploadInput = document.getElementById('avatar-upload-input');
+  const removeBtn = document.getElementById('avatar-remove-btn');
+  const avatarEl = document.getElementById('account-avatar');
+  if (!photoInput || !uploadInput) return;
+
+  const syncUser = (avatarUrl) => {
+    const next = { ...(state.user || user), avatar_url: avatarUrl };
+    state.user = next;
+    user.avatar_url = avatarUrl;
+    setAudience(state.audience === 'owner' ? 'owner' : 'member', next);
+    renderAccountIdentity(next);
+  };
+
+  const handleFile = async (input) => {
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) return;
+    avatarEl?.classList.add('is-busy');
+    try {
+      const { path } = await uploadAvatar(state.supabase, user.id, file);
+      const { error } = await state.supabase.rpc('set_avatar', { p_path: path });
+      if (error) {
+        await removeAvatar(state.supabase, path);
+        throw error;
+      }
+      const previous = user.avatar_url || '';
+      syncUser(path);
+      if (previous && previous !== path) await removeAvatar(state.supabase, previous);
+      notify(t('account.avatar_updated'), 'success');
+    } catch (err) {
+      const code = err?.message || '';
+      notify(
+        code === 'too-large'
+          ? t('account.avatar_too_large')
+          : code === 'invalid-type' || code === 'invalid-image' || code === 'compress-failed'
+            ? t('account.avatar_invalid')
+            : t('toast.error_generic'),
+        'error',
+      );
+    } finally {
+      avatarEl?.classList.remove('is-busy');
+    }
+  };
+
+  photoBtn?.addEventListener('click', () => photoInput.click());
+  uploadBtn?.addEventListener('click', () => uploadInput.click());
+  photoInput.addEventListener('change', () => handleFile(photoInput));
+  uploadInput.addEventListener('change', () => handleFile(uploadInput));
+
+  removeBtn?.addEventListener('click', async () => {
+    if (!user.avatar_url) return;
+    try {
+      const previous = user.avatar_url;
+      const { error } = await state.supabase.rpc('set_avatar', { p_path: '' });
+      if (error) throw error;
+      syncUser('');
+      await removeAvatar(state.supabase, previous);
+      notify(t('account.avatar_removed'), 'success');
+    } catch (err) {
+      notify(err.message || t('toast.error_generic'), 'error');
+    }
+  });
 }
 
 async function loadRecentOrders(user) {

@@ -26,7 +26,59 @@
 
       <div class="account-grid">
         <aside class="side-card reveal">
-          <div class="avatar" id="account-avatar" aria-hidden="true"></div>
+          <div class="avatar-wrap">
+            <div class="avatar" id="account-avatar" aria-hidden="true"></div>
+            <div class="avatar-tools">
+              <button
+                type="button"
+                id="avatar-photo-btn"
+                class="avatar-tool"
+                title="ถ่ายรูป"
+                aria-label="ถ่ายรูป"
+                data-i18n-title="account.avatar_take"
+                data-i18n-aria-label="account.avatar_take"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path
+                    d="M3 8.5A2.5 2.5 0 0 1 5.5 6h1.2a2 2 0 0 0 1.7-1l.3-.5h6.6l.3.5a2 2 0 0 0 1.7 1h1.2A2.5 2.5 0 0 1 21 8.5V17a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17Z"
+                  />
+                  <circle cx="12" cy="12.5" r="3.2" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                id="avatar-upload-btn"
+                class="avatar-tool"
+                title="เลือกรูป"
+                aria-label="เลือกรูป"
+                data-i18n-title="account.avatar_pick"
+                data-i18n-aria-label="account.avatar_pick"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M12 16V4" />
+                  <path d="m7 9 5-5 5 5" />
+                  <path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
+                </svg>
+              </button>
+            </div>
+          </div>
+          <input type="file" id="avatar-photo-input" accept="image/*" capture="user" class="hidden" />
+          <input type="file" id="avatar-upload-input" accept="image/jpeg,image/png,image/webp" class="hidden" />
+          <button type="button" id="avatar-remove-btn" class="avatar-remove hidden" data-i18n="account.avatar_remove">ลบรูปโปรไฟล์</button>
           <div class="font-semibold" id="account-name">ผู้ใช้งาน</div>
           <div class="text-muted text-sm" id="account-email"></div>
 

@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { avatarPublicUrl } from '/src/core/storage.js';
 import {
   getAudience,
   getCurrentUser,
@@ -291,6 +292,8 @@ function renderHeader(header) {
   }
 
   const actions = header.querySelector('#header-actions');
+  const avatarUrl = state.user?.avatar_url ? safeImage(avatarPublicUrl(state.user.avatar_url)) : '';
+  const accountIcon = avatarUrl ? `<img class="header-avatar" src="${escapeHTML(avatarUrl)}" alt="">` : ICONS.user;
   if (actions) {
     actions.innerHTML = `
       ${
@@ -302,7 +305,7 @@ function renderHeader(header) {
       }
       ${
         member
-          ? `<a href="/account" class="btn btn-ghost btn-sm header-account">${ICONS.user}<span class="account-label">${t('nav.account')}</span></a>
+          ? `<a href="/account" class="btn btn-ghost btn-sm header-account">${accountIcon}<span class="account-label">${t('nav.account')}</span></a>
            ${isOwner() ? `<a href="/admin/dashboard" class="btn btn-outline btn-sm header-admin" data-i18n="nav.admin">${t('nav.admin')}</a>` : ''}
            <button id="user-menu-btn" class="btn btn-danger btn-sm header-logout">${t('nav.logout')}</button>`
           : `<a href="/auth/login" class="btn btn-outline btn-sm header-login" data-i18n="nav.login">${t('nav.login')}</a>
@@ -494,7 +497,7 @@ async function restoreSession() {
     const userId = session.user.id;
     const { data: profile } = await state.supabase
       .from('profiles')
-      .select('id, username, first_name, last_name, nickname, phone, age')
+      .select('id, username, first_name, last_name, nickname, phone, age, avatar_url')
       .eq('id', userId)
       .maybeSingle();
 
@@ -513,6 +516,7 @@ async function restoreSession() {
       nickname: profile?.nickname || '',
       phone: profile?.phone || '',
       age: profile?.age ?? null,
+      avatar_url: profile?.avatar_url || '',
     };
 
     setAudience(adminRow ? 'owner' : 'member', user);
