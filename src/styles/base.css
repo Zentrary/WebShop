@@ -3606,6 +3606,20 @@ td > .empty-state {
   letter-spacing: 0.01em;
 }
 
+.product-card .posted {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  letter-spacing: 0.01em;
+}
+/* บรรทัดรองในตารางหลังบ้าน เช่น "ใหม่ถึง 26/11/2026" */
+.cell-sub {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--font-size-xs);
+  font-weight: 400;
+  color: var(--color-text-muted);
+}
+
 /* ---------- กำลังจะมา (สินค้าที่ตั้งเวลาเปิดขายล่วงหน้า) ----------
    การ์ดเป็นแนวนอน (รูปซ้าย ข้อความขวา) ทุกขนาดจอ เพราะสินค้าที่ตั้งเวลา
    มีไม่กี่ชิ้น — รูปแนวตั้ง 4:5 จะทำให้แถบนี้สูงจนดันรายการสินค้าตกลงไป */

@@ -23,8 +23,10 @@ let currentPage = 1;
 let activeCategory = '';
 const PRODUCTS_PER_PAGE = 12;
 const productCache = new Map();
-const NEW_BADGE_DAYS = 7;
 const COMING_SOON_LIMIT = 4;
+/** หมวด "สินค้าใหม่" เป็นของระบบ ไม่ได้อยู่ในตาราง categories */
+const NEW_CATEGORY = '__new';
+const NEW_DEFAULT_DAYS = 7;
 let comingSoonTimer = null;
 
 let currentRenderer = null;
@@ -140,14 +142,26 @@ const HEART_SVG =
   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1L12 21.2l7.7-7.8 1.1-1a5.5 5.5 0 0 0 0-7.8Z"/></svg>';
 
 /**
- * "ใหม่" = สินค้าที่เพิ่งขึ้นเว็บภายใน 7 วัน ใช้วันที่ตั้งเวลา (publish_at) ถ้ามี
- * ไม่งั้นใช้วันที่สร้าง — สินค้าที่ลงไว้ล่วงหน้าจะได้ไม่ขึ้นป้ายตั้งแต่ยังไม่เปิดขาย
+ * "ใหม่" = ยังไม่พ้นเวลาที่ตั้งไว้ (products.new_until ที่ฐานข้อมูลคำนวณให้จาก
+ * publish_at/created_at + new_days) ครบกำหนดแล้วสินค้าจะหลุดจากหมวด "ใหม่"
+ * แล้วกลับไปอยู่หมวดจริงของมันเองโดยอัตโนมัติ
  */
 function isNewArrival(product) {
+  if (product.new_until) return new Date(product.new_until).getTime() > Date.now();
   const stamp = product.publish_at || product.created_at;
   if (!stamp) return false;
-  const age = Date.now() - new Date(stamp).getTime();
-  return age >= 0 && age < NEW_BADGE_DAYS * 24 * 60 * 60 * 1000;
+  const days = Number.isFinite(Number(product.new_days)) ? Number(product.new_days) : NEW_DEFAULT_DAYS;
+  return new Date(stamp).getTime() + days * 24 * 60 * 60 * 1000 > Date.now();
+}
+
+/** วันที่โพสต์แบบสั้นตามที่ร้านขอ: 24/11/2026 (ไม่ต้องมีเวลา) */
+function formatPostDate(product) {
+  const stamp = product.publish_at || product.created_at;
+  if (!stamp) return '';
+  const d = new Date(stamp);
+  if (Number.isNaN(d.getTime())) return '';
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
 }
 
 /** เวลาที่เหลือก่อนเปิดขาย แบบอ่านง่าย: "2 วัน 4 ชม." / "4 ชม. 20 นาที" */
@@ -189,6 +203,7 @@ function createProductCard(product) {
     <div class="body">
       <span class="cat">${escapeHTML(product.category || '')}</span>
       <h3 class="name">${escapeHTML(product.name)}</h3>
+      <span class="posted">${escapeHTML(formatPostDate(product))}</span>
       <div class="foot">
         <span class="price">${formatTHB(price)}${
           onSale ? `<s class="price-was">${formatTHB(product.price)}</s>` : ''
@@ -300,12 +315,13 @@ function renderCategoryChips(container, categories, grid, countEl, searchInput) 
 
   container.innerHTML = '';
 
-  const addChip = (value, label) => {
+  const addChip = (value, label, hint = '') => {
     const chip = document.createElement('button');
     chip.type = 'button';
     chip.className = 'category-chip';
     if (activeCategory === value) chip.classList.add('active');
     chip.textContent = label;
+    if (hint) chip.title = hint;
     chip.addEventListener('click', () => {
       const next = activeCategory === value ? '' : value;
       activeCategory = next;
@@ -318,6 +334,7 @@ function renderCategoryChips(container, categories, grid, countEl, searchInput) 
   };
 
   addChip('', t('shop.filter_all'));
+  addChip(NEW_CATEGORY, t('shop.new_chip'), t('shop.new_chip_hint'));
   categories.forEach((cat) => addChip(cat.name, cat.name));
 }
 
@@ -329,7 +346,8 @@ async function loadProducts(grid, countEl, search = '', category = null) {
     .eq('active', true)
     .or(`publish_at.is.null,publish_at.lte.${nowIso}`);
 
-  if (category) query = query.eq('category', category);
+  if (category === NEW_CATEGORY) query = query.gt('new_until', nowIso);
+  else if (category) query = query.eq('category', category);
   if (search) query = query.ilike('name', `%${search}%`);
 
   const from = (currentPage - 1) * PRODUCTS_PER_PAGE;
@@ -348,10 +366,12 @@ async function loadProducts(grid, countEl, search = '', category = null) {
   grid.innerHTML = '';
 
   if (!products || products.length === 0) {
+    const emptyTitle = category === NEW_CATEGORY ? t('shop.empty_new') : t('shop.empty');
+    const emptyHint = category === NEW_CATEGORY ? t('shop.empty_new_hint') : t('shop.empty_hint');
     grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-      <p>${t('shop.empty')}</p>
-      <p class="text-muted text-sm">${t('shop.empty_hint')}</p>
+      <p>${emptyTitle}</p>
+      <p class="text-muted text-sm">${emptyHint}</p>
     </div>`;
     renderPagination(document.getElementById('pagination'), 0);
     return;
@@ -600,6 +620,7 @@ async function initProductPage() {
       .eq('active', true)
       .eq('category', product.category)
       .neq('id', productId)
+      .or(`publish_at.is.null,publish_at.lte.${new Date().toISOString()}`)
       .limit(4);
 
     const relatedGrid = document.getElementById('related-grid');

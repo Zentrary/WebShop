@@ -317,6 +317,16 @@ async function initProducts() {
     }</span>`;
   }
 
+  /** บอกใต้ชื่อสินค้าว่า "ใหม่ถึง 26/11/2026" จะได้รู้ว่าอีกกี่วันจะกลับเข้าหมวด */
+  function renderNewWindow(p) {
+    if (!p.new_until) return '';
+    const d = new Date(p.new_until);
+    if (Number.isNaN(d.getTime()) || d.getTime() <= Date.now()) return '';
+    const pad = (n) => String(n).padStart(2, '0');
+    const date = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
+    return `<span class="cell-sub">${escapeHTML(t('admin.new_until_label', { date }))}</span>`;
+  }
+
   /** เติมรายชื่อหมวดหมู่ที่มีอยู่ลง datalist ให้พิมพ์ซ้ำได้ไว ๆ */
   async function loadCategoryOptions() {
     const listEl = document.getElementById('category-options');
@@ -356,7 +366,9 @@ async function initProducts() {
       const saleOn = Number(p.sale_price) > 0 && Number(p.sale_price) < Number(p.price);
       tr.innerHTML =
         `<td class="cell-thumb-cell" data-label="${t('admin.product_image')}"><img class="cell-thumb" src="${p.image_url || '/images/placeholder.svg'}" alt=""></td>` +
-        `<td data-label="${t('admin.product_name')}" class="font-semibold" style="color:var(--color-text)">${escapeHTML(p.name)}</td>` +
+        `<td data-label="${t('admin.product_name')}" class="font-semibold" style="color:var(--color-text)">${escapeHTML(
+          p.name,
+        )}${renderNewWindow(p)}</td>` +
         `<td data-label="${t('admin.product_category')}">${escapeHTML(p.category || '-')}</td>` +
         `<td data-label="${t('common.price')}" class="num">${formatTHB(saleOn ? p.sale_price : p.price)}${
           saleOn ? ` <s class="price-was">${formatTHB(p.price)}</s>` : ''
@@ -398,6 +410,8 @@ async function initProducts() {
       if (publishInput) publishInput.value = toLocalInput(p.publish_at);
       const showSoonInput = document.getElementById('product-show-soon');
       if (showSoonInput) showSoonInput.checked = p.show_soon !== false;
+      const newDaysInput = document.getElementById('product-new-days');
+      if (newDaysInput) newDaysInput.value = String(p.new_days ?? 7);
       return;
     }
 
@@ -428,6 +442,8 @@ async function initProducts() {
       if (publishInput) publishInput.value = '';
       const showSoonInput = document.getElementById('product-show-soon');
       if (showSoonInput) showSoonInput.checked = true;
+      const newDaysInput = document.getElementById('product-new-days');
+      if (newDaysInput) newDaysInput.value = '7';
       form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     });
   }
@@ -496,6 +512,15 @@ async function initProducts() {
       payload.publish_at = rawPublish ? new Date(rawPublish).toISOString() : null;
       const showSoonInput = document.getElementById('product-show-soon');
       payload.show_soon = showSoonInput ? showSoonInput.checked : true;
+
+      const newDaysInput = document.getElementById('product-new-days');
+      const rawNewDays = newDaysInput ? newDaysInput.value.trim() : '';
+      const newDays = rawNewDays === '' ? 7 : Number(rawNewDays);
+      if (!Number.isInteger(newDays) || newDays < 0 || newDays > 365) {
+        notify(t('admin.new_days_invalid'), 'error');
+        return;
+      }
+      payload.new_days = newDays;
 
       if (!(await ensureCategory(payload.category))) return;
 
