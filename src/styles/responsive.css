@@ -1052,22 +1052,3 @@
     flex: 0 0 auto;
   }
 }
-
-/* แถบ "กำลังจะมา": บนมือถือเรียงเป็นคอลัมน์เดียว และย่อระยะขอบ */
-@media (max-width: 640px) {
-  .coming-soon {
-    padding: var(--space-md);
-  }
-  .coming-soon-grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .coming-card {
-    grid-template-columns: 76px minmax(0, 1fr);
-  }
-  .coming-card .thumb {
-    height: 76px;
-  }
-  .coming-countdown {
-    white-space: normal;
-  }
-}
