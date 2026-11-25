@@ -17,13 +17,14 @@ import {
   getLanguage,
   toggleLanguage,
   onLanguageChange,
+  onTranslate,
   translatePage,
   setBrandName,
   applyDocumentTitle,
 } from '/src/core/i18n.js';
 import { setFlash, notify, flash } from '/src/core/ui.js';
 import { initCaptcha } from '/src/core/captcha.js';
-import { mergeStoreSettings } from '/src/core/settings.js';
+import { mergeStoreSettings, deliveryWindow } from '/src/core/settings.js';
 import { initReveal } from '/src/core/reveal.js';
 import { installGlobalErrorHandlers } from '/src/core/errors.js';
 import { applyBrandAssets } from '/src/core/brand.js';
@@ -215,6 +216,7 @@ export function initHeader() {
     renderHeader(header);
     renderContactBands(state.storeSettings || {});
     applyMemberGating();
+    applyShippingEta();
   });
 }
 
@@ -416,6 +418,17 @@ function renderFooter(footer) {
   }
 }
 
+onTranslate(() => applyShippingEta());
+
+export function applyShippingEta() {
+  if (typeof document === 'undefined') return;
+  const { min, max } = deliveryWindow(state.storeSettings || {});
+  document.querySelectorAll('[data-shipping-eta]').forEach((node) => {
+    const kind = node.getAttribute('data-shipping-eta') || 'short';
+    node.textContent = t(`eta.${kind}`, { min, max });
+  });
+}
+
 export async function loadStoreSettings(attempt = 0) {
   if (!state.supabase) return;
   try {
@@ -437,6 +450,7 @@ export async function loadStoreSettings(attempt = 0) {
   }
   if (document.querySelector('.site-footer')) renderFooter(document.querySelector('.site-footer'));
   renderContactBands(state.storeSettings || {});
+  applyShippingEta();
 }
 
 export function requireSupabase() {

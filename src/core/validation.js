@@ -171,6 +171,20 @@ export function validateStoreSettings(settings = {}) {
     return { ok: false, errorKey: 'validation.low_stock_invalid' };
   }
 
+  const deliveryMinRaw = toNumber(settings.delivery_days_min);
+  const deliveryMaxRaw = toNumber(settings.delivery_days_max);
+  const deliveryMin = deliveryMinRaw === null ? 2 : deliveryMinRaw;
+  const deliveryMax = deliveryMaxRaw === null ? 5 : deliveryMaxRaw;
+  if (
+    !Number.isInteger(deliveryMin) ||
+    !Number.isInteger(deliveryMax) ||
+    deliveryMin < 1 ||
+    deliveryMax > 60 ||
+    deliveryMax < deliveryMin
+  ) {
+    return { ok: false, errorKey: 'validation.delivery_days_invalid' };
+  }
+
   return {
     ok: true,
     value: {
@@ -185,6 +199,8 @@ export function validateStoreSettings(settings = {}) {
       logo_url: logoUrl,
       shipping_fee: shippingFee,
       free_shipping_threshold: threshold,
+      delivery_days_min: deliveryMin,
+      delivery_days_max: deliveryMax,
       show_contact: settings.show_contact !== false,
       low_stock_threshold: lowStockThreshold,
     },

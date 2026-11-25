@@ -709,6 +709,8 @@ async function initSettings() {
       set('setting-contact-instagram', s.instagram_url);
       set('setting-contact-tiktok', s.tiktok_url);
       set('setting-shipping-fee', s.shipping_fee);
+      set('setting-delivery-days-min', s.delivery_days_min ?? 2);
+      set('setting-delivery-days-max', s.delivery_days_max ?? 5);
       set('setting-free-shipping-threshold', s.free_shipping_threshold);
       set('setting-low-stock', s.low_stock_threshold);
       set('setting-about', s.about_text);
@@ -791,6 +793,8 @@ async function initSettings() {
         shipping_fee: get('setting-shipping-fee').trim(),
         free_shipping_threshold: get('setting-free-shipping-threshold').trim(),
         low_stock_threshold: get('setting-low-stock').trim(),
+        delivery_days_min: get('setting-delivery-days-min').trim(),
+        delivery_days_max: get('setting-delivery-days-max').trim(),
         about_text: get('setting-about'),
         shipping_note: get('setting-shipping-note'),
       };

@@ -1091,9 +1091,8 @@ table.data .num {
 
 .settings-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-lg);
-  align-items: start;
 }
 .settings-card {
   padding: var(--space-xl);
@@ -1143,7 +1142,27 @@ table.data .num {
 .settings-row {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-md);
+  gap: var(--space-md) var(--space-lg);
+  margin-bottom: var(--space-md);
+}
+.settings-row--3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.settings-row .form-group {
+  margin-bottom: 0;
+}
+.settings-days {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.settings-days .form-input {
+  flex: 0 1 96px;
+  min-width: 0;
+  text-align: center;
+}
+.settings-days-sep {
+  color: var(--color-text-muted);
 }
 .settings-row--pages {
   grid-template-columns: minmax(0, 1fr) minmax(0, 0.7fr) minmax(0, 1.4fr);
