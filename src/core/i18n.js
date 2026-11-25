@@ -103,8 +103,11 @@ const DICT = {
     'home.contact_channels': 'ช่องทางออนไลน์',
     'home.email_desc': 'ส่งอีเมลมาหาเราได้',
 
-    'shop.guest_banner': 'ดูสินค้าได้เลย ไม่ต้องเข้าสู่ระบบ — ค่อยเข้าสู่ระบบตอนจะสั่งซื้อ',
-    'shop.guest_banner_cta': 'เข้าสู่ระบบ',
+    'shop.gate_eyebrow': 'ผู้เยี่ยมชม',
+    'shop.gate_title': 'ดูสินค้าได้เลย',
+    'shop.gate_desc': 'ไม่ต้องเข้าสู่ระบบก็เลือกดูได้เต็มที่ — พอจะสั่งซื้อ ระบบจะให้เข้าสู่ระบบก่อนเพื่อผูกคำสั่งซื้อกับบัญชีของคุณ',
+    'shop.gate_login': 'เข้าสู่ระบบ',
+    'shop.gate_browse': 'ดูสินค้าก่อน',
     'toast.login_to_buy': 'กรุณาเข้าสู่ระบบก่อนสั่งซื้อ',
     'product.sale': 'ลดราคา',
     'product.was_price': 'ราคาปกติ',
@@ -882,8 +885,12 @@ const DICT = {
     'home.contact_channels': 'Online channels',
     'home.email_desc': 'Send us an email',
 
-    'shop.guest_banner': 'Browse freely — sign in only when you are ready to order',
-    'shop.guest_banner_cta': 'Sign in',
+    'shop.gate_eyebrow': 'Guest mode',
+    'shop.gate_title': 'Browse freely',
+    'shop.gate_desc':
+      'Look around all you like. When you are ready to order we will ask you to sign in so the order is linked to your account.',
+    'shop.gate_login': 'Sign in',
+    'shop.gate_browse': 'Keep browsing',
     'toast.login_to_buy': 'Please sign in before ordering',
     'product.sale': 'Sale',
     'product.was_price': 'Regular price',
