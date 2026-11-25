@@ -85,9 +85,23 @@
                 type="text"
                 id="product-category"
                 class="form-input"
+                list="category-options"
+                autocomplete="off"
                 placeholder="ชื่อหมวดหมู่"
                 data-i18n-placeholder="admin.category_name_input_ph"
               />
+              <datalist id="category-options"></datalist>
+              <span class="form-hint" data-i18n="admin.category_auto_hint">พิมพ์ชื่อใหม่ = สร้างหมวดหมู่นี้ให้อัตโนมัติ</span>
+            </div>
+
+            <div class="form-group col-md-2">
+              <label class="form-label" for="product-publish-at" data-i18n="admin.publish_at">ตั้งเวลาเปิดขาย</label>
+              <input type="datetime-local" id="product-publish-at" class="form-input" />
+              <span class="form-hint" data-i18n="admin.publish_at_hint">เว้นว่าง = ขายทันที · ถึงเวลาที่ตั้งไว้สินค้าจะขึ้นเว็บเอง</span>
+              <label class="form-checkbox form-checkbox-slim">
+                <input type="checkbox" id="product-show-soon" checked />
+                <span data-i18n="admin.show_soon">แสดง "เร็ว ๆ นี้" ก่อนถึงเวลา</span>
+              </label>
             </div>
             <div class="form-group col-2">
               <label class="form-label" for="product-image" data-i18n="admin.product_image">URL รูปสินค้า</label>

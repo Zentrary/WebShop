@@ -955,8 +955,11 @@
   .form-grid {
     grid-template-columns: minmax(0, 1fr);
   }
+  /* ทุกกลุ่มต้องเต็มความกว้าง ไม่งั้น col-md-2 ที่ span 2 จะสร้างคอลัมน์ผี
+     ทำให้ช่องกรอกถูกบีบเหลือไม่กี่พิกเซลบนมือถือ */
   .form-grid .col-2,
-  .form-grid .col-3 {
+  .form-grid .col-3,
+  .form-grid .col-md-2 {
     grid-column: 1 / -1;
   }
   .input-with-action {
@@ -1047,5 +1050,24 @@
   }
   .filter-row > * {
     flex: 0 0 auto;
+  }
+}
+
+/* แถบ "กำลังจะมา": บนมือถือเรียงเป็นคอลัมน์เดียว และย่อระยะขอบ */
+@media (max-width: 640px) {
+  .coming-soon {
+    padding: var(--space-md);
+  }
+  .coming-soon-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .coming-card {
+    grid-template-columns: 76px minmax(0, 1fr);
+  }
+  .coming-card .thumb {
+    height: 76px;
+  }
+  .coming-countdown {
+    white-space: normal;
   }
 }

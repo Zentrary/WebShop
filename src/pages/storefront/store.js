@@ -23,6 +23,9 @@ let currentPage = 1;
 let activeCategory = '';
 const PRODUCTS_PER_PAGE = 12;
 const productCache = new Map();
+const NEW_BADGE_DAYS = 7;
+const COMING_SOON_LIMIT = 4;
+let comingSoonTimer = null;
 
 let currentRenderer = null;
 
@@ -136,6 +139,31 @@ function productImages(product) {
 const HEART_SVG =
   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1L12 21.2l7.7-7.8 1.1-1a5.5 5.5 0 0 0 0-7.8Z"/></svg>';
 
+/**
+ * "ใหม่" = สินค้าที่เพิ่งขึ้นเว็บภายใน 7 วัน ใช้วันที่ตั้งเวลา (publish_at) ถ้ามี
+ * ไม่งั้นใช้วันที่สร้าง — สินค้าที่ลงไว้ล่วงหน้าจะได้ไม่ขึ้นป้ายตั้งแต่ยังไม่เปิดขาย
+ */
+function isNewArrival(product) {
+  const stamp = product.publish_at || product.created_at;
+  if (!stamp) return false;
+  const age = Date.now() - new Date(stamp).getTime();
+  return age >= 0 && age < NEW_BADGE_DAYS * 24 * 60 * 60 * 1000;
+}
+
+/** เวลาที่เหลือก่อนเปิดขาย แบบอ่านง่าย: "2 วัน 4 ชม." / "4 ชม. 20 นาที" */
+function formatCountdown(target) {
+  const ms = new Date(target).getTime() - Date.now();
+  if (!Number.isFinite(ms)) return '';
+  if (ms <= 0) return t('shop.coming_now');
+  const totalMinutes = Math.max(1, Math.ceil(ms / 60000));
+  const days = Math.floor(totalMinutes / 1440);
+  const hours = Math.floor((totalMinutes % 1440) / 60);
+  const minutes = totalMinutes % 60;
+  if (days > 0) return t('shop.countdown_dhm', { d: days, h: hours });
+  if (hours > 0) return t('shop.countdown_hm', { h: hours, m: minutes });
+  return t('shop.countdown_m', { m: minutes });
+}
+
 function createProductCard(product) {
   const card = document.createElement('article');
   card.className = 'card product-card reveal';
@@ -152,6 +180,7 @@ function createProductCard(product) {
     <div class="thumb">
       <img src="${firstImage}" alt="${escapeHTML(product.name)}" loading="lazy" decoding="async">
       ${onSale ? `<span class="sale-badge">${escapeHTML(t('product.sale'))}</span>` : ''}
+      ${isNewArrival(product) ? `<span class="new-badge">${escapeHTML(t('shop.new_badge'))}</span>` : ''}
       <button class="favorite-btn ${favActive ? 'active' : ''}" data-favorite="${product.id}"
         title="${t(favActive ? 'product.favorite_remove' : 'product.favorite_add')}"
         aria-label="${t(favActive ? 'product.favorite_remove' : 'product.favorite_add')}">${HEART_SVG}</button>
@@ -250,6 +279,7 @@ async function initStorePage() {
   if (categoryCountEl) categoryCountEl.textContent = t('shop.categories_count', { n: categories.length });
 
   await loadProducts(grid, countEl, searchInput.value, activeCategory || null);
+  await initComingSoon(grid, countEl, searchInput);
 
   let debounce;
   bindOnce(searchInput, 'input', () => {
@@ -292,7 +322,12 @@ function renderCategoryChips(container, categories, grid, countEl, searchInput) 
 }
 
 async function loadProducts(grid, countEl, search = '', category = null) {
-  let query = state.supabase.from('products').select('*', { count: 'exact' }).eq('active', true);
+  const nowIso = new Date().toISOString();
+  let query = state.supabase
+    .from('products')
+    .select('*', { count: 'exact' })
+    .eq('active', true)
+    .or(`publish_at.is.null,publish_at.lte.${nowIso}`);
 
   if (category) query = query.eq('category', category);
   if (search) query = query.ilike('name', `%${search}%`);
@@ -325,6 +360,89 @@ async function loadProducts(grid, countEl, search = '', category = null) {
   products.forEach((product) => grid.appendChild(createProductCard(product)));
   observeRevealsLocal(grid);
   renderPagination(document.getElementById('pagination'), count || 0);
+}
+
+/**
+ * แถบ "กำลังจะมา" — สินค้าที่เจ้าของร้านตั้งเวลาเปิดขายไว้ล่วงหน้า
+ * ลูกค้าเห็นล่วงหน้าได้ (ถ้าเปิดตัวเลือก show_soon) พร้อมเวลานับถอยหลัง
+ * พอถึงเวลา การ์ดจะย้ายไปอยู่ในรายการสินค้าจริงเองพร้อมแจ้งเตือน
+ */
+async function initComingSoon(grid, countEl, searchInput) {
+  const section = document.getElementById('coming-soon');
+  const gridEl = document.getElementById('coming-soon-grid');
+  if (comingSoonTimer) {
+    clearInterval(comingSoonTimer);
+    comingSoonTimer = null;
+  }
+  if (!section || !gridEl) return;
+
+  const nowIso = new Date().toISOString();
+  let items = [];
+  try {
+    const { data } = await state.supabase
+      .from('products')
+      .select('*')
+      .eq('active', true)
+      .eq('show_soon', true)
+      .gt('publish_at', nowIso)
+      .order('publish_at', { ascending: true })
+      .limit(COMING_SOON_LIMIT);
+    items = data || [];
+  } catch {
+    items = [];
+  }
+
+  if (!items.length) {
+    section.classList.add('hidden');
+    gridEl.innerHTML = '';
+    return;
+  }
+
+  section.classList.remove('hidden');
+  gridEl.innerHTML = '';
+  items.forEach((product) => gridEl.appendChild(createComingSoonCard(product)));
+  observeRevealsLocal(gridEl);
+
+  comingSoonTimer = setInterval(() => {
+    const due = [];
+    gridEl.querySelectorAll('[data-countdown]').forEach((el) => {
+      const target = el.getAttribute('data-countdown');
+      el.textContent = `${t('shop.coming_in')} ${formatCountdown(target)}`;
+      if (new Date(target).getTime() <= Date.now()) due.push(target);
+    });
+    if (!due.length) return;
+
+    const goneLive = items.find((p) => new Date(p.publish_at).getTime() <= Date.now());
+    clearInterval(comingSoonTimer);
+    comingSoonTimer = null;
+    if (goneLive) notify(t('shop.new_arrival_toast', { name: goneLive.name }), 'success');
+    loadProducts(grid, countEl, searchInput ? searchInput.value : '', activeCategory || null);
+    initComingSoon(grid, countEl, searchInput);
+  }, 30000);
+}
+
+function createComingSoonCard(product) {
+  const card = document.createElement('article');
+  card.className = 'card product-card coming-card';
+  const images = productImages(product);
+  const firstImage = images.length ? safeImage(images[0]) : '/images/placeholder.svg';
+  card.innerHTML = `
+    <div class="thumb">
+      <img src="${firstImage}" alt="${escapeHTML(product.name)}" loading="lazy" decoding="async">
+      <span class="soon-badge">${escapeHTML(t('shop.coming_title'))}</span>
+    </div>
+    <div class="body">
+      <span class="cat">${escapeHTML(product.category || '')}</span>
+      <h3 class="name">${escapeHTML(product.name)}</h3>
+      <div class="foot">
+        <span class="price">${formatTHB(effectivePrice(product))}</span>
+        <span class="coming-countdown" data-countdown="${escapeHTML(product.publish_at)}">
+          ${escapeHTML(t('shop.coming_in'))} ${formatCountdown(product.publish_at)}
+        </span>
+      </div>
+    </div>
+  `;
+  return card;
 }
 
 function renderPagination(el, total) {
