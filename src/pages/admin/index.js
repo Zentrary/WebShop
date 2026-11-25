@@ -25,6 +25,7 @@ import {
   LOGO_ACCEPT,
 } from '/src/core/storage.js';
 import { reportClientError } from '/src/core/errors.js';
+import { fillCarrierSelect, detectCarrier, carrierTrackingUrl } from '/src/core/carriers.js';
 import { mergeStoreSettings } from '/src/core/settings.js';
 import { validateStoreSettings, validateProduct, validateCategory, validatePromptPay } from '/src/core/validation.js';
 
@@ -1507,11 +1508,51 @@ async function initAdminOrderDetail() {
     document.getElementById('admin-order-total').textContent = formatTHB(order.total);
     document.getElementById('admin-tracking-number').value = order.tracking || '';
 
+    const carrierSelect = document.getElementById('admin-order-carrier');
+    const trackingInput = document.getElementById('admin-tracking-number');
+    const carrierHint = document.getElementById('admin-carrier-hint');
+    const trackingOpen = document.getElementById('admin-tracking-open');
+    let carrierTouched = Boolean(order.carrier);
+
+    const syncTrackingLink = () => {
+      if (!trackingOpen) return;
+      const number = (trackingInput?.value || '').trim();
+      const url = number ? carrierTrackingUrl(carrierSelect?.value || '', number) : null;
+      trackingOpen.href = url || '#';
+      trackingOpen.classList.toggle('hidden', !url);
+    };
+
+    fillCarrierSelect(carrierSelect, order.carrier || '');
+    if (carrierHint) carrierHint.classList.add('hidden');
+    syncTrackingLink();
+
+    if (trackingInput && carrierSelect) {
+      bindOnce(trackingInput, 'input', () => {
+        const number = trackingInput.value.trim();
+        if (!carrierTouched) {
+          const guess = detectCarrier(number);
+          if (guess && guess !== carrierSelect.value) {
+            carrierSelect.value = guess;
+            carrierHint?.classList.remove('hidden');
+          } else if (!guess) {
+            carrierSelect.value = '';
+            carrierHint?.classList.add('hidden');
+          }
+        }
+        syncTrackingLink();
+      });
+      bindOnce(carrierSelect, 'change', () => {
+        carrierTouched = Boolean(carrierSelect.value);
+        if (carrierTouched) carrierHint?.classList.add('hidden');
+        syncTrackingLink();
+      });
+    }
+
     bindPrintSheets(order);
 
     const locked = LOCKED_ORDER_STATUSES.includes(order.status || 'pending');
     document.getElementById('admin-order-locked')?.classList.toggle('hidden', !locked);
-    ['admin-order-status', 'admin-tracking-number'].forEach((id) => {
+    ['admin-order-status', 'admin-tracking-number', 'admin-order-carrier'].forEach((id) => {
       const el = document.getElementById(id);
       if (el) el.disabled = locked;
     });
@@ -1609,11 +1650,13 @@ async function initAdminOrderDetail() {
     bindOnce(document.getElementById('admin-update-order-btn'), 'click', async () => {
       const newStatus = document.getElementById('admin-order-status').value;
       const trackingNumber = document.getElementById('admin-tracking-number').value.trim();
+      const carrier = document.getElementById('admin-order-carrier')?.value || null;
       try {
         const { error } = await supabase.rpc('transition_order', {
           order_id: order.id,
           next_status: newStatus,
           tracking_number: trackingNumber || null,
+          p_carrier: carrier,
         });
         if (error) throw error;
         notify(t('admin.order_updated'), 'success');
