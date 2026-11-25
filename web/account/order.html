@@ -38,6 +38,24 @@
               <div class="timeline" id="order-timeline"></div>
             </div>
 
+            <div class="panel reveal hidden" id="order-shipment-panel">
+              <h2 data-i18n="order.shipment_title">การติดตามพัสดุ</h2>
+              <div class="sum-row"><span data-i18n="order.carrier">ขนส่ง</span><span id="order-carrier-name">-</span></div>
+              <div class="flex gap-sm mt-md" style="flex-wrap: wrap">
+                <a
+                  id="order-track-link"
+                  class="btn btn-primary btn-sm hidden"
+                  href="#"
+                  target="_blank"
+                  rel="noopener"
+                  data-i18n="order.track_open"
+                  >เปิดหน้าตรวจสอบพัสดุ</a
+                >
+                <button type="button" id="order-copy-tracking" class="btn btn-outline btn-sm" data-i18n="common.copy">คัดลอก</button>
+              </div>
+              <p class="text-muted text-xs mt-sm" data-i18n="order.track_hint">กดปุ่มเพื่อดูสถานะล่าสุดจากหน้าขนส่ง</p>
+            </div>
+
             <div class="panel reveal" data-delay="1">
               <h2 data-i18n="order.items">สินค้าที่สั่งซื้อ</h2>
               <div id="order-items-list"></div>

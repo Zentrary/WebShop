@@ -16,6 +16,7 @@ import {
 import { promptPayCardHTML } from '/src/core/payment.js';
 import { validateDelivery } from '/src/core/validation.js';
 import { getOrderStatusBadge, getTimelineProgress } from '/src/core/experience.js';
+import { carrierLabel, carrierTrackingUrl } from '/src/core/carriers.js';
 import { calculateShipping, amountToFreeShipping } from '/src/core/settings.js';
 
 let currentRenderer = null;
@@ -630,6 +631,54 @@ async function loadCustomerShippingUpdates(orderId) {
   }
 }
 
+/**
+ * การ์ดติดตามพัสดุ: แสดงขนส่ง + ลิงก์หน้าตรวจสอบของขนส่งนั้น + ปุ่มคัดลอกเลข
+ * (ไม่เรียก API ภายนอก จึงฟรี 100% และใช้ได้ทุกขนส่ง)
+ */
+function renderShipmentTracking(order) {
+  const panel = document.getElementById('order-shipment-panel');
+  if (!panel) return;
+  panel.classList.remove('hidden');
+
+  const carrierName = document.getElementById('order-carrier-name');
+  if (carrierName) carrierName.textContent = carrierLabel(order.carrier) || t('order.carrier_unspecified');
+
+  const link = document.getElementById('order-track-link');
+  const url = carrierTrackingUrl(order.carrier, order.tracking);
+  if (link) {
+    if (url) {
+      link.href = url;
+      link.classList.remove('hidden');
+    } else {
+      link.classList.add('hidden');
+    }
+  }
+
+  const copyBtn = document.getElementById('order-copy-tracking');
+  if (copyBtn) {
+    bindOnce(copyBtn, 'click', async () => {
+      try {
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(order.tracking);
+        } else {
+          const helper = document.createElement('textarea');
+          helper.value = order.tracking;
+          helper.style.position = 'fixed';
+          helper.style.opacity = '0';
+          document.body.appendChild(helper);
+          helper.select();
+          document.execCommand('copy');
+          helper.remove();
+        }
+        notify(t('common.copied'), 'success');
+      } catch (err) {
+        console.warn('[ZenMarket] copy tracking failed', err);
+        notify(t('toast.error_generic'), 'error');
+      }
+    });
+  }
+}
+
 async function initCustomerOrderDetailPage() {
   if (!isSignedIn() || !state.user?.id) {
     sessionStorage.setItem('zenmarket_return_path', window.location.pathname + window.location.search);
@@ -668,6 +717,7 @@ async function initCustomerOrderDetailPage() {
     if (order.tracking) {
       document.getElementById('order-tracking').textContent = order.tracking;
       document.getElementById('order-tracking-row').classList.remove('hidden');
+      renderShipmentTracking(order);
     }
 
     const steps = getTimelineProgress(order.status);
