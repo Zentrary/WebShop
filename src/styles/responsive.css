@@ -229,6 +229,22 @@
   .hero-cta .btn {
     flex: 1 1 auto;
   }
+  .hero-meta .stat {
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-md);
+    padding-bottom: var(--space-sm);
+    border-bottom: 1px solid var(--color-border-soft);
+  }
+  .hero-meta .stat:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+  .hero-meta .stat .stat-value {
+    font-size: var(--font-size-xl);
+    text-align: right;
+  }
   .auth-card-wide {
     max-width: 640px;
   }
@@ -528,12 +544,20 @@
     width: 28px;
     height: 28px;
   }
+  /* จอแคบมาก: เก็บไว้แค่ตราสัญลักษณ์ ไม่ให้ชื่อร้านถูกตัดเป็น \"...\" */
+  .site-header .header-logo-name,
+  .admin-topbar .header-logo-name {
+    display: none;
+  }
   .header-actions .btn {
     padding: 0.4rem 0.6rem;
     font-size: var(--font-size-xs);
   }
   .product-grid {
     grid-template-columns: 1fr;
+  }
+  .kpi-grid {
+    grid-template-columns: minmax(0, 1fr);
   }
   .hero h1 {
     font-size: 1.9rem;
@@ -615,8 +639,8 @@
     justify-content: flex-end;
     flex-wrap: wrap;
     gap: var(--space-xs);
-    padding-top: var(--space-sm);
-    margin-top: var(--space-xs);
+    padding-top: var(--space-xs);
+    margin-top: 0;
   }
   table.data td.cell-actions .btn {
     white-space: nowrap;
@@ -838,6 +862,39 @@
     min-height: 40px;
     padding-inline: 1rem;
   }
+  .header-logo {
+    min-height: 44px;
+  }
+  .footer-col a,
+  .footer-contact-list a {
+    min-height: 44px;
+  }
+  .avatar-action {
+    min-height: 38px;
+  }
+  .ci-remove {
+    min-height: 38px;
+    padding-inline: 0.4rem;
+  }
+  .lang-link {
+    min-height: 44px;
+  }
+  .text-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+    padding-inline: 0.1rem;
+  }
+  .breadcrumb a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+    padding-inline: 0.15rem;
+  }
+  .contact-details dd a {
+    min-height: 40px;
+    padding: 0.55rem 0;
+  }
 }
 
 @media (max-width: 720px) {
@@ -920,5 +977,75 @@
   }
   .form-foot .btn {
     flex: 1 1 auto;
+  }
+}
+
+/* แท็บเล็ต: ปุ่มหลักไม่ต้องยืดเต็มความกว้างจอ */
+@media (min-width: 641px) and (max-width: 900px) {
+  .hero-cta .btn {
+    flex: 0 0 auto;
+    min-width: 240px;
+  }
+  .settings-savebar .btn,
+  .settings-card-foot .btn {
+    width: auto;
+    min-width: 200px;
+  }
+}
+
+/* แท็บเล็ต: ตารางแบบการ์ดใช้สองคอลัมน์ ไม่ให้แต่ละแถวยาวเกินจำเป็น */
+@media (min-width: 601px) and (max-width: 900px) {
+  table.data tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 var(--space-2xl);
+    align-items: center;
+    padding: var(--space-md) var(--space-lg);
+  }
+  table.data tr + tr {
+    margin-top: var(--space-sm);
+  }
+  table.data td {
+    border-top: 1px solid var(--color-border-soft);
+    padding: 0.55rem 0;
+  }
+  table.data td:nth-child(-n + 2) {
+    border-top: 0;
+  }
+  table.data td.cell-actions {
+    grid-column: 2;
+    justify-content: flex-end;
+    border-top: 1px solid var(--color-border-soft);
+    margin-top: 0;
+    padding-top: var(--space-xs);
+  }
+  table.data td[colspan] {
+    grid-column: 1 / -1;
+  }
+}
+
+/* ตัวกรองในหลังบ้าน: แถวเดียวเลื่อนแนวนอนบนมือถือ */
+@media (max-width: 720px) {
+  .filter-row {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+  }
+  .filter-row > * {
+    flex: 0 0 auto;
+  }
+  .filter-row::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@media (min-width: 721px) {
+  .filter-row {
+    flex-wrap: wrap;
+    row-gap: var(--space-sm);
+  }
+  .filter-row > * {
+    flex: 0 0 auto;
   }
 }
