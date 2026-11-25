@@ -18,7 +18,7 @@ export const USERNAME_PATTERN = /^[a-z0-9_]{3,30}$/;
 
 export const AGE_RANGE = { min: 13, max: 120 };
 
-export const PASSWORD_RULES = { minLength: 8 };
+export const PASSWORD_RULES = { minLength: 10 };
 
 export function passwordStrength(password) {
   const value = String(password || '');

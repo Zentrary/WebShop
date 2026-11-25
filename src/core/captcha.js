@@ -1,3 +1,5 @@
+import { t } from '/src/core/i18n.js';
+
 let turnstileLoaded = false;
 let turnstileSiteKey = null;
 const pending = [];
@@ -64,6 +66,12 @@ export function renderTurnstile(containerId, onVerify, onExpire) {
   } else {
     ensureScript();
     pending.push(run);
+    setTimeout(() => {
+      const el = typeof containerId === 'string' ? document.getElementById(containerId) : containerId;
+      if (turnstileLoaded || !el || el.dataset.fallback) return;
+      el.dataset.fallback = '1';
+      el.innerHTML = `<p class="auth-hint auth-hint-bad">${t('auth.captcha_unavailable')}</p>`;
+    }, 6000);
   }
   return null;
 }

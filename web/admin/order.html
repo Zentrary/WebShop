@@ -74,7 +74,11 @@
                   </div>
                   <div class="form-group">
                     <label class="form-label" for="admin-shipping-images" data-i18n="admin.shipping_images">รูปการจัดส่ง (สูงสุด 4 รูป)</label>
-                    <input type="file" id="admin-shipping-images" class="form-input" accept="image/png,image/jpeg,image/webp" multiple />
+                    <input type="file" id="admin-shipping-images" class="hidden" accept="image/png,image/jpeg,image/webp" multiple />
+                    <button type="button" id="admin-shipping-pick" class="btn btn-outline" data-i18n="admin.shipping_pick">
+                      เลือกรูปการจัดส่ง
+                    </button>
+                    <span id="admin-shipping-file-status" class="form-status" data-i18n="admin.shipping_no_file">ยังไม่ได้เลือกรูป</span>
                   </div>
                   <button type="submit" class="btn btn-primary" data-i18n="admin.shipping_add">เพิ่มอัปเดตการจัดส่ง</button>
                 </form>
