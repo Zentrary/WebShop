@@ -34,8 +34,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const path = window.location.pathname;
 
-  // ลูกค้าทั่วไปดูสินค้าได้เลย ไม่ต้องล็อกอิน — จะขอล็อกอินตอนกดสั่งซื้อเท่านั้น
-  renderGuestNotice();
   if (isSignedIn()) await loadFavorites();
 
   const route = normalizePath(path);
@@ -45,6 +43,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     currentRenderer = initStorePage;
   }
 
+  initGuestGate(route);
+
   if (currentRenderer) await currentRenderer();
 
   onLanguageChange(() => {
@@ -53,24 +53,63 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 });
 
+const GUEST_GATE_KEY = 'zenmarket_guest_gate_seen';
+const GATE_CLOSE_SVG =
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>';
+
 /**
- * แถบเล็ก ๆ บอกลูกค้าที่ยังไม่ล็อกอินว่าเลือกดูได้เต็มที่
- * แล้วค่อยเข้าสู่ระบบตอนกดสั่งซื้อ
+ * ป๊อปอัปบอกผู้เยี่ยมชมว่าดูสินค้าได้เลย แต่ต้องเข้าสู่ระบบก่อนสั่งซื้อ
+ * แสดงเฉพาะหน้ารายการสินค้า ปิดได้ และไม่เด้งซ้ำในรอบการใช้งานเดียวกัน
  */
-function renderGuestNotice() {
-  if (isSignedIn()) return;
-  const host = document.querySelector('main.container.page');
-  if (!host || document.getElementById('shop-guest-note')) return;
-  const note = document.createElement('div');
-  note.id = 'shop-guest-note';
-  note.className = 'guest-note reveal';
-  note.innerHTML = `<span>${escapeHTML(t('shop.guest_banner'))}</span>
-    <a class="btn btn-outline btn-sm" href="/auth/login">${escapeHTML(t('shop.guest_banner_cta'))}</a>`;
-  // วางใต้หัวข้อหน้า/ breadcrumb ไม่ใช่บนสุดของหน้า อ่านลำดับได้เป็นธรรมชาติกว่า
-  const anchor = host.querySelector('.page-head') || host.querySelector('nav') || host.querySelector('h1');
-  if (anchor) anchor.after(note);
-  else host.prepend(note);
-  observeRevealsLocal(note);
+function initGuestGate(route) {
+  if (isSignedIn() || route !== '/shop') return;
+  try {
+    if (sessionStorage.getItem(GUEST_GATE_KEY)) return;
+  } catch {}
+  if (document.getElementById('guest-gate')) return;
+
+  const dialog = document.createElement('dialog');
+  dialog.id = 'guest-gate';
+  dialog.className = 'guest-gate';
+  dialog.setAttribute('tabindex', '-1');
+  dialog.setAttribute('aria-labelledby', 'guest-gate-title');
+  dialog.setAttribute('aria-describedby', 'guest-gate-desc');
+  dialog.innerHTML = `
+    <button type="button" class="guest-gate-close" data-guest-gate-close aria-label="${escapeHTML(
+      t('common.close'),
+    )}" data-i18n-aria-label="common.close">${GATE_CLOSE_SVG}</button>
+    <span class="guest-gate-eyebrow" data-i18n="shop.gate_eyebrow">${escapeHTML(t('shop.gate_eyebrow'))}</span>
+    <h2 id="guest-gate-title" class="guest-gate-title" data-i18n="shop.gate_title">${escapeHTML(t('shop.gate_title'))}</h2>
+    <p id="guest-gate-desc" class="guest-gate-desc" data-i18n="shop.gate_desc">${escapeHTML(t('shop.gate_desc'))}</p>
+    <div class="guest-gate-actions">
+      <a class="btn btn-primary" href="/auth/login" data-i18n="shop.gate_login">${escapeHTML(t('shop.gate_login'))}</a>
+      <button type="button" class="btn btn-ghost" data-guest-gate-close data-i18n="shop.gate_browse">${escapeHTML(
+        t('shop.gate_browse'),
+      )}</button>
+    </div>`;
+  document.body.appendChild(dialog);
+
+  const remember = () => {
+    try {
+      sessionStorage.setItem(GUEST_GATE_KEY, '1');
+    } catch {}
+  };
+  const close = () => {
+    remember();
+    if (dialog.open) dialog.close();
+  };
+
+  dialog.querySelectorAll('[data-guest-gate-close]').forEach((btn) => btn.addEventListener('click', close));
+  dialog.addEventListener('click', (event) => {
+    if (event.target === dialog) close();
+  });
+  dialog.addEventListener('close', remember);
+  setTimeout(() => {
+    try {
+      dialog.showModal();
+      dialog.focus();
+    } catch {}
+  }, 450);
 }
 
 /**
