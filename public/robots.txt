@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /account
+Disallow: /auth
+
+Sitemap: https://webshop-tau-ebon.vercel.app/sitemap.xml

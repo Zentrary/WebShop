@@ -2,8 +2,9 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const ROOT = '/home/user/WebShop/src';
+const ROOT = fileURLToPath(new URL('../src', import.meta.url));
 
 function walk(dir, out = []) {
   for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -574,9 +575,6 @@ for (const file of walk(ROOT)) {
     } else {
       defined.add(clause);
     }
-  }
-
-  for (const mm of src.matchAll(/import\s+['"][^'"]+['"]/g)) {
   }
 
   const declRe = /\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)/g;

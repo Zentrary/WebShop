@@ -9,7 +9,9 @@
     "lint:undef": "node scripts/scan-no-undef.mjs",
     "format": "prettier --write \"src/**/*.{js,css}\" \"web/**/*.html\" \"scripts/**/*.mjs\" \"*.md\" \"*.json\"",
     "format:check": "prettier --check \"src/**/*.{js,css}\" \"web/**/*.html\" \"scripts/**/*.mjs\" \"*.md\" \"*.json\"",
-    "strip:comments": "node scripts/strip-comments.mjs"
+    "strip:comments": "node scripts/strip-comments.mjs",
+    "prebuild": "node scripts/gen-sitemap.mjs",
+    "verify": "npm run lint:undef && npm run format:check && npm run build"
   },
   "devDependencies": {
     "jsdom": "^31.0.1",

@@ -11,6 +11,37 @@ function upsertMeta(selector, attr, key, content) {
   el.setAttribute('content', content);
 }
 
+export function applyPageMeta({ title, description, image, type, url } = {}) {
+  if (typeof document === 'undefined') return;
+  const pageUrl = url || window.location.href;
+  const absolute = (value) => {
+    try {
+      return new URL(value, window.location.origin).href;
+    } catch {
+      return value;
+    }
+  };
+
+  if (title) {
+    upsertMeta('meta[property="og:title"]', 'property', 'og:title', title);
+    upsertMeta('meta[name="twitter:title"]', 'name', 'twitter:title', title);
+  }
+  if (description) {
+    upsertMeta('meta[name="description"]', 'name', 'description', description);
+    upsertMeta('meta[property="og:description"]', 'property', 'og:description', description);
+    upsertMeta('meta[name="twitter:description"]', 'name', 'twitter:description', description);
+  }
+  if (image) {
+    const img = absolute(image);
+    upsertMeta('meta[property="og:image"]', 'property', 'og:image', img);
+    upsertMeta('meta[name="twitter:image"]', 'name', 'twitter:image', img);
+    upsertMeta('meta[name="twitter:card"]', 'name', 'twitter:card', 'summary_large_image');
+  }
+  if (type) upsertMeta('meta[property="og:type"]', 'property', 'og:type', type);
+  upsertMeta('meta[property="og:url"]', 'property', 'og:url', pageUrl);
+  upsertLink('canonical', pageUrl);
+}
+
 function upsertLink(rel, href, type) {
   if (typeof document === 'undefined' || !href) return;
   let el = document.head.querySelector(`link[rel="${rel}"]`);
@@ -37,6 +68,10 @@ export function applyBrandAssets(settings = {}) {
   }
 
   const url = window.location.origin + window.location.pathname;
+  if (!document.head.querySelector('meta[name="description"]') && description) {
+    upsertMeta('meta[name="description"]', 'name', 'description', description);
+  }
+  upsertLink('canonical', url);
   upsertMeta('meta[property="og:site_name"]', 'property', 'og:site_name', shopName);
   upsertMeta('meta[property="og:title"]', 'property', 'og:title', document.title || shopName);
   upsertMeta('meta[property="og:type"]', 'property', 'og:type', 'website');

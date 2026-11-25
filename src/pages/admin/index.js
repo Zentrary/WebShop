@@ -1291,6 +1291,138 @@ async function initPayments() {
 
 const LOCKED_ORDER_STATUSES = ['delivered', 'cancelled'];
 
+async function loadShopForPrint() {
+  try {
+    const { data } = await supabase.from('store_settings').select('*').eq('singleton', true).maybeSingle();
+    return data || {};
+  } catch {
+    return {};
+  }
+}
+
+function printSheetHtml(order, shop, mode) {
+  const isSlip = mode === 'slip';
+  const date = order.created_at ? new Date(order.created_at).toLocaleDateString('th-TH') : '-';
+  const items = order.items || [];
+  const pieces = items.reduce((sum, item) => sum + Number(item.quantity || 1), 0);
+  const rows = items
+    .map(
+      (item) => `<tr>
+        <td>${escapeHTML(item.name || '')}</td>
+        <td class="num">${Number(item.quantity || 1)}</td>
+        <td class="num">${formatTHB(item.price)}</td>
+        <td class="num">${formatTHB(Number(item.price || 0) * Number(item.quantity || 1))}</td>
+      </tr>`,
+    )
+    .join('');
+
+  const shopBlock = `
+    <div class="sheet-shop">
+      <strong>${escapeHTML(shop.shop_name || 'ZenMarket')}</strong>
+      <span>${escapeHTML(shop.contact_phone || '')}</span>
+      <span>${escapeHTML(shop.contact_address || '')}</span>
+    </div>`;
+
+  const head = `
+    <div class="sheet-head">
+      <h1>${escapeHTML(t(isSlip ? 'admin.print_slip_title' : 'admin.print_receipt_title'))}</h1>
+      <div class="sheet-meta">
+        <span>${escapeHTML(t('admin.print_order_no'))} <strong>#${escapeHTML(order.id.slice(0, 8))}</strong></span>
+        <span>${escapeHTML(t('common.date'))} ${escapeHTML(date)}</span>
+      </div>
+    </div>`;
+
+  if (isSlip) {
+    return `${head}
+      <div class="sheet-pair">
+        <section class="sheet-box">
+          <h2>${escapeHTML(t('admin.print_sender'))}</h2>
+          ${shopBlock}
+        </section>
+        <section class="sheet-box sheet-box--to">
+          <h2>${escapeHTML(t('admin.print_receiver'))}</h2>
+          <div class="sheet-to-name">${escapeHTML(order.recipient || '-')}</div>
+          <div class="sheet-to-phone">${escapeHTML(order.phone || '')}</div>
+          <div class="sheet-to-address">${escapeHTML(order.address || '-')}</div>
+        </section>
+      </div>
+      <div class="sheet-row">
+        <span>${escapeHTML(t('admin.print_tracking'))}</span>
+        <span class="sheet-fill">${escapeHTML(order.tracking || ' ')}</span>
+        <span>${escapeHTML(t('admin.print_pieces', { n: pieces }))}</span>
+      </div>
+      <table class="sheet-table">
+        <thead><tr><th>${escapeHTML(t('order.items'))}</th><th class="num">${escapeHTML(t('common.quantity'))}</th></tr></thead>
+        <tbody>${items
+          .map(
+            (item) =>
+              `<tr><td>${escapeHTML(item.name || '')}${item.sku ? ` <span class="sheet-sku">${escapeHTML(item.sku)}</span>` : ''}</td><td class="num">${Number(item.quantity || 1)}</td></tr>`,
+          )
+          .join('')}</tbody>
+      </table>
+      <p class="sheet-note">${escapeHTML(t('admin.print_slip_note'))}</p>`;
+  }
+
+  return `${head}
+    <div class="sheet-pair">
+      <section class="sheet-box">
+        <h2>${escapeHTML(t('admin.print_sender'))}</h2>
+        ${shopBlock}
+      </section>
+      <section class="sheet-box">
+        <h2>${escapeHTML(t('admin.print_receiver'))}</h2>
+        <div class="sheet-to-name">${escapeHTML(order.recipient || '-')}</div>
+        <div class="sheet-to-phone">${escapeHTML(order.phone || '')}</div>
+        <div class="sheet-to-address">${escapeHTML(order.address || '-')}</div>
+      </section>
+    </div>
+    <table class="sheet-table">
+      <thead>
+        <tr>
+          <th>${escapeHTML(t('order.items'))}</th>
+          <th class="num">${escapeHTML(t('common.quantity'))}</th>
+          <th class="num">${escapeHTML(t('admin.print_unit_price'))}</th>
+          <th class="num">${escapeHTML(t('common.total'))}</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div class="sheet-totals">
+      <div><span>${escapeHTML(t('cart.subtotal'))}</span><span>${formatTHB(order.subtotal)}</span></div>
+      <div><span>${escapeHTML(t('cart.shipping'))}</span><span>${formatTHB(order.shipping)}</span></div>
+      ${Number(order.discount) > 0 ? `<div><span>${escapeHTML(t('cart.discount'))}</span><span>-${formatTHB(order.discount)}</span></div>` : ''}
+      <div class="sheet-total"><span>${escapeHTML(t('cart.total'))}</span><span>${formatTHB(order.total)}</span></div>
+    </div>
+    <p class="sheet-payment">
+      ${escapeHTML(t('checkout.promptpay'))} —
+      <strong>${escapeHTML(t(order.status === 'pending' ? 'admin.print_unpaid' : 'admin.print_paid'))}</strong>
+    </p>
+    <p class="sheet-note">${escapeHTML(t('admin.print_receipt_note'))}</p>`;
+}
+
+async function bindPrintSheets(order) {
+  const sheet = document.getElementById('print-sheet');
+  const slipBtn = document.getElementById('admin-print-slip');
+  const receiptBtn = document.getElementById('admin-print-receipt');
+  if (!sheet || (!slipBtn && !receiptBtn)) return;
+  const shop = await loadShopForPrint();
+
+  const run = (mode) => {
+    sheet.innerHTML = printSheetHtml(order, shop, mode);
+    document.body.classList.add('print-mode');
+    window.print();
+  };
+
+  const cleanup = () => {
+    document.body.classList.remove('print-mode');
+    sheet.innerHTML = '';
+  };
+  window.addEventListener('afterprint', cleanup, { once: false });
+
+  bindOnce(slipBtn, 'click', () => run('slip'));
+  bindOnce(receiptBtn, 'click', () => run('receipt'));
+}
+
 async function initAdminOrderDetail() {
   const orderId = new URLSearchParams(window.location.search).get('id');
   if (!orderId) return;
@@ -1317,6 +1449,8 @@ async function initAdminOrderDetail() {
     document.getElementById('admin-order-shipping').textContent = formatTHB(order.shipping);
     document.getElementById('admin-order-total').textContent = formatTHB(order.total);
     document.getElementById('admin-tracking-number').value = order.tracking || '';
+
+    bindPrintSheets(order);
 
     const locked = LOCKED_ORDER_STATUSES.includes(order.status || 'pending');
     document.getElementById('admin-order-locked')?.classList.toggle('hidden', !locked);

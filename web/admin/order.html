@@ -30,6 +30,10 @@
               <p class="admin-page-sub"><span data-i18n="common.date">วันที่สั่งซื้อ</span> <span id="admin-order-date"></span></p>
             </div>
             <div class="admin-head-actions">
+              <button type="button" id="admin-print-slip" class="btn btn-outline btn-sm" data-i18n="admin.print_slip">พิมพ์ใบปะหน้า</button>
+              <button type="button" id="admin-print-receipt" class="btn btn-outline btn-sm" data-i18n="admin.print_receipt">
+                พิมพ์ใบเสร็จ
+              </button>
               <a href="/admin/orders" class="btn btn-outline btn-sm" data-i18n="admin.back_orders">← กลับรายการ</a>
             </div>
           </div>
@@ -128,5 +132,6 @@
         </div>
       </div>
     </div>
+    <div id="print-sheet" class="print-sheet" aria-hidden="true"></div>
   </body>
 </html>

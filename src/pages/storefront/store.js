@@ -16,6 +16,7 @@ import { observeReveals } from '/src/core/reveal.js';
 import { loadFavorites, toggleFavorite, isFavorite, canUseFavorites } from '/src/core/favorites.js';
 import { t, applyDocumentTitle, onLanguageChange } from '/src/core/i18n.js';
 import { normalizePath } from '/src/core/routes.js';
+import { applyPageMeta } from '/src/core/brand.js';
 
 let currentProduct = null;
 let currentPage = 1;
@@ -326,6 +327,13 @@ async function initProductPage() {
 
     currentProduct = product;
     applyDocumentTitle(`${product.name}`);
+    const seoImages = productImages(product);
+    applyPageMeta({
+      title: `${product.name} | ${state.storeSettings?.shop_name || 'ZenMarket'}`,
+      description: (product.description || '').trim().slice(0, 160) || undefined,
+      image: seoImages[0] ? safeImage(seoImages[0]) : state.storeSettings?.logo_url || undefined,
+      type: 'product',
+    });
 
     document.getElementById('product-title').textContent = product.name;
     const unitPrice = effectivePrice(product);

@@ -30,7 +30,9 @@ export function initIdleTimeout(options = {}) {
       banner = document.createElement('div');
       banner.id = 'idle-warning';
       banner.className = 'idle-warning';
-      banner.setAttribute('role', 'status');
+      banner.setAttribute('role', 'alert');
+      banner.setAttribute('aria-live', 'assertive');
+      banner.setAttribute('aria-atomic', 'true');
       banner.innerHTML = `<span>${t('session.idle_warning')}</span><button type="button" class="btn btn-primary btn-sm">${t('session.idle_stay')}</button>`;
       banner.querySelector('button')?.addEventListener('click', () => reset());
       document.body.appendChild(banner);
