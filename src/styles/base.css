@@ -3654,12 +3654,13 @@ td .badge-error {
   }
 }
 
+/* แจ้งเตือนเซสชันอยู่ใต้ header ด้านบนจอ — ไม่ทับ footer อีก */
 .idle-warning {
   position: fixed;
+  top: calc(var(--header-height) + var(--space-sm));
   left: 50%;
-  bottom: calc(var(--space-xl) + env(safe-area-inset-bottom, 0px));
   transform: translateX(-50%);
-  z-index: 90;
+  z-index: 95;
   display: flex;
   align-items: center;
   gap: var(--space-md);
@@ -3705,6 +3706,168 @@ td .badge-error {
   display: none;
 }
 
+/* ใบปะหน้า / ใบเสร็จ สำหรับพิมพ์ (แสดงเฉพาะตอน window.print) */
+.print-sheet {
+  display: none;
+}
+.print-sheet .sheet-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid #111;
+}
+.print-sheet h1 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+.print-sheet .sheet-meta {
+  display: grid;
+  gap: 2px;
+  font-size: 0.8rem;
+  text-align: right;
+}
+.print-sheet .sheet-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+.print-sheet .sheet-box {
+  padding: 0.75rem;
+  border: 1px solid #999;
+  border-radius: 6px;
+}
+.print-sheet .sheet-box h2 {
+  margin: 0 0 0.35rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #555;
+}
+.print-sheet .sheet-shop {
+  display: grid;
+  gap: 2px;
+  font-size: 0.8rem;
+}
+.print-sheet .sheet-box--to .sheet-to-name {
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+.print-sheet .sheet-to-phone {
+  font-size: 1rem;
+  font-weight: 600;
+}
+.print-sheet .sheet-to-address {
+  margin-top: 0.25rem;
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+.print-sheet .sheet-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  font-size: 0.85rem;
+}
+.print-sheet .sheet-fill {
+  flex: 0 1 18rem;
+  min-height: 1.4rem;
+  margin-right: auto;
+  padding: 0 0.4rem;
+  border-bottom: 1px dashed #999;
+  font-weight: 700;
+}
+.print-sheet .sheet-table {
+  width: 100%;
+  margin-top: 1rem;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+.print-sheet .sheet-table th,
+.print-sheet .sheet-table td {
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid #ccc;
+  text-align: left;
+}
+.print-sheet .sheet-table th.num,
+.print-sheet .sheet-table td.num {
+  width: 1%;
+  text-align: right;
+  white-space: nowrap;
+}
+.print-sheet .sheet-table th {
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #555;
+  border-bottom: 1.5px solid #666;
+}
+.print-sheet .num {
+  text-align: right;
+  white-space: nowrap;
+}
+.print-sheet .sheet-sku {
+  color: #666;
+  font-size: 0.75rem;
+}
+.print-sheet .sheet-totals {
+  display: grid;
+  gap: 4px;
+  margin-top: 0.75rem;
+  margin-right: 0.5rem;
+  margin-left: auto;
+  max-width: 260px;
+  font-size: 0.85rem;
+}
+.print-sheet .sheet-totals > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.print-sheet .sheet-total {
+  padding-top: 0.35rem;
+  border-top: 1px solid #666;
+  font-size: 1rem;
+  font-weight: 700;
+}
+.print-sheet .sheet-payment {
+  margin-top: 0.75rem;
+  font-size: 0.85rem;
+}
+.print-sheet .sheet-note {
+  margin-top: 0.9rem;
+  font-size: 0.72rem;
+  color: #555;
+}
+@media print {
+  @page {
+    margin: 12mm;
+  }
+  .print-sheet {
+    display: block !important;
+    color: #000;
+    background: #fff;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+    font-family: ui-sans-serif, system-ui, 'Noto Sans Thai', sans-serif;
+  }
+  body.print-mode > *:not(.print-sheet) {
+    display: none !important;
+  }
+  body.print-mode {
+    background: #fff;
+    color: #000;
+  }
+  .print-sheet :is(h1, h2, h3, p, td, th, span, div, strong, b, small) {
+    color: inherit;
+  }
+  .print-sheet table,
+  .print-sheet section {
+    break-inside: avoid;
+  }
+}
 .order-locked {
   display: flex;
   align-items: center;
