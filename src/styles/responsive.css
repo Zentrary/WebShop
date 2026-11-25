@@ -158,13 +158,12 @@
   h2 {
     font-size: var(--font-size-2xl);
   }
-  /* แถวสินค้าในตะกร้า: รูป | ชื่อ+ราคา | จำนวน และมียอดรวมอยู่ใต้จำนวน */
+  /* แถวสินค้าในตะกร้า: รูป | ชื่อ+ราคา | จำนวน | ยอดรวม อยู่บรรทัดเดียว */
   .cart-row {
-    grid-template-columns: 72px minmax(0, 1fr) auto;
-    grid-template-areas:
-      'thumb main qty'
-      'thumb . total';
-    row-gap: var(--space-sm);
+    grid-template-columns: 72px minmax(0, 1fr) auto auto;
+    grid-template-areas: 'thumb main qty total';
+    column-gap: var(--space-md);
+    align-items: center;
   }
   .cart-row .ci-thumb {
     grid-area: thumb;
@@ -180,6 +179,7 @@
   .cart-row .ci-total {
     grid-area: total;
     align-items: flex-end;
+    justify-content: center;
     text-align: right;
   }
   .footer-inner {
@@ -352,32 +352,70 @@
   .btn-full {
     width: 100%;
   }
-  /* จอมือถือ: ชื่อสินค้าเต็มความกว้าง แล้วจำนวน+ยอดรวมอยู่บรรทัดล่าง */
+  /* จอมือถือ: รูปอยู่ซ้ายคู่กับชื่อ, จำนวนอยู่ใต้ชื่อ, ยอดรวม+ลบอยู่ขวาเต็มความสูง */
+  .cart-row {
+    grid-template-columns: 64px minmax(0, 1fr) auto;
+    grid-template-areas:
+      'thumb main total'
+      'thumb qty total';
+    column-gap: var(--space-md);
+    row-gap: 0.5rem;
+    align-items: start;
+  }
+  .cart-row .ci-thumb {
+    grid-area: thumb;
+    width: 64px;
+    height: 64px;
+    align-self: start;
+  }
+  .cart-row .ci-qty {
+    grid-area: qty;
+    justify-self: start;
+  }
+  .cart-row .ci-total {
+    grid-area: total;
+    align-self: stretch;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 0.35rem;
+    text-align: right;
+  }
+  .cart-row--info {
+    grid-template-columns: 56px minmax(0, 1fr) auto;
+    grid-template-areas: 'thumb main total';
+    align-items: center;
+  }
+  .cart-row--info .ci-thumb {
+    width: 56px;
+    height: 56px;
+  }
+  .cart-row--info .ci-total {
+    align-self: center;
+    justify-content: center;
+    gap: 0;
+  }
+}
+
+@media (max-width: 400px) {
+  /* จอ 360–400: ย่อรูปและปุ่มจำนวนลงให้ยอดรวมยังอยู่แถวเดียวกันได้ */
   .cart-row {
     grid-template-columns: 56px minmax(0, 1fr) auto;
-    grid-template-areas:
-      'thumb main main'
-      'thumb qty total';
-    align-items: center;
+    column-gap: var(--space-sm);
   }
   .cart-row .ci-thumb {
     width: 56px;
     height: 56px;
   }
-  .cart-row .ci-total {
-    flex-direction: column;
-    align-items: flex-end;
-    justify-content: center;
-    gap: 0;
-    text-align: right;
+  .cart-row .qty-ctl button {
+    padding: 0.35rem 0.6rem;
   }
-  .cart-row .qty-ctl {
-    justify-self: start;
+  .cart-row .qty-ctl input {
+    width: 28px;
   }
 }
 
-@media (max-width: 400px) {
-  /* จอ 360–400: จำนวนกับยอดรวมเคยชนกัน แยกเป็นคนละบรรทัดไปเลย */
+@media (max-width: 360px) {
+  /* จอแคบมาก (≤360): เรียงลงเป็นชั้น ๆ ไม่ให้ยอดรวมทับปุ่มจำนวน */
   .cart-row {
     grid-template-areas:
       'thumb main main'
@@ -385,9 +423,11 @@
       'thumb total total';
   }
   .cart-row .ci-total {
+    align-self: end;
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
+    gap: var(--space-sm);
     text-align: left;
   }
 }

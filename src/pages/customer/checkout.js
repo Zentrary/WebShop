@@ -1,7 +1,7 @@
 import { initApp, state, updateCartBadge, requireSupabase, renderGuestGate, applyMemberGating } from '/src/app.js';
 import { isSignedIn } from '/src/core/audience.js';
 import { translatePage, t, onLanguageChange } from '/src/core/i18n.js';
-import { notify } from '/src/core/ui.js';
+import { confirmAction, notify } from '/src/core/ui.js';
 import {
   formatTHB,
   escapeHTML,
@@ -686,7 +686,7 @@ async function initCustomerOrderDetailPage() {
     document.getElementById('order-items-list').innerHTML = items
       .map(
         (item) => `
-      <div class="cart-row">
+      <div class="cart-row cart-row--info">
         <img class="ci-thumb" src="${item.image_url || '/images/placeholder.svg'}" alt="${escapeHTML(item.name || '')}">
         <div class="ci-main">
           <div class="nm">${escapeHTML(item.name || '')}</div>
@@ -790,7 +790,11 @@ async function initCustomerOrderDetailPage() {
       const cancelBtn = document.getElementById('order-cancel-btn');
       if (cancelBtn) {
         cancelBtn.addEventListener('click', async () => {
-          if (!window.confirm(t('order.cancel_confirm'))) return;
+          const confirmed = await confirmAction(t('order.cancel_confirm'), {
+            danger: true,
+            confirmText: t('order.cancel'),
+          });
+          if (!confirmed) return;
           try {
             const { error } = await state.supabase.rpc('transition_order', {
               order_id: order.id,

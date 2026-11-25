@@ -1,5 +1,5 @@
 import { isOwner, setAudience } from '/src/core/audience.js';
-import { notify } from '/src/core/ui.js';
+import { confirmAction, notify } from '/src/core/ui.js';
 import {
   formatTHB,
   escapeHTML,
@@ -573,7 +573,8 @@ async function initCategories() {
       const name = delBtn.getAttribute('data-del');
       const count = counts[name] || 0;
       const question = count ? t('admin.category_delete_has_products', { count }) : t('admin.delete_confirm');
-      if (!window.confirm(question)) return;
+      const confirmed = await confirmAction(question, { danger: true, confirmText: t('common.delete') });
+      if (!confirmed) return;
       const { error } = await supabase.rpc('admin_delete_category', { p_name: name });
       if (error) {
         notify(error.message || t('toast.error_generic'), 'error');
@@ -671,7 +672,12 @@ async function initReviews() {
 
   bindOnce(tbody, 'click', async (e) => {
     const btn = e.target.closest('[data-del]');
-    if (btn && window.confirm(t('admin.delete_confirm'))) {
+    if (btn) {
+      const confirmed = await confirmAction(t('admin.delete_confirm'), {
+        danger: true,
+        confirmText: t('common.delete'),
+      });
+      if (!confirmed) return;
       const { error } = await supabase.from('product_reviews').delete().eq('id', btn.getAttribute('data-del'));
       if (error) notify(error.message || t('toast.error_generic'), 'error');
       else await initReviews();
@@ -1332,7 +1338,7 @@ async function initAdminOrderDetail() {
     document.getElementById('admin-order-items').innerHTML = items
       .map(
         (item) => `
-      <div class="cart-row">
+      <div class="cart-row cart-row--info">
         <img class="ci-thumb" src="${item.image_url || '/images/placeholder.svg'}" alt="">
         <div class="ci-main"><div class="nm">${escapeHTML(item.name || '')}</div><div class="pr">${formatTHB(item.price)} × ${item.quantity || 1}</div></div>
         <div class="ci-qty"></div>
