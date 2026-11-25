@@ -41,19 +41,11 @@
             <div class="panel reveal hidden" id="order-shipment-panel">
               <h2 data-i18n="order.shipment_title">การติดตามพัสดุ</h2>
               <div class="sum-row"><span data-i18n="order.carrier">ขนส่ง</span><span id="order-carrier-name">-</span></div>
+              <div class="sum-row"><span data-i18n="order.tracking">เลขพัสดุ</span><span id="order-tracking-code">-</span></div>
               <div class="flex gap-sm mt-md" style="flex-wrap: wrap">
-                <a
-                  id="order-track-link"
-                  class="btn btn-primary btn-sm hidden"
-                  href="#"
-                  target="_blank"
-                  rel="noopener"
-                  data-i18n="order.track_open"
-                  >เปิดหน้าตรวจสอบพัสดุ</a
-                >
                 <button type="button" id="order-copy-tracking" class="btn btn-outline btn-sm" data-i18n="common.copy">คัดลอก</button>
               </div>
-              <p class="text-muted text-xs mt-sm" data-i18n="order.track_hint">กดปุ่มเพื่อดูสถานะล่าสุดจากหน้าขนส่ง</p>
+              <p class="text-muted text-xs mt-sm" data-i18n="order.track_hint">คัดลอกเลขพัสดุไปตรวจสอบกับเว็บของขนส่งได้เลย</p>
             </div>
 
             <div class="panel reveal" data-delay="1">
@@ -107,10 +99,6 @@
                 <span id="order-status" class="badge badge-info"></span>
               </div>
               <div id="order-actions" class="flex gap-sm mt-md" style="flex-wrap: wrap"></div>
-              <div id="order-tracking-row" class="flex items-center justify-between hidden">
-                <span class="text-muted text-sm" data-i18n="order.tracking">เลขพัสดุ</span>
-                <span id="order-tracking" class="text-sm font-semibold"></span>
-              </div>
             </div>
             <hr class="divider" />
             <h3 style="font-size: var(--font-size-base); margin-bottom: var(--space-sm)" data-i18n="checkout.address">ที่อยู่จัดส่ง</h3>

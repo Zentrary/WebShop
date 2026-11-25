@@ -1,47 +1,16 @@
 /**
- * ทะเบียนขนส่งไทย (ใช้ร่วมกันระหว่างหน้าแอดมินและหน้าลูกค้า)
- * - url(tracking) คืนลิงก์หน้าตรวจสอบพัสดุของขนส่ง (null = ไม่มีหน้าเฉพาะ ต้องคัดลอกเลขไปวางเอง)
- * - detect(tracking) ใช้ "เดา" ขนส่งจากรูปแบบเลขพัสดุแบบที่มั่นใจสูงเท่านั้น ที่เหลือให้เลือกเอง
+ * ทะเบียนขนส่งไทย — ใช้แค่ "ชื่อขนส่ง" ที่แนบไปกับเลขพัสดุ
+ * ไม่มีการเรียก API / ไม่มีลิงก์ไปหน้าขนส่ง: ลูกค้าคัดลอกเลขพัสดุไปเช็กเองได้
  */
 import { t } from '/src/core/i18n.js';
 
 export const CARRIERS = [
-  {
-    slug: 'thailand_post',
-    nameKey: 'carrier.thailand_post',
-    url: (tracking) => `https://track.thailandpost.co.th/?trackNumber=${encodeURIComponent(tracking || '')}`,
-    detect: (value) => /^[A-Za-z]{2}\d{9}TH$/.test(value),
-  },
-  {
-    slug: 'kex',
-    nameKey: 'carrier.kex',
-    url: () => 'https://th.kex-express.com/th/track/',
-    detect: (value) => /^(PRO|KEX)\d/i.test(value),
-  },
-  {
-    slug: 'flash',
-    nameKey: 'carrier.flash',
-    url: () => 'https://www.flashexpress.co.th/tracking/',
-    detect: () => false,
-  },
-  {
-    slug: 'jt',
-    nameKey: 'carrier.jt',
-    url: () => 'https://www.jtexpress.co.th/tracking',
-    detect: () => false,
-  },
-  {
-    slug: 'spx',
-    nameKey: 'carrier.spx',
-    url: () => 'https://spx.co.th/track',
-    detect: (value) => /^TH\d{10,}$/i.test(value),
-  },
-  {
-    slug: 'other',
-    nameKey: 'carrier.other',
-    url: () => null,
-    detect: () => false,
-  },
+  { slug: 'thailand_post', nameKey: 'carrier.thailand_post', detect: (value) => /^[A-Za-z]{2}\d{9}TH$/.test(value) },
+  { slug: 'kex', nameKey: 'carrier.kex', detect: (value) => /^(PRO|KEX)\d/i.test(value) },
+  { slug: 'flash', nameKey: 'carrier.flash', detect: () => false },
+  { slug: 'jt', nameKey: 'carrier.jt', detect: () => false },
+  { slug: 'spx', nameKey: 'carrier.spx', detect: (value) => /^TH\d{10,}$/i.test(value) },
+  { slug: 'other', nameKey: 'carrier.other', detect: () => false },
 ];
 
 export const CARRIER_SLUGS = CARRIERS.map((carrier) => carrier.slug);
@@ -65,14 +34,7 @@ export function detectCarrier(tracking) {
   return found && found.slug !== 'other' ? found.slug : '';
 }
 
-/** ลิงก์หน้าตรวจสอบพัสดุ หรือ null ถ้าขนส่งไม่มีหน้าเฉพาะ */
-export function carrierTrackingUrl(slug, tracking) {
-  const carrier = getCarrier(slug);
-  if (!carrier) return null;
-  return carrier.url(String(tracking || '').trim());
-}
-
-/** เติม <select> ตัวเลือกขนส่ง (ใช้ทั้งหน้าแอดมิน) */
+/** เติม <select> ตัวเลือกขนส่ง (ใช้ในหน้าแอดมิน) */
 export function fillCarrierSelect(select, selected) {
   if (!select) return;
   select.innerHTML = '';
