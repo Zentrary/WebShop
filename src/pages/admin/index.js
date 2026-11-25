@@ -256,6 +256,29 @@ function renderSalesChart(days) {
   `;
 }
 
+/** `<input type="datetime-local">` ใช้เวลาเครื่องของผู้ใช้ ไม่ใช่ UTC */
+function toLocalInput(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+/** แสดงเวลาตั้งโต๊ะแบบสั้น ๆ: "25 พ.ย. 09:00" (en: "25 Nov 09:00") */
+function formatScheduleTime(date) {
+  try {
+    return new Intl.DateTimeFormat(getLanguage() === 'en' ? 'en-GB' : 'th-TH', {
+      day: 'numeric',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(date);
+  } catch {
+    return date.toISOString().slice(0, 16).replace('T', ' ');
+  }
+}
+
 /** Rounds a maximum up to a friendly value so the axis shows round numbers. */
 function niceAxisMax(value) {
   if (!value || value <= 0) return 0;
@@ -276,6 +299,45 @@ async function initProducts() {
     const qty = Number(stock) || 0;
     if (qty > 0) return `<span class="stock-qty">${qty}</span>`;
     return `<span class="badge badge-error">${t('admin.stock_out')}</span>`;
+  }
+
+  /**
+   * สถานะในตารางต้องบอกได้ว่า "ตั้งเวลาไว้" ไม่ใช่แค่เปิด/ซ่อน
+   * ไม่งั้นเจ้าของร้านจะนึกว่าสินค้าหายไปจากเว็บ
+   */
+  function renderStatusCell(p) {
+    const when = p.publish_at ? new Date(p.publish_at) : null;
+    if (when && when.getTime() > Date.now()) {
+      return `<span class="badge badge-warning">${escapeHTML(
+        t('admin.scheduled_badge', { when: formatScheduleTime(when) }),
+      )}</span>`;
+    }
+    return `<span class="badge badge-${p.active ? 'success' : 'error'}">${
+      p.active ? t('admin.active') : t('admin.hidden')
+    }</span>`;
+  }
+
+  /** เติมรายชื่อหมวดหมู่ที่มีอยู่ลง datalist ให้พิมพ์ซ้ำได้ไว ๆ */
+  async function loadCategoryOptions() {
+    const listEl = document.getElementById('category-options');
+    if (!listEl) return;
+    const { data } = await supabase.from('categories').select('name').order('name');
+    listEl.innerHTML = (data || []).map((row) => `<option value="${escapeHTML(row.name)}"></option>`).join('');
+  }
+
+  /** พิมพ์ชื่อหมวดใหม่ในฟอร์มสินค้า = สร้างหมวดนั้นให้เลย (ไม่ต้องไปหน้าหมวดหมู่ก่อน) */
+  async function ensureCategory(name) {
+    const trimmed = String(name || '').trim();
+    if (!trimmed) return true;
+    const { data: existing } = await supabase.from('categories').select('name').eq('name', trimmed).maybeSingle();
+    if (existing) return true;
+    const { error } = await supabase.from('categories').insert({ name: trimmed });
+    if (error && error.code !== '23505') {
+      notify(error.message || t('toast.error_generic'), 'error');
+      return false;
+    }
+    await loadCategoryOptions();
+    return true;
   }
 
   async function loadProducts() {
@@ -300,7 +362,7 @@ async function initProducts() {
           saleOn ? ` <s class="price-was">${formatTHB(p.price)}</s>` : ''
         }</td>` +
         `<td data-label="${t('admin.product_stock')}" class="num">${renderStockCell(p.stock)}</td>` +
-        `<td data-label="${t('common.status')}"><span class="badge badge-${p.active ? 'success' : 'error'}">${p.active ? t('admin.active') : t('admin.hidden')}</span></td>` +
+        `<td data-label="${t('common.status')}">${renderStatusCell(p)}</td>` +
         `<td class="cell-actions"><button class="btn btn-outline btn-sm" data-edit="${p.id}">${t('common.edit')}</button> ` +
         `<button class="btn btn-outline btn-sm" data-toggle="${p.id}">${p.active ? t('admin.hide') : t('admin.show')}</button> ` +
         `<button class="btn btn-danger btn-sm" data-del="${p.id}">${t('common.delete')}</button></td>`;
@@ -309,6 +371,7 @@ async function initProducts() {
   }
 
   loadProducts();
+  loadCategoryOptions();
 
   bindOnce(tbody, 'click', async (e) => {
     const edit = e.target.closest('[data-edit]');
@@ -331,6 +394,10 @@ async function initProducts() {
       document.getElementById('product-image').value = p.image_url || '';
       document.getElementById('product-description').value = p.description || '';
       document.getElementById('product-active').checked = !!p.active;
+      const publishInput = document.getElementById('product-publish-at');
+      if (publishInput) publishInput.value = toLocalInput(p.publish_at);
+      const showSoonInput = document.getElementById('product-show-soon');
+      if (showSoonInput) showSoonInput.checked = p.show_soon !== false;
       return;
     }
 
@@ -357,6 +424,10 @@ async function initProducts() {
       form.classList.remove('hidden');
       form.reset();
       document.getElementById('product-active').checked = true;
+      const publishInput = document.getElementById('product-publish-at');
+      if (publishInput) publishInput.value = '';
+      const showSoonInput = document.getElementById('product-show-soon');
+      if (showSoonInput) showSoonInput.checked = true;
       form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     });
   }
@@ -415,6 +486,18 @@ async function initProducts() {
         notify(t('admin.product_name_required'), 'error');
         return;
       }
+
+      const publishInput = document.getElementById('product-publish-at');
+      const rawPublish = publishInput ? publishInput.value : '';
+      if (rawPublish && Number.isNaN(new Date(rawPublish).getTime())) {
+        notify(t('admin.publish_at_invalid'), 'error');
+        return;
+      }
+      payload.publish_at = rawPublish ? new Date(rawPublish).toISOString() : null;
+      const showSoonInput = document.getElementById('product-show-soon');
+      payload.show_soon = showSoonInput ? showSoonInput.checked : true;
+
+      if (!(await ensureCategory(payload.category))) return;
 
       let error;
       if (editingId) {
