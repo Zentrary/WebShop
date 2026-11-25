@@ -25,7 +25,7 @@ import {
   LOGO_ACCEPT,
 } from '/src/core/storage.js';
 import { reportClientError } from '/src/core/errors.js';
-import { fillCarrierSelect, detectCarrier, carrierTrackingUrl } from '/src/core/carriers.js';
+import { fillCarrierSelect, detectCarrier } from '/src/core/carriers.js';
 import { mergeStoreSettings } from '/src/core/settings.js';
 import { validateStoreSettings, validateProduct, validateCategory, validatePromptPay } from '/src/core/validation.js';
 
@@ -1511,20 +1511,10 @@ async function initAdminOrderDetail() {
     const carrierSelect = document.getElementById('admin-order-carrier');
     const trackingInput = document.getElementById('admin-tracking-number');
     const carrierHint = document.getElementById('admin-carrier-hint');
-    const trackingOpen = document.getElementById('admin-tracking-open');
     let carrierTouched = Boolean(order.carrier);
-
-    const syncTrackingLink = () => {
-      if (!trackingOpen) return;
-      const number = (trackingInput?.value || '').trim();
-      const url = number ? carrierTrackingUrl(carrierSelect?.value || '', number) : null;
-      trackingOpen.href = url || '#';
-      trackingOpen.classList.toggle('hidden', !url);
-    };
 
     fillCarrierSelect(carrierSelect, order.carrier || '');
     if (carrierHint) carrierHint.classList.add('hidden');
-    syncTrackingLink();
 
     if (trackingInput && carrierSelect) {
       bindOnce(trackingInput, 'input', () => {
@@ -1539,12 +1529,10 @@ async function initAdminOrderDetail() {
             carrierHint?.classList.add('hidden');
           }
         }
-        syncTrackingLink();
       });
       bindOnce(carrierSelect, 'change', () => {
         carrierTouched = Boolean(carrierSelect.value);
         if (carrierTouched) carrierHint?.classList.add('hidden');
-        syncTrackingLink();
       });
     }
 

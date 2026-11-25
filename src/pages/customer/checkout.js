@@ -16,7 +16,7 @@ import {
 import { promptPayCardHTML } from '/src/core/payment.js';
 import { validateDelivery } from '/src/core/validation.js';
 import { getOrderStatusBadge, getTimelineProgress } from '/src/core/experience.js';
-import { carrierLabel, carrierTrackingUrl } from '/src/core/carriers.js';
+import { carrierLabel } from '/src/core/carriers.js';
 import { calculateShipping, amountToFreeShipping } from '/src/core/settings.js';
 
 let currentRenderer = null;
@@ -632,8 +632,8 @@ async function loadCustomerShippingUpdates(orderId) {
 }
 
 /**
- * การ์ดติดตามพัสดุ: แสดงขนส่ง + ลิงก์หน้าตรวจสอบของขนส่งนั้น + ปุ่มคัดลอกเลข
- * (ไม่เรียก API ภายนอก จึงฟรี 100% และใช้ได้ทุกขนส่ง)
+ * การ์ดติดตามพัสดุ: แสดงชื่อขนส่ง + เลขพัสดุ + ปุ่มคัดลอกเลข
+ * ลูกค้านำเลขไปเช็กกับเว็บของขนส่งเอง ร้านอัปเดตความคืบหน้าผ่าน "อัปเดตการจัดส่ง"
  */
 function renderShipmentTracking(order) {
   const panel = document.getElementById('order-shipment-panel');
@@ -643,16 +643,8 @@ function renderShipmentTracking(order) {
   const carrierName = document.getElementById('order-carrier-name');
   if (carrierName) carrierName.textContent = carrierLabel(order.carrier) || t('order.carrier_unspecified');
 
-  const link = document.getElementById('order-track-link');
-  const url = carrierTrackingUrl(order.carrier, order.tracking);
-  if (link) {
-    if (url) {
-      link.href = url;
-      link.classList.remove('hidden');
-    } else {
-      link.classList.add('hidden');
-    }
-  }
+  const code = document.getElementById('order-tracking-code');
+  if (code) code.textContent = order.tracking || '-';
 
   const copyBtn = document.getElementById('order-copy-tracking');
   if (copyBtn) {
@@ -715,8 +707,6 @@ async function initCustomerOrderDetailPage() {
     document.getElementById('order-shipping').textContent = formatTHB(order.shipping);
     document.getElementById('order-total').textContent = formatTHB(order.total);
     if (order.tracking) {
-      document.getElementById('order-tracking').textContent = order.tracking;
-      document.getElementById('order-tracking-row').classList.remove('hidden');
       renderShipmentTracking(order);
     }
 
