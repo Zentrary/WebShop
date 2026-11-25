@@ -45,9 +45,12 @@
         </div>
 
         <form id="admin-product-form" class="panel mb-lg hidden reveal">
-          <h2 id="admin-product-form-title" data-i18n="admin.new_product">เพิ่มสินค้าใหม่</h2>
-          <div class="flex gap-md" style="flex-wrap: wrap">
-            <div class="form-group" style="flex: 1; min-width: 220px">
+          <div class="panel-head">
+            <h2 id="admin-product-form-title" data-i18n="admin.new_product">เพิ่มสินค้าใหม่</h2>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group col-2">
               <label class="form-label" for="product-name" data-i18n="admin.product_name">ชื่อสินค้า</label>
               <input
                 type="text"
@@ -58,11 +61,25 @@
                 data-i18n-placeholder="admin.product_name_ph"
               />
             </div>
-            <div class="form-group" style="flex: 0 1 160px">
+            <div class="form-group">
               <label class="form-label" for="product-sku">SKU</label>
               <input type="text" id="product-sku" class="form-input" placeholder="C001" />
             </div>
-            <div class="form-group" style="flex: 0 1 200px">
+
+            <div class="form-group">
+              <label class="form-label" for="product-price" data-i18n="admin.product_price">ราคา (บาท)</label>
+              <input type="number" id="product-price" class="form-input" min="0" step="1" required placeholder="50" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="product-sale-price" data-i18n="admin.sale_price">ราคาโปรโมชั่น</label>
+              <input type="number" id="product-sale-price" class="form-input" min="0" step="1" placeholder="40" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="product-stock" data-i18n="admin.product_stock">จำนวนสต็อก</label>
+              <input type="number" id="product-stock" class="form-input" min="0" step="1" required placeholder="10" />
+            </div>
+
+            <div class="form-group col-md-2">
               <label class="form-label" for="product-category" data-i18n="admin.product_category">หมวดหมู่</label>
               <input
                 type="text"
@@ -72,49 +89,39 @@
                 data-i18n-placeholder="admin.category_name_input_ph"
               />
             </div>
-          </div>
-          <div class="flex gap-md" style="flex-wrap: wrap">
-            <div class="form-group" style="flex: 0 1 160px">
-              <label class="form-label" for="product-price" data-i18n="admin.product_price">ราคา (บาท)</label>
-              <input type="number" id="product-price" class="form-input" min="0" step="1" required placeholder="50" />
-            </div>
-            <div class="form-group" style="flex: 0 1 170px">
-              <label class="form-label" for="product-sale-price" data-i18n="admin.sale_price">ราคาโปรโมชั่น (เว้นว่าง = ไม่ลด)</label>
-              <input type="number" id="product-sale-price" class="form-input" min="0" step="1" placeholder="40" />
-            </div>
-            <div class="form-group" style="flex: 0 1 160px">
-              <label class="form-label" for="product-stock" data-i18n="admin.product_stock">จำนวนสต็อก</label>
-              <input type="number" id="product-stock" class="form-input" min="0" step="1" required placeholder="10" />
-            </div>
-            <div class="form-group" style="flex: 1; min-width: 240px">
+            <div class="form-group col-2">
               <label class="form-label" for="product-image" data-i18n="admin.product_image">URL รูปสินค้า</label>
-              <input type="url" id="product-image" class="form-input" placeholder="https://..." />
-              <div class="flex gap-sm mt-sm" style="align-items: center">
+              <div class="input-with-action">
+                <input type="url" id="product-image" class="form-input" placeholder="https://..." />
                 <input type="file" id="product-image-file" accept="image/png,image/jpeg,image/webp" class="hidden" />
-                <button type="button" id="product-image-upload-btn" class="btn btn-outline btn-sm" data-i18n="admin.product_upload">
+                <button type="button" id="product-image-upload-btn" class="btn btn-outline" data-i18n="admin.product_upload">
                   อัปโหลดรูป
                 </button>
-                <span id="product-image-status" class="text-muted text-sm"></span>
               </div>
+              <span id="product-image-status" class="form-status"></span>
+            </div>
+
+            <div class="form-group col-3">
+              <label class="form-label" for="product-description" data-i18n="admin.product_desc">รายละเอียดสินค้า</label>
+              <textarea
+                id="product-description"
+                class="form-input"
+                rows="3"
+                placeholder="รายละเอียดสินค้า"
+                data-i18n-placeholder="admin.product_description_ph"
+              ></textarea>
             </div>
           </div>
-          <div class="form-group">
-            <label class="form-label" for="product-description" data-i18n="admin.product_desc">รายละเอียดสินค้า</label>
-            <textarea
-              id="product-description"
-              class="form-input"
-              rows="3"
-              placeholder="รายละเอียดสินค้า"
-              data-i18n-placeholder="admin.product_description_ph"
-            ></textarea>
-          </div>
-          <label class="form-checkbox mb-lg">
-            <input type="checkbox" id="product-active" checked />
-            <span data-i18n="admin.product_active">เปิดขายสินค้านี้</span>
-          </label>
-          <div class="flex gap-sm">
-            <button type="submit" class="btn btn-primary" data-i18n="admin.save_product">บันทึกสินค้า</button>
-            <button type="button" id="admin-product-cancel" class="btn btn-ghost" data-i18n="common.cancel">ยกเลิก</button>
+
+          <div class="form-foot">
+            <label class="form-checkbox">
+              <input type="checkbox" id="product-active" checked />
+              <span data-i18n="admin.product_active">เปิดขายสินค้านี้</span>
+            </label>
+            <div class="flex gap-sm">
+              <button type="submit" class="btn btn-primary" data-i18n="admin.save_product">บันทึกสินค้า</button>
+              <button type="button" id="admin-product-cancel" class="btn btn-ghost" data-i18n="common.cancel">ยกเลิก</button>
+            </div>
           </div>
         </form>
 
