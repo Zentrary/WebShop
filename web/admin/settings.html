@@ -28,178 +28,285 @@
           </div>
         </div>
 
-        <form id="admin-settings-form" class="panel reveal">
-          <h2 data-i18n="admin.settings_store">ข้อมูลร้าน</h2>
-          <div class="form-group">
-            <label class="form-label" for="setting-store-name" data-i18n="admin.settings_shop_name">ชื่อร้าน</label>
-            <input type="text" id="setting-store-name" class="form-input" placeholder="ZenMarket" />
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="setting-store-logo" data-i18n="admin.settings_logo">โลโก้ร้าน</label>
-            <input
-              type="url"
-              id="setting-store-logo"
-              class="form-input"
-              placeholder="https://your-shop.com/logo.png"
-              data-i18n-placeholder="admin.logo_url_ph"
-            />
-            <div class="form-hint" data-i18n="admin.logo_hint">รองรับไฟล์ PNG, JPG, SVG หรือ WebP ขนาดไม่เกิน 1 MB</div>
+        <form id="admin-settings-form" class="settings-form reveal">
+          <div class="settings-grid">
+            <section class="panel settings-card">
+              <header class="settings-card-head">
+                <span class="settings-card-icon"
+                  ><svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M4 9.5V19a1.5 1.5 0 0 0 1.5 1.5h13A1.5 1.5 0 0 0 20 19V9.5" />
+                    <path d="M3 9.5 5 4h14l2 5.5a3 3 0 0 1-5.5 1.4A3 3 0 0 1 12 12a3 3 0 0 1-3.5-1.1A3 3 0 0 1 3 9.5Z" />
+                    <path d="M10 20.5v-5h4v5" /></svg
+                ></span>
+                <span class="settings-card-titles">
+                  <h2 class="settings-card-title" data-i18n="admin.settings_store">ข้อมูลร้าน</h2>
+                  <p class="settings-card-hint" data-i18n="admin.settings_store_hint">ชื่อร้าน คำโปรย และโลโก้ที่แสดงบนหัวเว็บ</p>
+                </span>
+              </header>
 
-            <div class="flex gap-md items-center mt-sm" style="flex-wrap: wrap">
-              <div
-                id="setting-logo-preview"
-                style="
-                  width: 72px;
-                  height: 72px;
-                  border: 1px solid var(--color-border);
-                  border-radius: var(--radius-md);
-                  display: grid;
-                  place-items: center;
-                  overflow: hidden;
-                  background: var(--color-surface-2);
-                "
-              >
-                <span class="text-muted text-xs" data-i18n="admin.logo_preview">โลโก้</span>
+              <div class="form-group">
+                <label class="form-label" for="setting-store-name" data-i18n="admin.settings_shop_name">ชื่อร้าน</label>
+                <input type="text" id="setting-store-name" class="form-input" placeholder="ZenMarket" />
               </div>
-              <div class="flex gap-sm" style="flex-wrap: wrap">
-                <input type="file" id="setting-logo-file" accept="image/png,image/jpeg,image/webp" class="hidden" />
-                <button type="button" id="setting-logo-upload-btn" class="btn btn-outline btn-sm" data-i18n="admin.settings_logo_upload">
-                  อัปโหลดโลโก้
-                </button>
-                <button type="button" id="setting-logo-remove-btn" class="btn btn-ghost btn-sm" data-i18n="admin.logo_remove">
-                  ลบโลโก้
-                </button>
+
+              <div class="form-group">
+                <label class="form-label" for="setting-store-description" data-i18n="admin.settings_tagline">คำโปรยร้าน</label>
+                <input
+                  type="text"
+                  id="setting-store-description"
+                  class="form-input"
+                  placeholder="ร้านค้าออนไลน์ด้วยความตั้งใจ"
+                  data-i18n-placeholder="admin.settings_tagline_ph"
+                />
               </div>
-            </div>
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="setting-store-description" data-i18n="admin.settings_tagline">คำโปรยร้าน</label>
-            <input
-              type="text"
-              id="setting-store-description"
-              class="form-input"
-              placeholder="ร้านค้าออนไลน์ด้วยความตั้งใจ"
-              data-i18n-placeholder="admin.settings_tagline_ph"
-            />
+
+              <div class="form-group">
+                <label class="form-label" for="setting-store-logo" data-i18n="admin.settings_logo">โลโก้ร้าน</label>
+                <div class="logo-field">
+                  <div id="setting-logo-preview" class="logo-preview">
+                    <span class="text-muted text-xs" data-i18n="admin.logo_preview">โลโก้</span>
+                  </div>
+                  <div class="logo-field-body">
+                    <input
+                      type="url"
+                      id="setting-store-logo"
+                      class="form-input"
+                      placeholder="https://your-shop.com/logo.png"
+                      data-i18n-placeholder="admin.logo_url_ph"
+                    />
+                    <div class="form-hint" data-i18n="admin.logo_hint">รองรับไฟล์ PNG, JPG, SVG หรือ WebP ขนาดไม่เกิน 1 MB</div>
+                    <div class="flex gap-sm mt-sm" style="flex-wrap: wrap">
+                      <input type="file" id="setting-logo-file" accept="image/png,image/jpeg,image/webp" class="hidden" />
+                      <button
+                        type="button"
+                        id="setting-logo-upload-btn"
+                        class="btn btn-outline btn-sm"
+                        data-i18n="admin.settings_logo_upload"
+                      >
+                        อัปโหลดโลโก้
+                      </button>
+                      <button type="button" id="setting-logo-remove-btn" class="btn btn-ghost btn-sm" data-i18n="admin.logo_remove">
+                        ลบโลโก้
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section class="panel settings-card">
+              <header class="settings-card-head">
+                <span class="settings-card-icon"
+                  ><svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path
+                      d="M21 16.9v2.6a1.9 1.9 0 0 1-2.1 1.9 18.6 18.6 0 0 1-8.1-2.9 18.3 18.3 0 0 1-5.6-5.6A18.6 18.6 0 0 1 2.3 4.7 1.9 1.9 0 0 1 4.2 2.6h2.6a1.9 1.9 0 0 1 1.9 1.6c.1.9.3 1.7.6 2.5a1.9 1.9 0 0 1-.4 2L7.8 9.8a15 15 0 0 0 5.6 5.6l1.1-1.1a1.9 1.9 0 0 1 2-.4c.8.3 1.6.5 2.5.6a1.9 1.9 0 0 1 1.6 1.9Z"
+                    /></svg
+                ></span>
+                <span class="settings-card-titles">
+                  <h2 class="settings-card-title" data-i18n="admin.settings_contact">ช่องทางติดต่อ</h2>
+                  <p class="settings-card-hint" data-i18n="admin.settings_contact_hint">ช่องทางที่ลูกค้าใช้ติดต่อร้าน</p>
+                </span>
+              </header>
+
+              <div class="settings-row">
+                <div class="form-group">
+                  <label class="form-label" for="setting-contact-email" data-i18n="common.email">อีเมล</label>
+                  <input type="email" id="setting-contact-email" class="form-input" placeholder="hello@example.com" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="setting-contact-phone" data-i18n="common.phone">เบอร์โทรศัพท์</label>
+                  <input type="tel" id="setting-contact-phone" class="form-input" placeholder="0812345678" />
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="setting-contact-address" data-i18n="admin.settings_contact_address">ที่อยู่ร้าน</label>
+                <input
+                  type="text"
+                  id="setting-contact-address"
+                  class="form-input"
+                  placeholder="เลขที่ ถนน ตำบล อำเภอ จังหวัด"
+                  data-i18n-placeholder="admin.settings_contact_address_ph"
+                />
+              </div>
+
+              <div class="settings-row">
+                <div class="form-group">
+                  <label class="form-label" for="setting-contact-line" data-i18n="admin.settings_line">ลิงก์ LINE</label>
+                  <input type="url" id="setting-contact-line" class="form-input" placeholder="https://line.me/R/ti/..." />
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="setting-contact-facebook" data-i18n="admin.settings_facebook">ลิงก์ Facebook</label>
+                  <input type="url" id="setting-contact-facebook" class="form-input" placeholder="https://facebook.com/..." />
+                </div>
+              </div>
+
+              <div class="settings-row">
+                <div class="form-group">
+                  <label class="form-label" for="setting-contact-instagram" data-i18n="admin.settings_instagram">ลิงก์ Instagram</label>
+                  <input type="url" id="setting-contact-instagram" class="form-input" placeholder="https://instagram.com/..." />
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="setting-contact-tiktok" data-i18n="admin.settings_tiktok">ลิงก์ TikTok</label>
+                  <input
+                    type="url"
+                    id="setting-contact-tiktok"
+                    class="form-input"
+                    placeholder="https://tiktok.com/@..."
+                    data-i18n-placeholder="admin.settings_tiktok_ph"
+                  />
+                </div>
+              </div>
+
+              <div class="settings-toggle">
+                <label class="form-checkbox">
+                  <input type="checkbox" id="setting-show-contact" checked />
+                  <span data-i18n="admin.settings_show_contact">แสดงส่วนติดต่อบนหน้าแรก</span>
+                </label>
+                <div class="form-hint" data-i18n="admin.settings_show_contact_hint">ถ้าปิดไว้ ส่วนติดต่อจะไม่แสดงบนหน้าแรก แต่ท้ายเว็บยังแสดงอยู่</div>
+              </div>
+            </section>
+
+            <section class="panel settings-card">
+              <header class="settings-card-head">
+                <span class="settings-card-icon"
+                  ><svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M2.5 6.5h10V16h-10z" />
+                    <path d="M12.5 9.5H17l4 4V16h-8.5z" />
+                    <circle cx="6.5" cy="17.5" r="1.8" />
+                    <circle cx="17" cy="17.5" r="1.8" /></svg
+                ></span>
+                <span class="settings-card-titles">
+                  <h2 class="settings-card-title" data-i18n="admin.settings_shipping">การจัดส่ง</h2>
+                  <p class="settings-card-hint" data-i18n="admin.settings_shipping_hint">ค่าส่ง เกณฑ์ส่งฟรี และการแจ้งเตือนสต็อก</p>
+                </span>
+              </header>
+
+              <div class="settings-row">
+                <div class="form-group">
+                  <label class="form-label" for="setting-shipping-fee" data-i18n="admin.settings_shipping_fee">ค่าจัดส่ง (บาท)</label>
+                  <input
+                    type="number"
+                    id="setting-shipping-fee"
+                    class="form-input"
+                    min="0"
+                    max="10000"
+                    step="0.01"
+                    inputmode="decimal"
+                    placeholder="50"
+                  />
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="setting-free-shipping-threshold" data-i18n="admin.settings_free_threshold"
+                    >ส่งฟรีเมื่อช้อปครบ (บาท)</label
+                  >
+                  <input
+                    type="number"
+                    id="setting-free-shipping-threshold"
+                    class="form-input"
+                    min="1"
+                    max="1000000"
+                    step="0.01"
+                    inputmode="decimal"
+                    placeholder="300"
+                  />
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="setting-low-stock" data-i18n="admin.low_stock_threshold">เกณฑ์แจ้งเตือนสต็อก</label>
+                <input type="number" id="setting-low-stock" class="form-input" min="0" max="1000" step="1" placeholder="5" />
+                <div class="form-hint" data-i18n="admin.low_stock_threshold_hint">แจ้งเตือนเมื่อสต็อกเหลือน้อยกว่าหรือเท่ากับจำนวนนี้</div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="setting-shipping-note" data-i18n="admin.settings_shipping_note">หมายเหตุการจัดส่ง</label>
+                <textarea
+                  id="setting-shipping-note"
+                  class="form-input"
+                  rows="3"
+                  placeholder="จัดส่งช่วงเวลา หรือหมายเหตุอื่น ๆ"
+                  data-i18n-placeholder="admin.settings_shipping_note_ph"
+                ></textarea>
+              </div>
+            </section>
+
+            <section class="panel settings-card">
+              <header class="settings-card-head">
+                <span class="settings-card-icon"
+                  ><svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M5 3.5h9.5L20 9v11.5H5z" />
+                    <path d="M14 3.5V9h5.5" />
+                    <path d="M8.5 13h7M8.5 16.5h5" /></svg
+                ></span>
+                <span class="settings-card-titles">
+                  <h2 class="settings-card-title" data-i18n="admin.settings_about">เกี่ยวกับร้าน</h2>
+                  <p class="settings-card-hint" data-i18n="admin.settings_about_hint">ข้อความแนะนำร้านที่แสดงในหน้าแรก</p>
+                </span>
+              </header>
+
+              <div class="form-group">
+                <label class="form-label" for="setting-about" data-i18n="admin.settings_about_text">ข้อความแนะนำร้าน</label>
+                <textarea
+                  id="setting-about"
+                  class="form-input"
+                  rows="6"
+                  placeholder="เขียนเกี่ยวกับร้านของคุณ..."
+                  data-i18n-placeholder="admin.settings_about_ph"
+                ></textarea>
+              </div>
+            </section>
           </div>
 
-          <h2 class="mt-lg" data-i18n="admin.settings_contact">ช่องทางติดต่อ</h2>
-          <div class="flex gap-md" style="flex-wrap: wrap">
-            <div class="form-group" style="flex: 1; min-width: 220px">
-              <label class="form-label" for="setting-contact-email" data-i18n="common.email">อีเมล</label>
-              <input type="email" id="setting-contact-email" class="form-input" placeholder="hello@example.com" />
-            </div>
-            <div class="form-group" style="flex: 1; min-width: 220px">
-              <label class="form-label" for="setting-contact-phone" data-i18n="common.phone">เบอร์โทรศัพท์</label>
-              <input type="tel" id="setting-contact-phone" class="form-input" placeholder="0812345678" />
-            </div>
+          <div class="settings-savebar">
+            <p class="settings-savebar-hint" data-i18n="admin.settings_save_hint">บันทึกแล้วข้อมูลจะแสดงบนหน้าร้านทันที</p>
+            <button type="submit" class="btn btn-primary" data-i18n="admin.settings_save">บันทึกการตั้งค่า</button>
           </div>
-          <div class="form-group">
-            <label class="form-label" for="setting-contact-address" data-i18n="admin.settings_contact_address">ที่อยู่ร้าน</label>
-            <input
-              type="text"
-              id="setting-contact-address"
-              class="form-input"
-              placeholder="เลขที่ ถนน ตำบล อำเภอ จังหวัด"
-              data-i18n-placeholder="admin.settings_contact_address_ph"
-            />
-          </div>
-          <div class="flex gap-md" style="flex-wrap: wrap">
-            <div class="form-group" style="flex: 1; min-width: 220px">
-              <label class="form-label" for="setting-contact-line" data-i18n="admin.settings_line">ลิงก์ LINE</label>
-              <input type="url" id="setting-contact-line" class="form-input" placeholder="https://line.me/R/ti/..." />
-            </div>
-            <div class="form-group" style="flex: 1; min-width: 220px">
-              <label class="form-label" for="setting-contact-facebook" data-i18n="admin.settings_facebook">ลิงก์ Facebook</label>
-              <input type="url" id="setting-contact-facebook" class="form-input" placeholder="https://facebook.com/..." />
-            </div>
-          </div>
-          <div class="flex gap-md" style="flex-wrap: wrap">
-            <div class="form-group" style="flex: 1; min-width: 220px">
-              <label class="form-label" for="setting-contact-instagram" data-i18n="admin.settings_instagram">ลิงก์ Instagram</label>
-              <input type="url" id="setting-contact-instagram" class="form-input" placeholder="https://instagram.com/..." />
-            </div>
-            <div class="form-group" style="flex: 1; min-width: 220px">
-              <label class="form-label" for="setting-contact-tiktok" data-i18n="admin.settings_tiktok">ลิงก์ TikTok</label>
-              <input
-                type="url"
-                id="setting-contact-tiktok"
-                class="form-input"
-                placeholder="https://tiktok.com/@..."
-                data-i18n-placeholder="admin.settings_tiktok_ph"
-              />
-            </div>
-          </div>
+        </form>
 
-          <label class="form-checkbox">
-            <input type="checkbox" id="setting-show-contact" checked />
-            <span data-i18n="admin.settings_show_contact">แสดงส่วนติดต่อบนหน้าแรก</span>
-          </label>
-          <div class="form-hint" data-i18n="admin.settings_show_contact_hint">ถ้าปิดไว้ ส่วนติดต่อจะไม่แสดงบนหน้าแรก แต่ท้ายเว็บยังแสดงอยู่</div>
+        <section class="panel settings-card settings-card--pages reveal">
+          <header class="settings-card-head">
+            <span class="settings-card-icon"
+              ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 4.5h11l5 5V19.5H4z" />
+                <path d="M8 9.5h6M8 13h8M8 16.5h5" /></svg
+            ></span>
+            <span class="settings-card-titles">
+              <h2 class="settings-card-title" data-i18n="admin.pages_title">ข้อความหน้าเว็บ</h2>
+              <p class="settings-card-hint" data-i18n="admin.pages_sub">แก้ข้อความในหน้า เกี่ยวกับร้าน / ช่วยเหลือ / ความเป็นส่วนตัว</p>
+            </span>
+          </header>
 
-          <h2 class="mt-lg" data-i18n="admin.settings_shipping">การจัดส่ง</h2>
-          <div class="flex gap-md" style="flex-wrap: wrap">
-            <div class="form-group" style="flex: 1; min-width: 220px">
-              <label class="form-label" for="setting-shipping-fee" data-i18n="admin.settings_shipping_fee">ค่าจัดส่ง (บาท)</label>
-              <input
-                type="number"
-                id="setting-shipping-fee"
-                class="form-input"
-                min="0"
-                max="10000"
-                step="0.01"
-                inputmode="decimal"
-                placeholder="50"
-              />
-            </div>
-            <div class="form-group" style="flex: 1; min-width: 220px">
-              <label class="form-label" for="setting-low-stock" data-i18n="admin.low_stock_threshold">เกณฑ์แจ้งเตือนสต็อก</label>
-              <input type="number" id="setting-low-stock" class="form-input" min="0" max="1000" step="1" placeholder="5" />
-              <div class="form-hint" data-i18n="admin.low_stock_threshold_hint">แจ้งเตือนเมื่อสต็อกเหลือน้อยกว่าหรือเท่ากับจำนวนนี้</div>
-            </div>
-            <div class="form-group" style="flex: 1; min-width: 220px">
-              <label class="form-label" for="setting-free-shipping-threshold" data-i18n="admin.settings_free_threshold"
-                >ส่งฟรีเมื่อช้อปครบ (บาท)</label
-              >
-              <input
-                type="number"
-                id="setting-free-shipping-threshold"
-                class="form-input"
-                min="1"
-                max="1000000"
-                step="0.01"
-                inputmode="decimal"
-                placeholder="300"
-              />
-            </div>
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="setting-shipping-note" data-i18n="admin.settings_shipping_note">หมายเหตุการจัดส่ง</label>
-            <textarea
-              id="setting-shipping-note"
-              class="form-input"
-              rows="3"
-              placeholder="จัดส่งช่วงเวลา หรือหมายเหตุอื่น ๆ"
-              data-i18n-placeholder="admin.settings_shipping_note_ph"
-            ></textarea>
-          </div>
-
-          <h2 class="mt-lg" data-i18n="admin.settings_about">เกี่ยวกับร้าน</h2>
-          <div class="form-group">
-            <label class="form-label" for="setting-about" data-i18n="admin.settings_about_text">ข้อความแนะนำร้าน</label>
-            <textarea
-              id="setting-about"
-              class="form-input"
-              rows="5"
-              placeholder="เขียนเกี่ยวกับร้านของคุณ..."
-              data-i18n-placeholder="admin.settings_about_ph"
-            ></textarea>
-          </div>
-
-          <h2 class="mt-lg" data-i18n="admin.pages_title">ข้อความหน้าเว็บ</h2>
-          <p class="text-muted text-sm" data-i18n="admin.pages_sub">แก้ข้อความในหน้า เกี่ยวกับร้าน / ช่วยเหลือ / ความเป็นส่วนตัว</p>
-          <div class="flex gap-md" style="flex-wrap: wrap; margin-top: 0.75rem">
-            <div class="form-group" style="flex: 0 1 220px">
+          <div class="settings-row settings-row--pages">
+            <div class="form-group">
               <label class="form-label" for="pages-slug" data-i18n="admin.pages_page_label">หน้า</label>
               <select id="pages-slug" class="form-select">
                 <option value="about" data-i18n="admin.pages_about">เกี่ยวกับร้าน</option>
@@ -207,36 +314,36 @@
                 <option value="privacy" data-i18n="admin.pages_privacy">ความเป็นส่วนตัว</option>
               </select>
             </div>
-            <div class="form-group" style="flex: 0 1 160px">
+            <div class="form-group">
               <label class="form-label" for="pages-lang" data-i18n="common.language">ภาษา</label>
               <select id="pages-lang" class="form-select">
                 <option value="th">ไทย</option>
                 <option value="en">English</option>
               </select>
             </div>
+            <div class="form-group">
+              <label class="form-label" for="pages-title" data-i18n="admin.pages_heading">หัวข้อ</label>
+              <input
+                type="text"
+                id="pages-title"
+                class="form-input"
+                maxlength="120"
+                placeholder="เว้นว่าง = ใช้หัวข้อเริ่มต้นของหน้า"
+                data-i18n-placeholder="admin.pages_heading_ph"
+              />
+            </div>
           </div>
-          <div class="form-group">
-            <label class="form-label" for="pages-title" data-i18n="admin.pages_heading">หัวข้อ</label>
-            <input
-              type="text"
-              id="pages-title"
-              class="form-input"
-              maxlength="120"
-              placeholder="เว้นว่าง = ใช้หัวข้อเริ่มต้นของหน้า"
-              data-i18n-placeholder="admin.pages_heading_ph"
-            />
-          </div>
+
           <div class="form-group">
             <label class="form-label" for="pages-body" data-i18n="admin.pages_body">เนื้อหา (เว้นว่าง = ใช้ข้อความเริ่มต้น)</label>
             <textarea id="pages-body" class="form-input" rows="8"></textarea>
             <div class="form-hint" data-i18n="admin.pages_hint">เว้นบรรทัดเพื่อขึ้นย่อหน้าใหม่</div>
           </div>
-          <button type="button" id="pages-save" class="btn btn-outline" data-i18n="admin.pages_save">บันทึกข้อความหน้านี้</button>
 
-          <div class="settings-actions">
-            <button type="submit" class="btn btn-primary" data-i18n="admin.settings_save">บันทึกการตั้งค่า</button>
+          <div class="settings-card-foot">
+            <button type="button" id="pages-save" class="btn btn-outline" data-i18n="admin.pages_save">บันทึกข้อความหน้านี้</button>
           </div>
-        </form>
+        </section>
       </div>
     </div>
   </body>

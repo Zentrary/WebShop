@@ -113,6 +113,7 @@ const GLOBALS = new Set([
   'DOMParser',
   'XMLSerializer',
   'Image',
+  'createImageBitmap',
   'Audio',
   'Notification',
   'getComputedStyle',

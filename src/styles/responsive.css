@@ -753,3 +753,42 @@
     padding-inline: 1rem;
   }
 }
+
+@media (max-width: 720px) {
+  .settings-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .settings-row,
+  .settings-row--pages {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .settings-card {
+    padding: var(--space-lg);
+  }
+  .settings-savebar {
+    justify-content: stretch;
+  }
+  .settings-savebar .btn {
+    width: 100%;
+  }
+  .settings-savebar-hint {
+    display: none;
+  }
+  .settings-card-foot {
+    justify-content: stretch;
+  }
+  .settings-card-foot .btn {
+    width: 100%;
+  }
+  .logo-field {
+    flex-direction: column;
+  }
+  .logo-preview {
+    width: 64px;
+    height: 64px;
+  }
+  .logo-field-body {
+    flex: 1 1 auto;
+    width: 100%;
+  }
+}
