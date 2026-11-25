@@ -94,6 +94,12 @@
               <span class="form-hint" data-i18n="admin.category_auto_hint">พิมพ์ชื่อใหม่ = สร้างหมวดหมู่นี้ให้อัตโนมัติ</span>
             </div>
 
+            <div class="form-group">
+              <label class="form-label" for="product-new-days" data-i18n="admin.new_days">อยู่ในหมวด "ใหม่" (วัน)</label>
+              <input type="number" id="product-new-days" class="form-input" min="0" max="365" step="1" value="7" />
+              <span class="form-hint" data-i18n="admin.new_days_hint">ครบกำหนดแล้วสินค้าจะกลับไปอยู่หมวดที่เลือกไว้เอง ไม่ต้องย้ายมือ</span>
+            </div>
+
             <div class="form-group col-md-2">
               <label class="form-label" for="product-publish-at" data-i18n="admin.publish_at">ตั้งเวลาเปิดขาย</label>
               <input type="datetime-local" id="product-publish-at" class="form-input" />
