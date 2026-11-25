@@ -1,3 +1,5 @@
+import { t } from './i18n.js';
+
 const ICONS = {
   success:
     '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
@@ -38,9 +40,55 @@ export function notify(message, type = 'info', duration = 4000) {
 }
 
 export function confirmAction(message, options = {}) {
+  const {
+    title = t('common.confirm_title'),
+    confirmText = t('common.confirm_ok'),
+    cancelText = t('common.cancel'),
+    danger = false,
+  } = options;
+
   return new Promise((resolve) => {
-    const ok = window.confirm(message);
-    resolve(ok);
+    const dialog = document.createElement('dialog');
+    dialog.className = 'confirm-dialog';
+    dialog.innerHTML = `
+      <div class="confirm-body">
+        <h2 class="confirm-title"></h2>
+        <p class="confirm-message"></p>
+        <div class="confirm-actions">
+          <button type="button" class="btn btn-outline" data-confirm-cancel></button>
+          <button type="button" class="btn ${danger ? 'btn-danger-solid' : 'btn-primary'}" data-confirm-ok></button>
+        </div>
+      </div>`;
+
+    dialog.querySelector('.confirm-title').textContent = title;
+    dialog.querySelector('.confirm-message').textContent = message;
+    const cancelBtn = dialog.querySelector('[data-confirm-cancel]');
+    const okBtn = dialog.querySelector('[data-confirm-ok]');
+    cancelBtn.textContent = cancelText;
+    okBtn.textContent = confirmText;
+
+    let settled = false;
+    const settle = (value) => {
+      if (settled) return;
+      settled = true;
+      resolve(value);
+      if (dialog.open) dialog.close();
+      dialog.remove();
+    };
+
+    okBtn.addEventListener('click', () => settle(true));
+    cancelBtn.addEventListener('click', () => settle(false));
+    dialog.addEventListener('cancel', (event) => {
+      event.preventDefault();
+      settle(false);
+    });
+    dialog.addEventListener('click', (event) => {
+      if (event.target === dialog) settle(false);
+    });
+
+    document.body.appendChild(dialog);
+    dialog.showModal();
+    cancelBtn.focus();
   });
 }
 

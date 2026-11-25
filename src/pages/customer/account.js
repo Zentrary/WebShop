@@ -1,7 +1,7 @@
 import { initApp, state, requireSupabase } from '/src/app.js';
 import { setAudience, isSignedIn } from '/src/core/audience.js';
 import { translatePage, t, onLanguageChange } from '/src/core/i18n.js';
-import { notify } from '/src/core/ui.js';
+import { confirmAction, notify } from '/src/core/ui.js';
 import { initCaptcha, hasCaptcha, renderTurnstile } from '/src/core/captcha.js';
 import { formatTHB, escapeHTML, safeImage, safeReturnPath, effectivePrice, hasSalePrice } from '/src/core/lib.js';
 import {
@@ -623,7 +623,11 @@ async function loadAddresses(user) {
 
     list.querySelectorAll('[data-del-address]').forEach((btn) => {
       btn.addEventListener('click', async () => {
-        if (!window.confirm(t('account.delete_address_confirm'))) return;
+        const confirmed = await confirmAction(t('account.delete_address_confirm'), {
+          danger: true,
+          confirmText: t('common.delete'),
+        });
+        if (!confirmed) return;
         try {
           const { error } = await state.supabase.rpc('delete_address', { p_id: btn.getAttribute('data-del-address') });
           if (error) throw error;
