@@ -272,6 +272,12 @@ async function initProducts() {
   const formTitle = document.getElementById('admin-product-form-title');
   let editingId = null;
 
+  function renderStockCell(stock) {
+    const qty = Number(stock) || 0;
+    if (qty > 0) return `<span class="stock-qty">${qty}</span>`;
+    return `<span class="badge badge-error">${t('admin.stock_out')}</span>`;
+  }
+
   async function loadProducts() {
     const { data: products, error } = await supabase
       .from('products')
@@ -293,7 +299,7 @@ async function initProducts() {
         `<td data-label="${t('common.price')}" class="num">${formatTHB(saleOn ? p.sale_price : p.price)}${
           saleOn ? ` <s class="price-was">${formatTHB(p.price)}</s>` : ''
         }</td>` +
-        `<td data-label="${t('admin.product_stock')}" class="num">${p.stock}</td>` +
+        `<td data-label="${t('admin.product_stock')}" class="num">${renderStockCell(p.stock)}</td>` +
         `<td data-label="${t('common.status')}"><span class="badge badge-${p.active ? 'success' : 'error'}">${p.active ? t('admin.active') : t('admin.hidden')}</span></td>` +
         `<td class="cell-actions"><button class="btn btn-outline btn-sm" data-edit="${p.id}">${t('common.edit')}</button> ` +
         `<button class="btn btn-outline btn-sm" data-toggle="${p.id}">${p.active ? t('admin.hide') : t('admin.show')}</button> ` +
@@ -1329,6 +1335,20 @@ async function initAdminOrderDetail() {
     renderSlipReview(order);
 
     const shippingForm = document.getElementById('admin-shipping-update-form');
+    const pickBtn = document.getElementById('admin-shipping-pick');
+    const filesInput = document.getElementById('admin-shipping-images');
+    const filesStatus = document.getElementById('admin-shipping-file-status');
+    if (pickBtn && filesInput) {
+      bindOnce(pickBtn, 'click', () => filesInput.click());
+      bindOnce(filesInput, 'change', () => {
+        const picked = Array.from(filesInput.files || []);
+        if (!filesStatus) return;
+        filesStatus.textContent = picked.length
+          ? t('admin.shipping_files_selected', { n: picked.length })
+          : t('admin.shipping_no_file');
+      });
+    }
+
     if (shippingForm) {
       bindOnce(shippingForm, 'submit', async (e) => {
         e.preventDefault();
@@ -1360,6 +1380,7 @@ async function initAdminOrderDetail() {
           if (error) throw error;
           notify(t('admin.shipping_sent'), 'success');
           shippingForm.reset();
+          if (filesStatus) filesStatus.textContent = t('admin.shipping_no_file');
           await loadShippingHistory(order.id);
         } catch (err) {
           console.error(err);

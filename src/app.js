@@ -24,6 +24,7 @@ import {
 } from '/src/core/i18n.js';
 import { setFlash, notify, flash } from '/src/core/ui.js';
 import { initCaptcha } from '/src/core/captcha.js';
+import { initIdleTimeout } from '/src/core/idle.js';
 import { mergeStoreSettings, deliveryWindow } from '/src/core/settings.js';
 import { initReveal } from '/src/core/reveal.js';
 import { installGlobalErrorHandlers } from '/src/core/errors.js';
@@ -609,6 +610,18 @@ export function renderCookieNotice() {
   });
 }
 
+function startIdleWatch() {
+  initIdleTimeout({
+    onTimeout: async () => {
+      try {
+        if (state.supabase) await state.supabase.auth.signOut();
+      } catch {}
+      logout();
+      window.location.href = '/auth/login?timeout=1';
+    },
+  });
+}
+
 let initPromise = null;
 
 export function initApp() {
@@ -629,6 +642,8 @@ async function doInit() {
 
   state.audience = getAudience();
   state.user = getCurrentUser();
+
+  if (state.user) startIdleWatch();
 
   applyMemberGating();
 

@@ -279,6 +279,16 @@
   .header-logo-name {
     max-width: 26vw;
   }
+  .product-card .thumb {
+    aspect-ratio: 1 / 1;
+  }
+  .product-card .body {
+    padding: var(--space-sm) var(--space-sm) var(--space-md);
+  }
+  .product-card .name {
+    font-size: var(--font-size-sm);
+    line-height: 1.35;
+  }
   .hero-meta {
     gap: var(--space-md);
   }

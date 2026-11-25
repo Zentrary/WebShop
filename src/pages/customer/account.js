@@ -62,16 +62,32 @@ function bindPasswordStrength(inputId, hintId) {
   });
 }
 
+function mountCaptcha(form, containerId = 'turnstile-container') {
+  const container = document.getElementById(containerId);
+  if (!form || !hasCaptcha()) return;
+  if (container) container.style.display = 'block';
+  renderTurnstile(containerId, (token) => {
+    form.dataset.turnstileToken = token;
+  });
+}
+
+function captchaTokenFor(form) {
+  if (!hasCaptcha()) return undefined;
+  return form.dataset.turnstileToken || null;
+}
+
 function initLoginPage() {
   const form = document.getElementById('login-form');
-  const turnstileContainer = document.getElementById('turnstile-container');
   if (!form) return;
 
-  if (hasCaptcha()) {
-    if (turnstileContainer) turnstileContainer.style.display = 'block';
-    renderTurnstile('turnstile-container', (token) => {
-      form.dataset.turnstileToken = token;
-    });
+  mountCaptcha(form);
+
+  if (new URLSearchParams(window.location.search).get('timeout') === '1') {
+    const alert = document.getElementById('login-alert');
+    if (alert) {
+      alert.textContent = t('auth.session_expired');
+      alert.classList.remove('hidden');
+    }
   }
 
   form.addEventListener('submit', async (e) => {
@@ -80,6 +96,11 @@ function initLoginPage() {
     const password = document.getElementById('login-password').value;
     if (!identifier || !password) {
       notify(t('validation.login_required'), 'error');
+      return;
+    }
+    const captchaToken = captchaTokenFor(form);
+    if (captchaToken === null) {
+      notify(t('auth.captcha_required'), 'warning');
       return;
     }
     const btn = form.querySelector('button[type="submit"]');
@@ -107,7 +128,11 @@ function initLoginPage() {
         email = resolved;
       }
 
-      const { data, error } = await state.supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await state.supabase.auth.signInWithPassword({
+        email,
+        password,
+        options: captchaToken ? { captchaToken } : undefined,
+      });
       if (error) throw error;
 
       const { data: profile } = await state.supabase
@@ -149,6 +174,7 @@ function initRegisterPage() {
   const form = document.getElementById('register-form');
   if (!form) return;
   bindPasswordStrength('register-password', 'register-password-hint');
+  mountCaptcha(form);
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -195,6 +221,11 @@ function initRegisterPage() {
       notify(t(strength.errorKey), 'error');
       return;
     }
+    const captchaToken = captchaTokenFor(form);
+    if (captchaToken === null) {
+      notify(t('auth.captcha_required'), 'warning');
+      return;
+    }
 
     const btn = form.querySelector('button[type="submit"]');
     btn.disabled = true;
@@ -205,6 +236,7 @@ function initRegisterPage() {
         email,
         password,
         options: {
+          captchaToken,
           data: {
             username,
             phone: normalizedPhone,
@@ -244,11 +276,17 @@ function initRegisterPage() {
 function initForgotPasswordPage() {
   const form = document.getElementById('forgot-password-form');
   if (!form) return;
+  mountCaptcha(form);
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const email = document.getElementById('forgot-email').value.trim();
     if (!email) return;
+    const captchaToken = captchaTokenFor(form);
+    if (captchaToken === null) {
+      notify(t('auth.captcha_required'), 'warning');
+      return;
+    }
 
     const btn = form.querySelector('button[type="submit"]');
     btn.disabled = true;
@@ -257,6 +295,7 @@ function initForgotPasswordPage() {
     try {
       const { error } = await state.supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/auth/reset-password`,
+        ...(captchaToken ? { captchaToken } : {}),
       });
       if (error) throw error;
       notify(t('auth.forgot_sent'), 'success');
@@ -275,6 +314,7 @@ function initResetPasswordPage() {
   const form = document.getElementById('reset-password-form');
   if (!form) return;
   bindPasswordStrength('reset-password', 'reset-password-hint');
+  mountCaptcha(form);
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -290,9 +330,14 @@ function initResetPasswordPage() {
       notify(t(strength.errorKey), 'error');
       return;
     }
+    const captchaToken = captchaTokenFor(form);
+    if (captchaToken === null) {
+      notify(t('auth.captcha_required'), 'warning');
+      return;
+    }
 
     try {
-      const { error } = await state.supabase.auth.updateUser({ password });
+      const { error } = await state.supabase.auth.updateUser({ password }, captchaToken ? { captchaToken } : undefined);
       if (error) throw error;
       notify(t('auth.reset_success'), 'success');
       setTimeout(() => {

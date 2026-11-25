@@ -5,6 +5,8 @@ import { notify } from '/src/core/ui.js';
 import {
   formatTHB,
   escapeHTML,
+  safeImage,
+  effectivePrice,
   createPromptPayPayload,
   createPromptPayQRDataURL,
   getPrivateImageUrl,
@@ -17,6 +19,7 @@ import { getOrderStatusBadge, getTimelineProgress } from '/src/core/experience.j
 import { calculateShipping, amountToFreeShipping } from '/src/core/settings.js';
 
 let currentRenderer = null;
+let cartNotices = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
   await initApp();
@@ -47,8 +50,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 });
 
-function initCartPage() {
+async function initCartPage() {
+  await syncCart();
   renderCart();
+  paintCartNotices();
 
   bindOnce(document.getElementById('cart-items'), 'click', (e) => {
     const removeBtn = e.target.closest('[data-remove-item]');
@@ -76,6 +81,106 @@ function initCartPage() {
 
 // คูปองที่ใช้อยู่ (ตรวจกับเซิร์ฟเวอร์แล้วเท่านั้น — ฝั่งเซิร์ฟเวอร์คิดส่วนลดซ้ำอีกครั้งตอนสร้างออเดอร์)
 let appliedCoupon = null;
+
+async function syncCart() {
+  if (!state.supabase || !state.cart.length) return;
+  const ids = [...new Set(state.cart.map((item) => item.product_id).filter(Boolean))];
+  if (!ids.length) return;
+
+  let rows = [];
+  try {
+    const { data, error } = await state.supabase
+      .from('products')
+      .select('id,name,price,sale_price,stock,image_url,active')
+      .in('id', ids);
+    if (error) throw error;
+    rows = Array.isArray(data) ? data : [];
+  } catch {
+    return;
+  }
+
+  const catalog = new Map(rows.map((product) => [product.id, product]));
+  const notices = [];
+  let dirty = false;
+  const kept = [];
+
+  state.cart.forEach((item) => {
+    const product = catalog.get(item.product_id);
+    if (!product || product.active === false) {
+      notices.push({ type: 'removed', text: t('cart.notice_removed', { name: item.name }) });
+      dirty = true;
+      return;
+    }
+
+    if (item.name !== product.name) {
+      item.name = product.name;
+      dirty = true;
+    }
+    if ((item.image_url || null) !== (product.image_url || null)) {
+      item.image_url = product.image_url || null;
+      dirty = true;
+    }
+
+    const price = Number(effectivePrice(product));
+    if (Number(item.price) !== price) {
+      notices.push({
+        type: 'price',
+        text: t('cart.notice_price', { name: product.name, from: formatTHB(item.price), to: formatTHB(price) }),
+      });
+      item.price = price;
+      dirty = true;
+    }
+
+    const stock = Number(product.stock) || 0;
+    if (stock < item.quantity) {
+      const nextQty = Math.max(1, stock);
+      notices.push({
+        type: 'stock',
+        text:
+          stock > 0
+            ? t('cart.notice_stock', { name: product.name, n: nextQty })
+            : t('cart.notice_out_of_stock', { name: product.name }),
+      });
+      item.quantity = nextQty;
+      dirty = true;
+    }
+
+    kept.push(item);
+  });
+
+  if (dirty) {
+    state.cart = kept;
+    localStorage.setItem('zenmarket_cart', JSON.stringify(state.cart));
+    updateCartBadge();
+    cartNotices = notices;
+  }
+}
+
+function paintCartNotices() {
+  const host = document.getElementById('cart-notices') || document.getElementById('checkout-notices');
+  if (!host) return;
+  if (!cartNotices.length) {
+    host.innerHTML = '';
+    host.classList.add('hidden');
+    return;
+  }
+  host.classList.remove('hidden');
+  host.innerHTML = `
+    <div class="cart-notice">
+      <div class="cart-notice-body">
+        <strong>${escapeHTML(t('cart.notice_title'))}</strong>
+        <ul>${cartNotices.map((notice) => `<li>${escapeHTML(notice.text)}</li>`).join('')}</ul>
+        <span class="text-secondary text-xs">${escapeHTML(t('cart.notice_hint'))}</span>
+      </div>
+      <button type="button" class="btn btn-outline btn-sm" id="cart-notice-dismiss">${escapeHTML(t('cart.notice_dismiss'))}</button>
+    </div>
+  `;
+  host.querySelector('#cart-notice-dismiss')?.addEventListener('click', () => {
+    cartNotices = [];
+    host.innerHTML = '';
+    host.classList.add('hidden');
+  });
+}
 
 function cartTotals() {
   const subtotal = state.cart.reduce((s, i) => s + i.price * i.quantity, 0);
@@ -121,7 +226,7 @@ function renderCart() {
     const el = document.createElement('div');
     el.className = 'cart-row';
     el.innerHTML = `
-      <img class="ci-thumb" src="/images/placeholder.svg" alt="${escapeHTML(item.name)}">
+      <img class="ci-thumb" src="${safeImage(item.image_url)}" alt="${escapeHTML(item.name)}" loading="lazy">
       <div class="ci-main">
         <div class="nm">${escapeHTML(item.name)}</div>
         <div class="pr">${formatTHB(item.price)} ${t('cart.per_item')}</div>
@@ -173,6 +278,8 @@ async function initCheckoutPage() {
     return;
   }
 
+  await syncCart();
+  paintCartNotices();
   document.getElementById('checkout-items').innerHTML = state.cart
     .map(
       (item) => `
@@ -264,7 +371,7 @@ async function loadSavedAddresses() {
     }
 
     host.innerHTML = `
-      <p class="text-muted text-sm">${escapeHTML(t('checkout.saved_addresses'))} · ${escapeHTML(t('checkout.saved_addresses_hint'))}</p>
+      <p class="text-secondary text-sm" id="checkout-saved-hint">${escapeHTML(t('checkout.saved_addresses'))} · ${escapeHTML(t('checkout.saved_addresses_hint'))}</p>
       <div class="checkout-saved-list">
         ${data
           .map(
@@ -279,17 +386,34 @@ async function loadSavedAddresses() {
       </div>`;
 
     host.classList.remove('hidden');
+
+    const fillFrom = (addr, btn) => {
+      if (!addr) return;
+      document.getElementById('checkout-name').value = addr.recipient || '';
+      document.getElementById('checkout-phone').value = addr.phone || '';
+      document.getElementById('checkout-address').value = addr.address || '';
+      host.querySelectorAll('.saved-address').forEach((el) => el.classList.remove('is-active'));
+      if (btn) btn.classList.add('is-active');
+    };
+
     host.querySelectorAll('[data-address-index]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const addr = data[Number(btn.getAttribute('data-address-index'))];
-        if (!addr) return;
-        document.getElementById('checkout-name').value = addr.recipient || '';
-        document.getElementById('checkout-phone').value = addr.phone || '';
-        document.getElementById('checkout-address').value = addr.address || '';
-        host.querySelectorAll('.saved-address').forEach((el) => el.classList.remove('is-active'));
-        btn.classList.add('is-active');
-      });
+      btn.addEventListener('click', () => fillFrom(data[Number(btn.getAttribute('data-address-index'))], btn));
     });
+
+    const fieldsEmpty = ['checkout-name', 'checkout-phone', 'checkout-address'].every(
+      (id) => !(document.getElementById(id)?.value || '').trim(),
+    );
+    const preferred = data.find((addr) => addr.is_default) || data[0];
+    if (fieldsEmpty && preferred) {
+      const preferredIndex = data.indexOf(preferred);
+      fillFrom(preferred, host.querySelector(`[data-address-index="${preferredIndex}"]`));
+      const hint = document.getElementById('checkout-saved-hint');
+      if (hint) hint.textContent = t('checkout.saved_addresses_autofilled');
+    }
+
+    if (data.length === 1) {
+      host.querySelector('.checkout-saved-list')?.classList.add('is-single');
+    }
   } catch (err) {
     console.warn('[ZenMarket] saved addresses unavailable', err);
     host.classList.add('hidden');
@@ -597,6 +721,8 @@ async function initCustomerOrderDetailPage() {
       bindOnce(document.getElementById('slip-input'), 'change', async (e) => {
         const file = e.target.files[0];
         if (!file) return;
+        const slipStatus = document.getElementById('slip-file-status');
+        if (slipStatus) slipStatus.textContent = file.name;
         try {
           const objectPath = buildSlipObjectPath(state.user.id, order.id, file.name);
           const { error: upErr } = await state.supabase.storage
@@ -611,8 +737,14 @@ async function initCustomerOrderDetailPage() {
           if (rpcErr) throw rpcErr;
 
           notify(t('order.slip_sent'), 'success');
+          if (slipStatus) slipStatus.textContent = t('order.slip_uploading');
           setTimeout(() => location.reload(), 900);
         } catch (err) {
+          if (slipStatus) {
+            slipStatus.textContent = t('order.slip_failed', { name: file.name });
+            slipStatus.classList.add('form-status-error');
+          }
+          e.target.value = '';
           notify(err.message || t('toast.error_generic'), 'error');
         }
       });
