@@ -2278,10 +2278,9 @@ table.data .num {
   padding: var(--card-pad);
 }
 .avatar-wrap {
-  position: relative;
   width: 84px;
   height: 84px;
-  margin-bottom: var(--space-md);
+  margin-bottom: 0.75rem;
 }
 .side-card .avatar {
   width: 84px;
@@ -2305,39 +2304,39 @@ table.data .num {
   object-fit: cover;
   display: block;
 }
-.avatar-tools {
-  position: absolute;
-  right: -6px;
-  bottom: -4px;
+.avatar-actions {
   display: flex;
-  gap: 0.25rem;
+  gap: 0.375rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
 }
-.avatar-tool {
-  width: 30px;
+.avatar-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
   height: 30px;
-  padding: 0;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
+  padding: 0 0.6rem;
+  border-radius: 999px;
   border: 1px solid var(--color-border);
-  background: var(--color-surface);
+  background: var(--color-surface-2);
   color: var(--color-text-secondary);
+  font-family: inherit;
+  font-size: var(--font-size-xs);
   cursor: pointer;
-  box-shadow: 0 2px 8px rgb(0 0 0 / 0.35);
   transition:
     color 0.15s ease,
     border-color 0.15s ease;
 }
-.avatar-tool svg {
-  width: 16px;
-  height: 16px;
+.avatar-action svg {
+  width: 14px;
+  height: 14px;
 }
-.avatar-tool:hover {
+.avatar-action:hover {
   color: var(--color-accent);
   border-color: var(--color-accent);
 }
 .avatar-remove {
-  margin: -0.25rem 0 var(--space-md);
+  margin: 0 0 var(--space-md);
   padding: 0;
   border: 0;
   background: none;
