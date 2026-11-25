@@ -1132,6 +1132,13 @@ table.data .num {
   flex: 0 0 auto;
   white-space: nowrap;
 }
+.form-input:disabled,
+.form-select:disabled,
+.form-input[readonly] {
+  opacity: 0.7;
+  cursor: not-allowed;
+  background: var(--color-surface-2);
+}
 .form-status {
   display: block;
   margin-top: 0.35rem;
@@ -3088,10 +3095,51 @@ td > .empty-state {
 }
 
 /* PromptPay test preview */
+.qr-summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-md) var(--space-xl);
+  margin: 0 0 var(--space-md);
+  padding: var(--space-md) var(--space-lg);
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-2);
+}
+@media (max-width: 480px) {
+  .qr-summary {
+    grid-template-columns: 1fr;
+  }
+}
+.qr-summary-item {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.qr-summary-item dt {
+  font-size: var(--font-size-xs);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+.qr-summary-item dd {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text);
+  overflow-wrap: anywhere;
+}
+.qr-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+}
 .qr-preview {
   display: flex;
   gap: var(--space-xl);
   align-items: center;
+  justify-content: center;
   flex-wrap: wrap;
   padding: var(--space-lg);
   border: 1px solid var(--color-border-soft);
@@ -3104,29 +3152,6 @@ td > .empty-state {
 .qr-preview .pp-card {
   box-shadow: none;
   border: 1px solid #e2e8f2;
-}
-.qr-meta {
-  flex: 1;
-  min-width: 180px;
-  display: grid;
-  gap: var(--space-md);
-}
-.qr-meta > div {
-  display: grid;
-  gap: 2px;
-}
-.qr-meta dt {
-  font-size: var(--font-size-xs);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: #71717a;
-}
-.qr-meta dd {
-  margin: 0;
-  font-size: var(--font-size-sm);
-  font-weight: 600;
-  color: #18181b;
-  overflow-wrap: anywhere;
 }
 .qr-source {
   display: block;
@@ -3618,4 +3643,18 @@ td .badge-error {
 }
 .auth-alert.hidden {
   display: none;
+}
+
+.order-locked {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-lg);
+  padding: var(--space-md) var(--space-lg);
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-accent);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-2);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
 }

@@ -82,28 +82,27 @@
             <button type="button" id="test-generate-qr-btn" class="btn btn-primary" data-i18n="admin.payments_generate">สร้าง QR</button>
 
             <div id="test-qr-result" class="hidden mt-lg">
+              <dl class="qr-summary">
+                <div class="qr-summary-item">
+                  <dt data-i18n="admin.payments_qr_using">บัญชีรับเงินที่ใช้ทดสอบ</dt>
+                  <dd>
+                    <span id="test-qr-account">—</span>
+                    <span id="test-qr-source" class="qr-source"></span>
+                  </dd>
+                </div>
+                <div class="qr-summary-item">
+                  <dt data-i18n="admin.payments_qr_amount">ยอดทดสอบ</dt>
+                  <dd id="test-qr-amount-text">—</dd>
+                </div>
+              </dl>
               <div class="qr-preview">
                 <div id="test-qr-image"></div>
-                <dl class="qr-meta">
-                  <div>
-                    <dt data-i18n="admin.payments_qr_using">บัญชีรับเงินที่ใช้ทดสอบ</dt>
-                    <dd>
-                      <span id="test-qr-account">—</span>
-                      <span id="test-qr-source" class="qr-source"></span>
-                    </dd>
-                  </div>
-                  <div>
-                    <dt data-i18n="admin.payments_qr_amount">ยอดทดสอบ</dt>
-                    <dd id="test-qr-amount-text">—</dd>
-                  </div>
-                </dl>
               </div>
-              <div class="flex gap-sm mt-md" style="flex-wrap: wrap">
+              <div class="qr-actions">
                 <a id="test-qr-download" class="btn btn-outline btn-sm" download="promptpay-qr.png" data-i18n="admin.payments_download"
                   >ดาวน์โหลดรูป QR</a
                 >
               </div>
-              <p class="text-muted text-sm mt-sm" style="word-break: break-all" id="test-qr-payload"></p>
             </div>
           </div>
         </div>

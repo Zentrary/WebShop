@@ -1275,7 +1275,6 @@ async function initPayments() {
         const amountText = document.getElementById('test-qr-amount-text');
         if (amountText) amountText.textContent = formatTHB(amount);
 
-        document.getElementById('test-qr-payload').textContent = payload;
         document.getElementById('test-qr-result').classList.remove('hidden');
       } catch (err) {
         notify(err.message || t('toast.error_generic'), 'error');
@@ -1283,6 +1282,8 @@ async function initPayments() {
     });
   }
 }
+
+const LOCKED_ORDER_STATUSES = ['delivered', 'cancelled'];
 
 async function initAdminOrderDetail() {
   const orderId = new URLSearchParams(window.location.search).get('id');
@@ -1310,6 +1311,22 @@ async function initAdminOrderDetail() {
     document.getElementById('admin-order-shipping').textContent = formatTHB(order.shipping);
     document.getElementById('admin-order-total').textContent = formatTHB(order.total);
     document.getElementById('admin-tracking-number').value = order.tracking || '';
+
+    const locked = LOCKED_ORDER_STATUSES.includes(order.status || 'pending');
+    document.getElementById('admin-order-locked')?.classList.toggle('hidden', !locked);
+    ['admin-order-status', 'admin-tracking-number'].forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.disabled = locked;
+    });
+    ['admin-update-order-btn', 'admin-shipping-update-form', 'admin-shipping-divider'].forEach((id) => {
+      document.getElementById(id)?.classList.toggle('hidden', locked);
+    });
+    const shippingTitle = document.getElementById('admin-shipping-title');
+    if (shippingTitle) {
+      const titleKey = locked ? 'admin.shipping_history' : 'admin.shipping_updates';
+      shippingTitle.setAttribute('data-i18n', titleKey);
+      shippingTitle.textContent = t(titleKey);
+    }
 
     const items = order.items || [];
     document.getElementById('admin-order-items').innerHTML = items
