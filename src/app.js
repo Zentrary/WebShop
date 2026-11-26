@@ -231,8 +231,10 @@ function renderHeader(header) {
   // เทียบกับ path แบบ clean URL: /home, /shop, /shop/product, /account/orders …
   const isActive = {
     home: path === '/' || path === '/home',
-    shop: path === '/shop' || path.startsWith('/shop/'),
-    account: path === '/account' || path.startsWith('/account/'),
+    // ตะกร้า/ชำระเงิน ไม่ใช่ "รายการสินค้า" จึงไม่ต้องขีดเส้นใต้ค้างไว้
+    shop: path === '/shop' || path === '/shop/product',
+    orders: path === '/account/orders' || path === '/account/order',
+    account: path === '/account' || path === '/account/favorites',
   };
 
   // The account only appears once — as the icon button on the right. Repeating
@@ -240,6 +242,8 @@ function renderHeader(header) {
   const navItems = [
     { key: 'home', href: '/home', label: t('nav.home'), show: true },
     { key: 'shop', href: '/shop', label: t('nav.shop'), show: member },
+    // ทางลัดไปดูคำสั่งซื้อ ไม่ต้องเข้าผ่าน "บัญชีของฉัน" ทุกครั้ง
+    { key: 'orders', href: '/account/orders', label: t('nav.orders'), show: member },
   ];
 
   const mobileNavItems = [
@@ -282,8 +286,7 @@ function renderHeader(header) {
       ${member ? `<a href="/shop/cart" data-i18n="nav.cart">${t('nav.cart')}</a>` : ''}
       ${
         member
-          ? `<a href="/account/favorites" data-i18n="nav.favorites">${t('nav.favorites')}</a>
-           <a href="/account/orders" data-i18n="nav.orders">${t('nav.orders')}</a>`
+          ? `<a href="/account/favorites" data-i18n="nav.favorites">${t('nav.favorites')}</a>`
           : `<a href="/auth/login" data-i18n="nav.login">${t('nav.login')}</a>
            <a href="/auth/register" data-i18n="nav.register">${t('nav.register')}</a>`
       }
