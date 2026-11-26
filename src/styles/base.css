@@ -3168,7 +3168,8 @@ td > .empty-state {
 .admin-content .form-input,
 .admin-content .form-select,
 .admin-content .search-wrap .form-input {
-  background: var(--color-bg-elevated);
+  /* ใช้ background-color ไม่ใช่ background เพื่อไม่ให้ทับลูกศรของ .form-select */
+  background-color: var(--color-bg-elevated);
 }
 .admin-content .divider {
   border-top-color: var(--color-border-soft);
@@ -4002,4 +4003,17 @@ td .badge-error {
   background: var(--color-surface-2);
   color: var(--color-text);
   font-size: var(--font-size-sm);
+}
+
+/* ฟอร์มสินค้า: hint ใต้ dropdown หมวดหมู่ (ข้อความ + ลิงก์ไปหน้าหมวดหมู่) */
+.category-pick-hint {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: baseline;
+}
+.category-pick-hint a {
+  color: var(--color-accent);
+  text-decoration: underline;
+  font-weight: 500;
 }
