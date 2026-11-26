@@ -270,13 +270,33 @@
   .ops-stat-value {
     font-size: 1.25rem;
   }
+  /* มือถือ/แท็บเล็ต: จุดสีต้องอยู่ระดับเดียวกับบรรทัดแรกของข้อความ ไม่ลอยขึ้นไปข้างบน */
   .log-row {
-    align-items: flex-start;
-    flex-wrap: wrap;
+    grid-template-columns: 8px minmax(0, 1fr);
+    align-items: start;
+    row-gap: 0.15rem;
+  }
+  .log-dot {
+    align-self: start;
+    margin-top: 0.4rem;
   }
   .log-meta {
-    margin-left: calc(8px + var(--space-md));
-    width: 100%;
+    grid-column: 2;
+    text-align: left;
+    white-space: normal;
+  }
+  .tl-dot {
+    width: 26px;
+    height: 26px;
+    font-size: 0.72rem;
+  }
+  .tl-step::before {
+    top: 12px;
+    left: calc(50% + 16px);
+    right: calc(-50% + 16px);
+  }
+  .tl-step .lbl {
+    font-size: 0.72rem;
   }
 }
 
