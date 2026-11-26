@@ -29,57 +29,72 @@
           <button type="button" id="admin-coupon-add" class="btn btn-primary" data-i18n="admin.coupon_new">เพิ่มคูปอง</button>
         </div>
 
-        <form id="admin-coupon-form" class="panel mb-lg hidden reveal" novalidate>
-          <h2 data-i18n="admin.coupon_new">เพิ่มคูปอง</h2>
-
-          <div class="flex gap-md" style="flex-wrap: wrap">
-            <div class="form-group" style="flex: 1 1 200px">
-              <label class="form-label" for="coupon-code" data-i18n="admin.coupon_code">โค้ด</label>
-              <input type="text" id="coupon-code" class="form-input" maxlength="32" required placeholder="WELCOME10" />
+        <dialog id="coupon-sheet" class="edit-sheet" aria-labelledby="admin-coupon-form-title">
+          <div class="edit-sheet-head">
+            <div class="edit-sheet-heading">
+              <h2 id="admin-coupon-form-title" class="edit-sheet-title" data-i18n="admin.coupon_new">เพิ่มคูปอง</h2>
+              <p id="admin-coupon-form-sub" class="edit-sheet-sub" hidden></p>
             </div>
-            <div class="form-group" style="flex: 0 1 190px">
-              <label class="form-label" for="coupon-kind" data-i18n="admin.coupon_kind">รูปแบบ</label>
-              <select id="coupon-kind" class="form-input">
-                <option value="percent" data-i18n="admin.coupon_percent">เปอร์เซ็นต์ (%)</option>
-                <option value="amount" data-i18n="admin.coupon_amount">จำนวนเงิน (บาท)</option>
-              </select>
-            </div>
-            <div class="form-group" style="flex: 0 1 150px">
-              <label class="form-label" for="coupon-value" data-i18n="admin.coupon_value">ส่วนลด</label>
-              <input type="number" id="coupon-value" class="form-input" min="1" step="1" required placeholder="10" />
-            </div>
-            <div class="form-group" style="flex: 0 1 170px">
-              <label class="form-label" for="coupon-min" data-i18n="admin.coupon_min">ยอดซื้อขั้นต่ำ</label>
-              <input type="number" id="coupon-min" class="form-input" min="0" step="1" placeholder="0" />
-            </div>
-            <div class="form-group" style="flex: 0 1 170px">
-              <label class="form-label" for="coupon-max-uses" data-i18n="admin.coupon_max_uses">ใช้ได้สูงสุด (ครั้ง)</label>
-              <input
-                type="number"
-                id="coupon-max-uses"
-                class="form-input"
-                min="1"
-                step="1"
-                placeholder="ไม่จำกัด"
-                data-i18n-placeholder="admin.coupon_unlimited_ph"
-              />
-            </div>
-            <div class="form-group" style="flex: 0 1 190px">
-              <label class="form-label" for="coupon-ends" data-i18n="admin.coupon_ends">วันหมดอายุ</label>
-              <input type="date" id="coupon-ends" class="form-input" />
-            </div>
+            <button type="button" id="admin-coupon-close" class="edit-sheet-close" aria-label="ปิด" data-i18n-aria-label="common.close">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <path d="M18 6 6 18M6 6l12 12" />
+              </svg>
+            </button>
           </div>
 
-          <label class="flex items-center gap-sm mt-md">
-            <input type="checkbox" id="coupon-active" checked />
-            <span data-i18n="admin.coupon_active">เปิดใช้</span>
-          </label>
-
-          <div class="flex gap-sm mt-lg">
-            <button type="submit" class="btn btn-primary" data-i18n="common.save">บันทึก</button>
-            <button type="button" id="admin-coupon-cancel" class="btn btn-outline" data-i18n="common.cancel">ยกเลิก</button>
+          <div class="edit-sheet-body">
+            <form id="admin-coupon-form" class="edit-sheet-form" novalidate>
+              <div class="form-grid">
+                <div class="form-group col-2">
+                  <label class="form-label" for="coupon-code" data-i18n="admin.coupon_code">โค้ด</label>
+                  <input type="text" id="coupon-code" class="form-input" maxlength="32" required placeholder="WELCOME10" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="coupon-kind" data-i18n="admin.coupon_kind">รูปแบบ</label>
+                  <select id="coupon-kind" class="form-input">
+                    <option value="percent" data-i18n="admin.coupon_percent">เปอร์เซ็นต์ (%)</option>
+                    <option value="amount" data-i18n="admin.coupon_amount">จำนวนเงิน (บาท)</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="coupon-value" data-i18n="admin.coupon_value">ส่วนลด</label>
+                  <input type="number" id="coupon-value" class="form-input" min="1" step="1" required placeholder="10" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="coupon-min" data-i18n="admin.coupon_min">ยอดซื้อขั้นต่ำ</label>
+                  <input type="number" id="coupon-min" class="form-input" min="0" step="1" placeholder="0" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="coupon-max-uses" data-i18n="admin.coupon_max_uses">ใช้ได้สูงสุด (ครั้ง)</label>
+                  <input
+                    type="number"
+                    id="coupon-max-uses"
+                    class="form-input"
+                    min="1"
+                    step="1"
+                    placeholder="ไม่จำกัด"
+                    data-i18n-placeholder="admin.coupon_unlimited_ph"
+                  />
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="coupon-ends" data-i18n="admin.coupon_ends">วันหมดอายุ</label>
+                  <input type="date" id="coupon-ends" class="form-input" />
+                </div>
+              </div>
+            </form>
           </div>
-        </form>
+
+          <div class="edit-sheet-foot">
+            <label class="form-checkbox">
+              <input type="checkbox" id="coupon-active" form="admin-coupon-form" checked />
+              <span data-i18n="admin.coupon_active">เปิดใช้</span>
+            </label>
+            <div class="flex gap-sm">
+              <button type="submit" form="admin-coupon-form" class="btn btn-primary" data-i18n="common.save">บันทึก</button>
+              <button type="button" id="admin-coupon-cancel" class="btn btn-outline" data-i18n="common.cancel">ยกเลิก</button>
+            </div>
+          </div>
+        </dialog>
 
         <div class="table-wrap reveal">
           <table class="data">
