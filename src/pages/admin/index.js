@@ -295,27 +295,29 @@ async function initProducts() {
     return `<span class="cell-sub">${escapeHTML(t('admin.new_until_label', { date }))}</span>`;
   }
 
-  /** เติมรายชื่อหมวดหมู่ที่มีอยู่ลง datalist ให้พิมพ์ซ้ำได้ไว ๆ */
-  async function loadCategoryOptions() {
-    const listEl = document.getElementById('category-options');
-    if (!listEl) return;
-    const { data } = await supabase.from('categories').select('name').order('name');
-    listEl.innerHTML = (data || []).map((row) => `<option value="${escapeHTML(row.name)}"></option>`).join('');
-  }
-
-  /** พิมพ์ชื่อหมวดใหม่ในฟอร์มสินค้า = สร้างหมวดนั้นให้เลย (ไม่ต้องไปหน้าหมวดหมู่ก่อน) */
-  async function ensureCategory(name) {
-    const trimmed = String(name || '').trim();
-    if (!trimmed) return true;
-    const { data: existing } = await supabase.from('categories').select('name').eq('name', trimmed).maybeSingle();
-    if (existing) return true;
-    const { error } = await supabase.from('categories').insert({ name: trimmed });
-    if (error && error.code !== '23505') {
-      notify(error.message || t('toast.error_generic'), 'error');
-      return false;
+  /**
+   * เติม dropdown หมวดหมู่จากรายการที่สร้างไว้ในหน้า "หมวดหมู่"
+   * ไม่ให้พิมพ์ชื่อเองในฟอร์มสินค้า เพื่อกันพิมพ์ผิดแล้วกลายเป็นหมวดใหม่
+   */
+  async function loadCategorySelect(selected = '') {
+    const select = document.getElementById('product-category');
+    if (!select) return;
+    const chosen = String(selected || '').trim();
+    let names = [];
+    try {
+      const { data } = await supabase.from('categories').select('name').order('name');
+      names = (data || []).map((row) => row.name).filter(Boolean);
+    } catch (err) {
+      console.warn('[ZenMarket] load categories failed', err);
     }
-    await loadCategoryOptions();
-    return true;
+    // สินค้าเก่าที่ใช้ชื่อหมวดซึ่งถูกลบ/เปลี่ยนไปแล้ว ต้องยังเลือกค่านั้นได้ ไม่ให้หลุดเป็นว่าง
+    if (chosen && !names.includes(chosen)) names.push(chosen);
+    names.sort((a, b) => a.localeCompare(b, 'th'));
+    select.innerHTML = [
+      `<option value="">${escapeHTML(t('admin.category_none'))}</option>`,
+      ...names.map((name) => `<option value="${escapeHTML(name)}">${escapeHTML(name)}</option>`),
+    ].join('');
+    select.value = chosen;
   }
 
   async function loadProducts() {
@@ -351,7 +353,7 @@ async function initProducts() {
   }
 
   loadProducts();
-  loadCategoryOptions();
+  loadCategorySelect(document.getElementById('product-category')?.value || '');
 
   bindOnce(tbody, 'click', async (e) => {
     const edit = e.target.closest('[data-edit]');
@@ -367,7 +369,7 @@ async function initProducts() {
       form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       document.getElementById('product-name').value = p.name || '';
       document.getElementById('product-sku').value = p.sku || '';
-      document.getElementById('product-category').value = p.category || '';
+      await loadCategorySelect(p.category || '');
       document.getElementById('product-price').value = p.price || 0;
       document.getElementById('product-sale-price').value = p.sale_price ?? '';
       document.getElementById('product-stock').value = p.stock || 0;
@@ -396,7 +398,7 @@ async function initProducts() {
   });
 
   if (addBtn) {
-    bindOnce(addBtn, 'click', () => {
+    bindOnce(addBtn, 'click', async () => {
       editingId = null;
       formTitle.textContent = t('admin.new_product');
       form.classList.remove('hidden');
@@ -404,6 +406,7 @@ async function initProducts() {
       document.getElementById('product-active').checked = true;
       const newDaysInput = document.getElementById('product-new-days');
       if (newDaysInput) newDaysInput.value = '7';
+      await loadCategorySelect();
       form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     });
   }
@@ -471,8 +474,6 @@ async function initProducts() {
         return;
       }
       payload.new_days = newDays;
-
-      if (!(await ensureCategory(payload.category))) return;
 
       let error;
       if (editingId) {

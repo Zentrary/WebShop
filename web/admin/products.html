@@ -81,17 +81,11 @@
 
             <div class="form-group col-md-2">
               <label class="form-label" for="product-category" data-i18n="admin.product_category">หมวดหมู่</label>
-              <input
-                type="text"
-                id="product-category"
-                class="form-input"
-                list="category-options"
-                autocomplete="off"
-                placeholder="ชื่อหมวดหมู่"
-                data-i18n-placeholder="admin.category_name_input_ph"
-              />
-              <datalist id="category-options"></datalist>
-              <span class="form-hint" data-i18n="admin.category_auto_hint">พิมพ์ชื่อใหม่ = สร้างหมวดหมู่นี้ให้อัตโนมัติ</span>
+              <select id="product-category" class="form-select"></select>
+              <span class="form-hint category-pick-hint">
+                <span data-i18n="admin.category_pick_hint">เลือกจากหมวดหมู่ที่สร้างไว้</span>
+                <a href="/admin/categories" data-i18n="admin.category_manage">จัดการหมวดหมู่</a>
+              </span>
             </div>
 
             <div class="form-group">
