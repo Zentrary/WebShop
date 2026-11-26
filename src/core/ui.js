@@ -92,6 +92,139 @@ export function confirmAction(message, options = {}) {
   });
 }
 
+/**
+ * แผงฟอร์ม (edit sheet) — ใช้ร่วมกันทั้งหน้าสินค้าและหน้าคูปอง
+ * เปิดเป็น modal บน <dialog> ที่มีอยู่แล้วในหน้า เพื่อให้ได้ focus trap,
+ * ปุ่ม ESC และฉากหลังมืดจากเบราว์เซอร์โดยไม่ต้องเขียนเอง
+ * ปิดได้ 3 ทาง (ปุ่ม × / ESC / คลิกฉากหลัง) และถามก่อนถ้ามีการแก้ไขค้าง
+ */
+export function formSheet({ dialog, form, titleEl, subEl, closeBtn }) {
+  if (!dialog || !form) return null;
+
+  const fields = () => [...form.querySelectorAll('input, select, textarea')];
+  const snapshot = () =>
+    fields()
+      .map((el) => (el.type === 'checkbox' ? (el.checked ? '1' : '0') : String(el.value)))
+      .join('\u0001');
+
+  let baseline = snapshot();
+  let titleKey = '';
+  const isOpen = () => dialog.open;
+  const isDirty = () => snapshot() !== baseline;
+  const markClean = () => {
+    baseline = snapshot();
+  };
+
+  const open = ({ titleKey: nextKey = '', sub = '' } = {}) => {
+    titleKey = nextKey;
+    if (titleEl && titleKey) titleEl.textContent = t(titleKey);
+    if (subEl) {
+      subEl.textContent = sub || '';
+      subEl.hidden = !sub;
+    }
+    markClean();
+    if (!dialog.open) {
+      dialog.showModal();
+      document.documentElement.classList.add('sheet-open');
+    }
+    requestAnimationFrame(() => {
+      const first = form.querySelector('input:not([type="hidden"]):not([type="file"]), select, textarea');
+      if (first) first.focus({ preventScroll: true });
+    });
+  };
+
+  const closeNow = () => {
+    if (dialog.open) dialog.close();
+  };
+
+  const requestClose = async () => {
+    if (isDirty()) {
+      const discard = await confirmAction(t('admin.sheet_unsaved_message'), {
+        title: t('admin.sheet_unsaved_title'),
+        confirmText: t('admin.sheet_discard'),
+        cancelText: t('admin.sheet_keep_editing'),
+        danger: true,
+      });
+      if (!discard) return false;
+    }
+    closeNow();
+    return true;
+  };
+
+  dialog.addEventListener('cancel', (event) => {
+    event.preventDefault();
+    requestClose();
+  });
+  dialog.addEventListener('click', (event) => {
+    if (event.target === dialog) requestClose();
+  });
+  dialog.addEventListener('close', () => {
+    document.documentElement.classList.remove('sheet-open');
+  });
+  // สลับภาษาแล้วหัวแผงยังต้องถูก (ไม่ใช่กลับไปเป็น "เพิ่มสินค้าใหม่" ตอนกำลังแก้ไข)
+  window.addEventListener('zenmarket:lang-change', () => {
+    if (dialog.open && titleKey && titleEl) titleEl.textContent = t(titleKey);
+  });
+  if (closeBtn) closeBtn.addEventListener('click', () => requestClose());
+
+  return { open, closeNow, requestClose, isOpen, isDirty, markClean };
+}
+
+/**
+ * ถามข้อความสั้น ๆ ด้วยหน้าตาของร้าน แทน window.prompt()
+ * คืนค่า string เมื่อกดยืนยัน และคืน null เมื่อยกเลิก (เหมือน prompt())
+ */
+export function askText({ title, hint = '', placeholder = '', confirmText, cancelText, danger = false }) {
+  return new Promise((resolve) => {
+    const dialog = document.createElement('dialog');
+    dialog.className = 'confirm-dialog';
+    dialog.innerHTML = `
+      <div class="confirm-body">
+        <h2 class="confirm-title"></h2>
+        <p class="confirm-message"></p>
+        <textarea class="form-input ask-input" rows="3"></textarea>
+        <div class="confirm-actions">
+          <button type="button" class="btn btn-outline" data-confirm-cancel></button>
+          <button type="button" class="btn ${danger ? 'btn-danger-solid' : 'btn-primary'}" data-confirm-ok></button>
+        </div>
+      </div>`;
+
+    dialog.querySelector('.confirm-title').textContent = title || t('common.confirm_title');
+    const hintEl = dialog.querySelector('.confirm-message');
+    hintEl.textContent = hint;
+    if (!hint) hintEl.hidden = true;
+    const input = dialog.querySelector('.ask-input');
+    input.placeholder = placeholder;
+    const cancelBtn = dialog.querySelector('[data-confirm-cancel]');
+    const okBtn = dialog.querySelector('[data-confirm-ok]');
+    cancelBtn.textContent = cancelText || t('common.cancel');
+    okBtn.textContent = confirmText || t('common.save');
+
+    let settled = false;
+    const settle = (value) => {
+      if (settled) return;
+      settled = true;
+      resolve(value);
+      if (dialog.open) dialog.close();
+      dialog.remove();
+    };
+
+    okBtn.addEventListener('click', () => settle(input.value));
+    cancelBtn.addEventListener('click', () => settle(null));
+    dialog.addEventListener('cancel', (event) => {
+      event.preventDefault();
+      settle(null);
+    });
+    dialog.addEventListener('click', (event) => {
+      if (event.target === dialog) settle(null);
+    });
+
+    document.body.appendChild(dialog);
+    dialog.showModal();
+    input.focus();
+  });
+}
+
 export function flash() {
   try {
     const stored = sessionStorage.getItem('zenmarket_flash');

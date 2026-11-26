@@ -1,5 +1,5 @@
 import { isOwner, setAudience } from '/src/core/audience.js';
-import { confirmAction, notify } from '/src/core/ui.js';
+import { askText, confirmAction, formSheet, notify } from '/src/core/ui.js';
 import {
   formatTHB,
   escapeHTML,
@@ -271,6 +271,13 @@ async function initProducts() {
   const addBtn = document.getElementById('admin-add-product-btn');
   const form = document.getElementById('admin-product-form');
   const formTitle = document.getElementById('admin-product-form-title');
+  const sheet = formSheet({
+    dialog: document.getElementById('product-sheet'),
+    form,
+    titleEl: formTitle,
+    subEl: document.getElementById('admin-product-form-sub'),
+    closeBtn: document.getElementById('admin-product-close'),
+  });
   let editingId = null;
 
   function renderStockCell(stock) {
@@ -333,6 +340,7 @@ async function initProducts() {
     tbody.innerHTML = '';
     products?.forEach((p) => {
       const tr = document.createElement('tr');
+      tr.dataset.rowId = p.id;
       const saleOn = Number(p.sale_price) > 0 && Number(p.sale_price) < Number(p.price);
       tr.innerHTML =
         `<td class="cell-thumb-cell" data-label="${t('admin.product_image')}"><img class="cell-thumb" src="${p.image_url || '/images/placeholder.svg'}" alt=""></td>` +
@@ -352,6 +360,17 @@ async function initProducts() {
     });
   }
 
+  /** กะพริบแถวที่เพิ่งบันทึก เพื่อให้เห็นว่าการแก้ไขไปลงที่แถวไหน */
+  async function flashSavedRow(id) {
+    if (!id) return;
+    await loadProducts();
+    const row = tbody.querySelector(`tr[data-row-id="${id}"]`);
+    if (!row) return;
+    row.classList.add('is-saved');
+    row.scrollIntoView({ block: 'nearest' });
+    setTimeout(() => row.classList.remove('is-saved'), 1800);
+  }
+
   loadProducts();
   loadCategorySelect(document.getElementById('product-category')?.value || '');
 
@@ -364,9 +383,6 @@ async function initProducts() {
       const { data: p } = await supabase.from('products').select('*').eq('id', edit.getAttribute('data-edit')).single();
       if (!p) return;
       editingId = p.id;
-      formTitle.textContent = t('admin.edit_product');
-      form.classList.remove('hidden');
-      form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       document.getElementById('product-name').value = p.name || '';
       document.getElementById('product-sku').value = p.sku || '';
       await loadCategorySelect(p.category || '');
@@ -378,36 +394,46 @@ async function initProducts() {
       document.getElementById('product-active').checked = !!p.active;
       const newDaysInput = document.getElementById('product-new-days');
       if (newDaysInput) newDaysInput.value = String(p.new_days ?? 7);
+      sheet?.open({
+        titleKey: 'admin.edit_product',
+        sub: [p.name, p.sku].filter(Boolean).join(' · '),
+      });
       return;
     }
 
     if (toggle) {
       const id = toggle.getAttribute('data-toggle');
       const { data: p } = await supabase.from('products').select('active').eq('id', id).single();
-      await supabase.from('products').update({ active: !p.active }).eq('id', id);
-      loadProducts();
+      const { error } = await supabase.from('products').update({ active: !p?.active }).eq('id', id);
+      if (error) notify(error.message || t('toast.error_generic'), 'error');
+      await loadProducts();
     }
 
     if (del) {
-      if (confirm(t('admin.delete_confirm'))) {
-        await supabase.from('products').delete().eq('id', del.getAttribute('data-del'));
-        notify(t('toast.deleted'), 'success');
-        loadProducts();
+      const confirmed = await confirmAction(t('admin.delete_confirm'), {
+        danger: true,
+        confirmText: t('common.delete'),
+      });
+      if (!confirmed) return;
+      const { error } = await supabase.from('products').delete().eq('id', del.getAttribute('data-del'));
+      if (error) {
+        notify(error.message || t('toast.error_generic'), 'error');
+        return;
       }
+      notify(t('toast.deleted'), 'success');
+      await loadProducts();
     }
   });
 
   if (addBtn) {
     bindOnce(addBtn, 'click', async () => {
       editingId = null;
-      formTitle.textContent = t('admin.new_product');
-      form.classList.remove('hidden');
       form.reset();
       document.getElementById('product-active').checked = true;
       const newDaysInput = document.getElementById('product-new-days');
       if (newDaysInput) newDaysInput.value = '7';
       await loadCategorySelect();
-      form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      sheet?.open({ titleKey: 'admin.new_product' });
     });
   }
 
@@ -487,18 +513,19 @@ async function initProducts() {
         return;
       }
 
+      const savedId = editingId;
       notify(editingId ? t('admin.product_saved') : t('admin.product_added'), 'success');
       editingId = null;
-      form.classList.add('hidden');
+      sheet?.closeNow();
       form.reset();
-      loadProducts();
+      await flashSavedRow(savedId);
     });
 
     const cancelBtn = document.getElementById('admin-product-cancel');
     if (cancelBtn) {
-      bindOnce(cancelBtn, 'click', () => {
-        editingId = null;
-        form.classList.add('hidden');
+      bindOnce(cancelBtn, 'click', async () => {
+        const closed = await sheet?.requestClose();
+        if (closed) editingId = null;
       });
     }
   }
@@ -955,6 +982,14 @@ async function initCoupons() {
   const cancelBtn = document.getElementById('admin-coupon-cancel');
   if (!tbody || !form) return;
 
+  const sheet = formSheet({
+    dialog: document.getElementById('coupon-sheet'),
+    form,
+    titleEl: document.getElementById('admin-coupon-form-title'),
+    subEl: document.getElementById('admin-coupon-form-sub'),
+    closeBtn: document.getElementById('admin-coupon-close'),
+  });
+
   let editingId = null;
 
   const paint = async () => {
@@ -978,7 +1013,7 @@ async function initCoupons() {
           ? `${Number(c.used_count) || 0}/${c.max_uses}`
           : `${Number(c.used_count) || 0} · ${t('admin.coupon_unlimited')}`;
         const ends = c.ends_at ? new Date(c.ends_at).toLocaleDateString('th-TH') : '-';
-        return `<tr>
+        return `<tr data-row-id="${escapeHTML(c.id)}">
           <td data-label="${t('admin.coupon_code')}" class="font-semibold">${escapeHTML(c.code)}</td>
           <td data-label="${t('admin.coupon_value')}">${escapeHTML(value)}</td>
           <td data-label="${t('admin.coupon_min')}" class="num">${c.min_subtotal ? formatTHB(c.min_subtotal) : '-'}</td>
@@ -1003,15 +1038,14 @@ async function initCoupons() {
       editingId = null;
       form.reset();
       document.getElementById('coupon-active').checked = true;
-      form.classList.remove('hidden');
-      form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      sheet?.open({ titleKey: 'admin.coupon_new' });
     });
   }
 
   if (cancelBtn) {
-    cancelBtn.addEventListener('click', () => {
-      editingId = null;
-      form.classList.add('hidden');
+    cancelBtn.addEventListener('click', async () => {
+      const closed = await sheet?.requestClose();
+      if (closed) editingId = null;
     });
   }
 
@@ -1046,11 +1080,20 @@ async function initCoupons() {
       notify(error.message || t('toast.error_generic'), 'error');
       return;
     }
+    const savedId = editingId;
     notify(t('admin.coupon_saved'), 'success');
     editingId = null;
+    sheet?.closeNow();
     form.reset();
-    form.classList.add('hidden');
     await paint();
+    if (savedId) {
+      const row = tbody.querySelector(`tr[data-row-id="${savedId}"]`);
+      if (row) {
+        row.classList.add('is-saved');
+        row.scrollIntoView({ block: 'nearest' });
+        setTimeout(() => row.classList.remove('is-saved'), 1800);
+      }
+    }
   });
 
   tbody.addEventListener('click', async (e) => {
@@ -1072,14 +1115,21 @@ async function initCoupons() {
       document.getElementById('coupon-max-uses').value = c.max_uses ?? '';
       document.getElementById('coupon-ends').value = c.ends_at ? new Date(c.ends_at).toISOString().slice(0, 10) : '';
       document.getElementById('coupon-active').checked = !!c.active;
-      form.classList.remove('hidden');
-      form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      sheet?.open({ titleKey: 'admin.coupon_edit', sub: c.code || '' });
     }
 
-    if (del && confirm(t('admin.coupon_confirm_delete'))) {
+    if (del) {
+      const confirmed = await confirmAction(t('admin.coupon_confirm_delete'), {
+        danger: true,
+        confirmText: t('common.delete'),
+      });
+      if (!confirmed) return;
       const { error } = await supabase.from('coupons').delete().eq('id', del.getAttribute('data-del-coupon'));
-      if (error) notify(error.message || t('toast.error_generic'), 'error');
-      else notify(t('admin.coupon_deleted'), 'success');
+      if (error) {
+        notify(error.message || t('toast.error_generic'), 'error');
+        return;
+      }
+      notify(t('admin.coupon_deleted'), 'success');
       await paint();
     }
   });
@@ -1671,8 +1721,15 @@ function renderSlipReview(order) {
     const run = async (isApprove) => {
       let note = null;
       if (!isApprove) {
-        note = prompt(t('admin.slip_reject_prompt'));
-        if (note === null) return;
+        const typed = await askText({
+          title: t('admin.slip_reject_title'),
+          hint: t('admin.slip_reject_prompt'),
+          placeholder: t('admin.slip_reject_placeholder'),
+          confirmText: t('admin.slip_reject'),
+          danger: true,
+        });
+        if (typed === null) return;
+        note = typed.trim();
       }
       const { error } = await supabase.rpc('review_slip', {
         p_order_id: order.id,

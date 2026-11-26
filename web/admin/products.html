@@ -44,91 +44,103 @@
           </div>
         </div>
 
-        <form id="admin-product-form" class="panel mb-lg hidden reveal" novalidate>
-          <div class="panel-head">
-            <h2 id="admin-product-form-title" data-i18n="admin.new_product">เพิ่มสินค้าใหม่</h2>
+        <dialog id="product-sheet" class="edit-sheet" aria-labelledby="admin-product-form-title">
+          <div class="edit-sheet-head">
+            <div class="edit-sheet-heading">
+              <h2 id="admin-product-form-title" class="edit-sheet-title" data-i18n="admin.new_product">เพิ่มสินค้าใหม่</h2>
+              <p id="admin-product-form-sub" class="edit-sheet-sub" hidden></p>
+            </div>
+            <button type="button" id="admin-product-close" class="edit-sheet-close" aria-label="ปิด" data-i18n-aria-label="common.close">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <path d="M18 6 6 18M6 6l12 12" />
+              </svg>
+            </button>
           </div>
 
-          <div class="form-grid">
-            <div class="form-group col-2">
-              <label class="form-label" for="product-name" data-i18n="admin.product_name">ชื่อสินค้า</label>
-              <input
-                type="text"
-                id="product-name"
-                class="form-input"
-                required
-                placeholder="ชื่อสินค้า"
-                data-i18n-placeholder="admin.product_name_ph"
-              />
-            </div>
-            <div class="form-group">
-              <label class="form-label" for="product-sku">SKU</label>
-              <input type="text" id="product-sku" class="form-input" placeholder="C001" />
-            </div>
+          <div class="edit-sheet-body">
+            <form id="admin-product-form" class="edit-sheet-form" novalidate>
+              <div class="form-grid">
+                <div class="form-group col-2">
+                  <label class="form-label" for="product-name" data-i18n="admin.product_name">ชื่อสินค้า</label>
+                  <input
+                    type="text"
+                    id="product-name"
+                    class="form-input"
+                    required
+                    placeholder="ชื่อสินค้า"
+                    data-i18n-placeholder="admin.product_name_ph"
+                  />
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="product-sku">SKU</label>
+                  <input type="text" id="product-sku" class="form-input" placeholder="C001" />
+                </div>
 
-            <div class="form-group">
-              <label class="form-label" for="product-price" data-i18n="admin.product_price">ราคา (บาท)</label>
-              <input type="number" id="product-price" class="form-input" min="0" step="1" required placeholder="50" />
-            </div>
-            <div class="form-group">
-              <label class="form-label" for="product-sale-price" data-i18n="admin.sale_price">ราคาโปรโมชั่น</label>
-              <input type="number" id="product-sale-price" class="form-input" min="0" step="1" placeholder="40" />
-            </div>
-            <div class="form-group">
-              <label class="form-label" for="product-stock" data-i18n="admin.product_stock">จำนวนสต็อก</label>
-              <input type="number" id="product-stock" class="form-input" min="0" step="1" required placeholder="10" />
-            </div>
+                <div class="form-group">
+                  <label class="form-label" for="product-price" data-i18n="admin.product_price">ราคา (บาท)</label>
+                  <input type="number" id="product-price" class="form-input" min="0" step="1" required placeholder="50" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="product-sale-price" data-i18n="admin.sale_price">ราคาโปรโมชั่น</label>
+                  <input type="number" id="product-sale-price" class="form-input" min="0" step="1" placeholder="40" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="product-stock" data-i18n="admin.product_stock">จำนวนสต็อก</label>
+                  <input type="number" id="product-stock" class="form-input" min="0" step="1" required placeholder="10" />
+                </div>
 
-            <div class="form-group col-md-2">
-              <label class="form-label" for="product-category" data-i18n="admin.product_category">หมวดหมู่</label>
-              <select id="product-category" class="form-select"></select>
-              <span class="form-hint category-pick-hint">
-                <span data-i18n="admin.category_pick_hint">เลือกจากหมวดหมู่ที่สร้างไว้</span>
-                <a href="/admin/categories" data-i18n="admin.category_manage">จัดการหมวดหมู่</a>
-              </span>
-            </div>
+                <div class="form-group col-md-2">
+                  <label class="form-label" for="product-category" data-i18n="admin.product_category">หมวดหมู่</label>
+                  <select id="product-category" class="form-select"></select>
+                  <span class="form-hint category-pick-hint">
+                    <span data-i18n="admin.category_pick_hint">เลือกจากหมวดหมู่ที่สร้างไว้</span>
+                    <a href="/admin/categories" data-i18n="admin.category_manage">จัดการหมวดหมู่</a>
+                  </span>
+                </div>
 
-            <div class="form-group">
-              <label class="form-label" for="product-new-days" data-i18n="admin.new_days">อยู่ในหมวด "ใหม่" (วัน)</label>
-              <input type="number" id="product-new-days" class="form-input" min="0" max="365" step="1" value="7" />
-              <span class="form-hint" data-i18n="admin.new_days_hint">ครบกำหนดแล้วสินค้าจะกลับไปอยู่หมวดที่เลือกไว้เอง ไม่ต้องย้ายมือ</span>
-            </div>
+                <div class="form-group">
+                  <label class="form-label" for="product-new-days" data-i18n="admin.new_days">อยู่ในหมวด "ใหม่" (วัน)</label>
+                  <input type="number" id="product-new-days" class="form-input" min="0" max="365" step="1" value="7" />
+                  <span class="form-hint" data-i18n="admin.new_days_hint">ครบกำหนดแล้วสินค้าจะกลับไปอยู่หมวดที่เลือกไว้เอง ไม่ต้องย้ายมือ</span>
+                </div>
 
-            <div class="form-group col-2">
-              <label class="form-label" for="product-image" data-i18n="admin.product_image">URL รูปสินค้า</label>
-              <div class="input-with-action">
-                <input type="url" id="product-image" class="form-input" placeholder="https://..." />
-                <input type="file" id="product-image-file" accept="image/png,image/jpeg,image/webp" class="hidden" />
-                <button type="button" id="product-image-upload-btn" class="btn btn-outline" data-i18n="admin.product_upload">
-                  อัปโหลดรูป
-                </button>
+                <div class="form-group col-2">
+                  <label class="form-label" for="product-image" data-i18n="admin.product_image">URL รูปสินค้า</label>
+                  <div class="input-with-action">
+                    <input type="url" id="product-image" class="form-input" placeholder="https://..." />
+                    <input type="file" id="product-image-file" accept="image/png,image/jpeg,image/webp" class="hidden" />
+                    <button type="button" id="product-image-upload-btn" class="btn btn-outline" data-i18n="admin.product_upload">
+                      อัปโหลดรูป
+                    </button>
+                  </div>
+                  <span id="product-image-status" class="form-status"></span>
+                </div>
+
+                <div class="form-group col-3">
+                  <label class="form-label" for="product-description" data-i18n="admin.product_desc">รายละเอียดสินค้า</label>
+                  <textarea
+                    id="product-description"
+                    class="form-input"
+                    rows="3"
+                    placeholder="รายละเอียดสินค้า"
+                    data-i18n-placeholder="admin.product_description_ph"
+                  ></textarea>
+                </div>
               </div>
-              <span id="product-image-status" class="form-status"></span>
-            </div>
-
-            <div class="form-group col-3">
-              <label class="form-label" for="product-description" data-i18n="admin.product_desc">รายละเอียดสินค้า</label>
-              <textarea
-                id="product-description"
-                class="form-input"
-                rows="3"
-                placeholder="รายละเอียดสินค้า"
-                data-i18n-placeholder="admin.product_description_ph"
-              ></textarea>
-            </div>
+            </form>
           </div>
 
-          <div class="form-foot">
+          <div class="edit-sheet-foot">
             <label class="form-checkbox">
-              <input type="checkbox" id="product-active" checked />
+              <input type="checkbox" id="product-active" form="admin-product-form" checked />
               <span data-i18n="admin.product_active">เปิดขายสินค้านี้</span>
             </label>
             <div class="flex gap-sm">
-              <button type="submit" class="btn btn-primary" data-i18n="admin.save_product">บันทึกสินค้า</button>
+              <button type="submit" form="admin-product-form" class="btn btn-primary" data-i18n="admin.save_product">บันทึกสินค้า</button>
               <button type="button" id="admin-product-cancel" class="btn btn-ghost" data-i18n="common.cancel">ยกเลิก</button>
             </div>
           </div>
-        </form>
+        </dialog>
 
         <div class="table-wrap reveal">
           <table class="data">
