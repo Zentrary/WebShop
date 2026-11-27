@@ -303,6 +303,34 @@ async function initProducts() {
     return `<span class="cell-sub">${escapeHTML(t('admin.new_until_label', { date }))}</span>`;
   }
 
+  // แผงแก้ไขบังอยู่ข้างบนจอ: ข้อความ error ต้องอยู่ในแผงด้วย ไม่ใช่แค่ toast
+  const formError = document.getElementById('product-form-error');
+  const showFormError = (message) => {
+    if (!formError) return;
+    formError.textContent = message;
+    formError.hidden = false;
+  };
+  const clearFormError = () => {
+    if (!formError) return;
+    formError.textContent = '';
+    formError.hidden = true;
+  };
+  const focusField = (key) => {
+    if (!key) return;
+    const el = document.getElementById(`product-${key}`);
+    if (el && typeof el.focus === 'function') el.focus({ preventScroll: false });
+  };
+  // แปลง error ของ Postgres/PostgREST เป็นข้อความที่ร้านอ่านรู้เรื่อง
+  const productErrorMessage = (error) => {
+    const code = String(error?.code || '');
+    const text = String(error?.message || '');
+    if (code === '23505' || /duplicate key|unique/i.test(text)) return t('admin.product_sku_duplicate');
+    if (code === '23503' || /foreign key/i.test(text)) return t('admin.product_category_missing');
+    if (code === '23502' || /not-null|null value/i.test(text)) return t('admin.product_incomplete');
+    if (code === '42501' || /permission denied|row-level security/i.test(text)) return t('admin.product_no_permission');
+    return text || t('toast.error_generic');
+  };
+
   /**
    * เติม dropdown หมวดหมู่จากรายการที่สร้างไว้ในหน้า "หมวดหมู่"
    * ไม่ให้พิมพ์ชื่อเองในฟอร์มสินค้า เพื่อกันพิมพ์ผิดแล้วกลายเป็นหมวดใหม่
@@ -326,6 +354,8 @@ async function initProducts() {
       ...names.map((name) => `<option value="${escapeHTML(name)}">${escapeHTML(name)}</option>`),
     ].join('');
     select.value = chosen;
+    // ยังไม่มีหมวดหมู่เลย → เลือกไม่ได้ และบันทึกไม่ได้ (คอลัมน์ category เป็น NOT NULL)
+    if (!names.length) showFormError(t('admin.product_category_empty'));
   }
 
   async function loadProducts() {
@@ -362,10 +392,18 @@ async function initProducts() {
   }
 
   /** กะพริบแถวที่เพิ่งบันทึก เพื่อให้เห็นว่าการแก้ไขไปลงที่แถวไหน */
-  async function flashSavedRow(id) {
-    if (!id) return;
+  /**
+   * โหลดตารางใหม่หลังบันทึก แล้วไฮไลต์แถวที่เพิ่งบันทึก
+   * เดิมถ้าเป็นการ "เพิ่มสินค้า" (ยังไม่มี id) จะ return ออกก่อน ⇒ ตารางไม่รีเฟรช
+   * ผู้ใช้จึงเห็นเหมือนสินค้าไม่ถูกบันทึกทั้งที่บันทึกแล้ว
+   */
+  async function flashSavedRow(id, name = '') {
     await loadProducts();
-    const row = tbody.querySelector(`tr[data-row-id="${id}"]`);
+    const row = id
+      ? tbody.querySelector(`tr[data-row-id="${id}"]`)
+      : name
+        ? [...tbody.querySelectorAll('tr')].find((r) => r.textContent.includes(name))
+        : null;
     if (!row) return;
     row.classList.add('is-saved');
     row.scrollIntoView({ block: 'nearest' });
@@ -384,6 +422,7 @@ async function initProducts() {
       const { data: p } = await supabase.from('products').select('*').eq('id', edit.getAttribute('data-edit')).single();
       if (!p) return;
       editingId = p.id;
+      clearFormError();
       document.getElementById('product-name').value = p.name || '';
       document.getElementById('product-sku').value = p.sku || '';
       await loadCategorySelect(p.category || '');
@@ -433,6 +472,7 @@ async function initProducts() {
       document.getElementById('product-active').checked = true;
       const newDaysInput = document.getElementById('product-new-days');
       if (newDaysInput) newDaysInput.value = '7';
+      clearFormError();
       await loadCategorySelect();
       sheet?.open({ titleKey: 'admin.new_product' });
     });
@@ -468,6 +508,7 @@ async function initProducts() {
   if (form) {
     bindOnce(form, 'submit', async (e) => {
       e.preventDefault();
+      clearFormError();
       const checked = validateProduct({
         name: document.getElementById('product-name').value,
         sku: document.getElementById('product-sku').value,
@@ -480,16 +521,20 @@ async function initProducts() {
         active: document.getElementById('product-active').checked,
       });
       if (!checked.ok) {
-        notify(t(checked.errorKey), 'error');
+        const message = t(checked.errorKey);
+        showFormError(message);
+        notify(message, 'error');
+        focusField(checked.fieldKey);
         return;
       }
 
-      const payload = {
-        ...checked.value,
-        category: checked.value.category?.trim() || null,
-      };
+      // ห้ามส่ง null ลงคอลัมน์ NOT NULL (category/sku/image_url) — validateProduct จัดการแล้ว
+      const payload = { ...checked.value };
       if (!payload.name) {
-        notify(t('admin.product_name_required'), 'error');
+        const message = t('admin.product_name_required');
+        showFormError(message);
+        notify(message, 'error');
+        focusField('name');
         return;
       }
 
@@ -497,7 +542,10 @@ async function initProducts() {
       const rawNewDays = newDaysInput ? newDaysInput.value.trim() : '';
       const newDays = rawNewDays === '' ? 7 : Number(rawNewDays);
       if (!Number.isInteger(newDays) || newDays < 0 || newDays > 365) {
-        notify(t('admin.new_days_invalid'), 'error');
+        const message = t('admin.new_days_invalid');
+        showFormError(message);
+        notify(message, 'error');
+        focusField('new-days');
         return;
       }
       payload.new_days = newDays;
@@ -510,16 +558,20 @@ async function initProducts() {
         ({ error } = await supabase.from('products').insert(payload));
       }
       if (error) {
-        notify(error.message || t('toast.error_generic'), 'error');
+        const message = productErrorMessage(error);
+        showFormError(message);
+        notify(message, 'error');
         return;
       }
 
       const savedId = editingId;
+      const savedName = payload.name || '';
+      clearFormError();
       notify(editingId ? t('admin.product_saved') : t('admin.product_added'), 'success');
       editingId = null;
       sheet?.closeNow();
       form.reset();
-      await flashSavedRow(savedId);
+      await flashSavedRow(savedId, savedName);
     });
 
     const cancelBtn = document.getElementById('admin-product-cancel');
@@ -1050,8 +1102,22 @@ async function initCoupons() {
     });
   }
 
+  // ข้อความผิดพลาดของแผงคูปอง (แผงบัง toast อยู่)
+  const couponError = document.getElementById('coupon-form-error');
+  const showCouponError = (message) => {
+    if (!couponError) return;
+    couponError.textContent = message;
+    couponError.hidden = false;
+  };
+  const clearCouponError = () => {
+    if (!couponError) return;
+    couponError.textContent = '';
+    couponError.hidden = true;
+  };
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
+    clearCouponError();
     const code = document.getElementById('coupon-code').value.trim().toUpperCase();
     const kind = document.getElementById('coupon-kind').value;
     const value = Number(document.getElementById('coupon-value').value);
@@ -1059,9 +1125,13 @@ async function initCoupons() {
     const maxUsesRaw = document.getElementById('coupon-max-uses').value;
     const endsRaw = document.getElementById('coupon-ends').value;
 
-    if (!code || code.length < 2) return notify(t('coupon.invalid'), 'error');
-    if (!Number.isFinite(value) || value <= 0) return notify(t('coupon.invalid'), 'error');
-    if (kind === 'percent' && value > 100) return notify(t('coupon.invalid'), 'error');
+    const invalid = () => {
+      showCouponError(t('coupon.invalid'));
+      notify(t('coupon.invalid'), 'error');
+    };
+    if (!code || code.length < 2) return invalid();
+    if (!Number.isFinite(value) || value <= 0) return invalid();
+    if (kind === 'percent' && value > 100) return invalid();
 
     const payload = {
       code,
@@ -1078,10 +1148,13 @@ async function initCoupons() {
       : await supabase.from('coupons').insert(payload);
 
     if (error) {
-      notify(error.message || t('toast.error_generic'), 'error');
+      const message = error.message || t('toast.error_generic');
+      showCouponError(message);
+      notify(message, 'error');
       return;
     }
     const savedId = editingId;
+    clearCouponError();
     notify(t('admin.coupon_saved'), 'success');
     editingId = null;
     sheet?.closeNow();
