@@ -70,10 +70,12 @@
                     placeholder="ชื่อสินค้า"
                     data-i18n-placeholder="admin.product_name_ph"
                   />
+                  <span id="product-name-duplicate" class="form-hint dup-hint" role="status" hidden></span>
                 </div>
                 <div class="form-group">
                   <label class="form-label" for="product-sku">SKU</label>
                   <input type="text" id="product-sku" class="form-input" placeholder="C001" />
+                  <span id="product-sku-duplicate" class="form-hint dup-hint" role="status" hidden></span>
                 </div>
 
                 <div class="form-group">
@@ -106,14 +108,19 @@
 
                 <div class="form-group col-2">
                   <label class="form-label" for="product-image" data-i18n="admin.product_image">URL รูปสินค้า</label>
-                  <div class="input-with-action">
+                  <div class="image-field">
                     <input type="url" id="product-image" class="form-input" placeholder="https://..." />
                     <input type="file" id="product-image-file" accept="image/png,image/jpeg,image/webp" class="hidden" />
                     <button type="button" id="product-image-upload-btn" class="btn btn-outline" data-i18n="admin.product_upload">
                       อัปโหลดรูป
                     </button>
+                    <button type="button" id="product-image-edit-btn" class="btn btn-ghost" data-i18n="admin.image_edit_again" hidden>
+                      แก้ไขรูป
+                    </button>
                   </div>
                   <span id="product-image-status" class="form-status"></span>
+                  <span id="product-image-duplicate" class="form-hint dup-hint" role="status" hidden></span>
+                  <span class="form-hint" data-i18n="admin.image_edit_hint"> เลือกรูปแล้วปรับหมุน/ครอป/ซูมได้ก่อนบันทึก </span>
                 </div>
 
                 <div class="form-group col-3">
@@ -131,6 +138,25 @@
           </div>
 
           <div class="edit-sheet-foot">
+            <div id="product-dup-warning" class="dup-warning" hidden>
+              <p class="dup-warning-head">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M12 9v4M12 17h.01" />
+                  <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" />
+                </svg>
+                <span data-i18n="admin.dup_title">พบสินค้าที่อาจซ้ำกับรายการนี้</span>
+              </p>
+              <ul id="product-dup-list" class="dup-list"></ul>
+              <p class="dup-warning-hint" data-i18n="admin.dup_hint">ถ้าตั้งใจเพิ่มสินค้าใหม่จริง ๆ ให้กด "ยืนยันบันทึกอีกครั้ง"</p>
+            </div>
             <p id="product-form-error" class="sheet-error" role="alert" hidden></p>
             <label class="form-checkbox">
               <input type="checkbox" id="product-active" form="admin-product-form" checked />
@@ -140,6 +166,153 @@
               <button type="submit" form="admin-product-form" class="btn btn-primary" data-i18n="admin.save_product">บันทึกสินค้า</button>
               <button type="button" id="admin-product-cancel" class="btn btn-ghost" data-i18n="common.cancel">ยกเลิก</button>
             </div>
+          </div>
+        </dialog>
+
+        <dialog id="image-editor" class="img-editor" aria-labelledby="image-editor-title">
+          <div class="img-editor-head">
+            <div class="img-editor-heading">
+              <h2 id="image-editor-title" class="edit-sheet-title" data-i18n="admin.image_editor">แก้ไขรูปสินค้า</h2>
+              <p id="image-editor-sub" class="edit-sheet-sub" hidden></p>
+            </div>
+            <button type="button" id="image-editor-close" class="edit-sheet-close" aria-label="ปิด" data-i18n-aria-label="common.close">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <path d="M18 6 6 18M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          <div class="img-editor-body">
+            <div
+              id="image-editor-stage"
+              class="img-editor-stage"
+              tabindex="0"
+              role="application"
+              aria-label="พื้นที่ปรับรูป"
+              data-i18n-aria-label="admin.image_editor_stage"
+            >
+              <canvas id="image-editor-canvas"></canvas>
+              <div id="image-editor-frame" class="img-editor-frame" aria-hidden="true"></div>
+            </div>
+
+            <div class="img-editor-controls">
+              <div class="img-editor-group">
+                <span class="img-editor-label" data-i18n="admin.image_aspect">สัดส่วน</span>
+                <div class="img-editor-chips" id="image-editor-aspects" role="group" aria-label="สัดส่วนรูป">
+                  <button type="button" class="img-chip is-active" data-aspect="1" aria-pressed="true">1:1</button>
+                  <button type="button" class="img-chip" data-aspect="0.75" aria-pressed="false">3:4</button>
+                  <button type="button" class="img-chip" data-aspect="1.3333333" aria-pressed="false">4:3</button>
+                  <button type="button" class="img-chip" data-aspect="1.7777778" aria-pressed="false">16:9</button>
+                </div>
+              </div>
+
+              <div class="img-editor-group">
+                <label class="img-editor-label" for="image-editor-zoom" data-i18n="admin.image_zoom">ซูม</label>
+                <div class="img-editor-zoom">
+                  <input type="range" id="image-editor-zoom" min="1" max="4" step="0.01" value="1" />
+                  <span id="image-editor-zoom-value" class="img-editor-zoom-value">100%</span>
+                </div>
+              </div>
+
+              <div class="img-editor-group img-editor-tools">
+                <span class="img-editor-label" data-i18n="admin.image_tools">จัดรูป</span>
+                <div class="img-editor-tool-row">
+                  <button
+                    type="button"
+                    id="image-editor-rotate-left"
+                    class="img-tool"
+                    aria-label="หมุนซ้าย"
+                    data-i18n-aria-label="admin.image_rotate_left"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path d="M3 7v6h6" />
+                      <path d="M3.5 13a9 9 0 1 0 2.6-6.4L3 9" />
+                    </svg>
+                    <span data-i18n="admin.image_rotate_left_short">หมุนซ้าย</span>
+                  </button>
+                  <button
+                    type="button"
+                    id="image-editor-rotate-right"
+                    class="img-tool"
+                    aria-label="หมุนขวา"
+                    data-i18n-aria-label="admin.image_rotate_right"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path d="M21 7v6h-6" />
+                      <path d="M20.5 13a9 9 0 1 1-2.6-6.4L21 9" />
+                    </svg>
+                    <span data-i18n="admin.image_rotate_right_short">หมุนขวา</span>
+                  </button>
+                  <button
+                    type="button"
+                    id="image-editor-flip"
+                    class="img-tool"
+                    aria-label="พลิกซ้ายขวา"
+                    data-i18n-aria-label="admin.image_flip"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path d="M12 3v18" />
+                      <path d="M8 7 3 12l5 5V7Z" />
+                      <path d="M16 7l5 5-5 5V7Z" />
+                    </svg>
+                    <span data-i18n="admin.image_flip_short">พลิก</span>
+                  </button>
+                  <button
+                    type="button"
+                    id="image-editor-reset"
+                    class="img-tool"
+                    aria-label="เริ่มใหม่"
+                    data-i18n-aria-label="admin.image_reset"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path d="M3 12a9 9 0 1 0 3-6.7" />
+                      <path d="M3 4v5h5" />
+                    </svg>
+                    <span data-i18n="admin.image_reset_short">เริ่มใหม่</span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="img-editor-group">
+                <label class="img-editor-label" for="image-editor-size" data-i18n="admin.image_size">ขนาดรูป</label>
+                <select id="image-editor-size" class="form-select img-editor-size"></select>
+                <span id="image-editor-output" class="img-editor-note"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="img-editor-foot">
+            <p id="image-editor-status" class="form-status"></p>
+            <button type="button" id="image-editor-cancel" class="btn btn-outline" data-i18n="common.cancel">ยกเลิก</button>
+            <button type="button" id="image-editor-apply" class="btn btn-primary" data-i18n="admin.image_apply">ใช้รูปนี้</button>
           </div>
         </dialog>
 

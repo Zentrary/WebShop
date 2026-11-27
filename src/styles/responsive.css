@@ -357,6 +357,74 @@
   }
   /* บล็อกหมวดหมู่: ย่อหัวข้อ + ชิปแถวเดียวเลื่อนแนวนอน ไม่ดันสินค้าลง */
   /* บนจอแคบแผงต้องกว้างเต็มแถว ไม่งั้นรายการชื่อหมวดยาว ๆ จะถูกบีบแคบ */
+  /* ตัวแก้ไขรูป: เต็มจอและปุ่มใหญ่พอสำหรับนิ้ว */
+  .img-editor {
+    width: 100vw;
+    height: 100dvh;
+    max-height: 100dvh;
+    border: 0;
+    border-radius: 0;
+  }
+  .img-editor-head {
+    padding: var(--space-md);
+  }
+  .img-editor-body {
+    padding: var(--space-md);
+    gap: var(--space-sm);
+  }
+  .img-editor-stage {
+    height: min(38vh, 320px);
+  }
+  .img-editor-controls {
+    gap: var(--space-sm) var(--space-md);
+  }
+  .img-editor-tools,
+  .img-editor-tool-row {
+    width: 100%;
+  }
+  .img-tool {
+    flex: 1 1 auto;
+    justify-content: center;
+    min-height: 44px;
+  }
+  .img-chip {
+    min-height: 40px;
+  }
+  .img-editor-zoom input[type='range'] {
+    width: 120px;
+  }
+  .img-editor-foot {
+    padding: var(--space-sm) var(--space-md);
+    gap: var(--space-sm);
+  }
+  .img-editor-foot .btn {
+    flex: 1 1 auto;
+    min-height: 46px;
+  }
+  .img-editor-foot .form-status {
+    flex: 1 1 100%;
+    order: -1;
+  }
+  /* ปุ่มในช่องรูป (อัปโหลด/แก้ไข) ขยายเต็มความกว้าง กดง่ายบนมือถือ */
+  .image-field {
+    grid-template-columns: 1fr 1fr;
+    justify-items: stretch;
+  }
+  .image-field .btn {
+    min-height: 44px;
+  }
+  /* รายการสินค้าที่ซ้ำ: ชื่อยาวต้องไม่ดันปุ่ม "ดูสินค้า" ตกขอบ */
+  .dup-item {
+    grid-template-columns: 36px minmax(0, 1fr);
+  }
+  .dup-thumb {
+    width: 36px;
+    height: 36px;
+  }
+  .dup-link {
+    grid-column: 2;
+    justify-self: start;
+  }
   .filter-panel {
     width: calc(100vw - 2rem);
     max-width: 360px;
@@ -514,6 +582,11 @@
 @media (max-width: 480px) {
   :root {
     --header-height: 60px;
+  }
+  /* จอแคบมาก: ปุ่มจัดรูปเรียง 2×2 ไม่ให้ปุ่มสุดท้ายตกไปอยู่บรรทัดเดี่ยว ๆ */
+  .img-editor-tool-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
   }
   .product-grid {
     grid-template-columns: repeat(2, 1fr);
