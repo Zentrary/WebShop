@@ -30,6 +30,15 @@ import { reportClientError } from '/src/core/errors.js';
 import { fillCarrierSelect, detectCarrier } from '/src/core/carriers.js';
 import { mergeStoreSettings } from '/src/core/settings.js';
 import { validateStoreSettings, validateProduct, validateCategory, validatePromptPay } from '/src/core/validation.js';
+import { openImageEditor, hasImageEditor } from '/src/pages/admin/image-editor.js';
+import { dHash, urlToImage } from '/src/core/image.js';
+import {
+  loadProductIndex,
+  detectDuplicates,
+  bestImageMatch,
+  normalizeName,
+  normalizeSku,
+} from '/src/core/duplicates.js';
 
 let supabase;
 
@@ -267,6 +276,42 @@ function niceAxisMax(value) {
   return magnitude * step;
 }
 
+/**
+ * คำนวณลายนิ้วมือรูปจาก URL (ใช้กับรูปที่พิมพ์ URL เอง หรือรูปเก่าที่บันทึกไว้ก่อนมีระบบนี้)
+ * ถ้ารูปต่างโดเมนและไม่มี CORS จะคืน '' แล้วข้ามไปเงียบ ๆ
+ */
+async function hashImageUrl(url) {
+  if (!url) return '';
+  try {
+    const img = await urlToImage(url);
+    return dHash(img);
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * สินค้าที่ลงไว้ก่อนมีระบบตรวจรูปซ้ำจะยังไม่มีลายนิ้วมือ
+ * เปิดหน้าสินค้าครั้งแรกจึงคำนวณให้ครั้งเดียวแล้วเก็บลงฐานข้อมูล
+ * (ทำทีละรูป จำกัดจำนวน เพื่อไม่ให้ช้าหรือกินเน็ตตอนเปิดหน้า)
+ */
+async function backfillImageHashes(index, max = 30) {
+  const targets = index.filter((item) => !item.hashes.length && item.imageUrl).slice(0, max);
+  for (const item of targets) {
+    const hash = await hashImageUrl(item.imageUrl);
+    if (!hash) continue;
+    try {
+      const { error } = await supabase
+        .from('products')
+        .update({ image_hashes: [hash] })
+        .eq('id', item.id);
+      if (!error) item.hashes = [hash];
+    } catch {
+      /* เก็บไม่ได้ก็ยังตรวจรูปใหม่ได้ปกติ */
+    }
+  }
+}
+
 async function initProducts() {
   const tbody = document.getElementById('admin-products-list');
   const searchInput = document.getElementById('admin-product-search');
@@ -332,6 +377,158 @@ async function initProducts() {
     return text || t('toast.error_generic');
   };
 
+  /* ---------------------------------------------------------------- *
+   * ตรวจสินค้าซ้ำ (รูป / ชื่อ / รหัสสินค้า)
+   * ใช้รายการสินค้าที่โหลดมาครั้งเดียวเทียบในหน่วยความจำ
+   * ---------------------------------------------------------------- */
+  let dupIndex = [];
+  let dupAcknowledged = '';
+  let stagedFile = null;
+  let stagedHash = '';
+  let stagedUrl = '';
+  let hashesDirty = false;
+  let hintedUrl = '';
+  let originalImage = { url: '', hashes: [] };
+
+  const nameHint = document.getElementById('product-name-duplicate');
+  const skuHint = document.getElementById('product-sku-duplicate');
+  const imageHint = document.getElementById('product-image-duplicate');
+  const dupWarning = document.getElementById('product-dup-warning');
+  const dupList = document.getElementById('product-dup-list');
+  const submitBtn = form?.closest('dialog')?.querySelector('button[type="submit"]') || null;
+
+  const setHint = (node, text) => {
+    if (!node) return;
+    node.textContent = text || '';
+    node.hidden = !text;
+  };
+
+  function currentHashes() {
+    return [stagedHash].filter(Boolean);
+  }
+
+  function clearDupWarning() {
+    dupAcknowledged = '';
+    if (dupWarning) dupWarning.hidden = true;
+    if (dupList) dupList.innerHTML = '';
+    if (submitBtn) submitBtn.textContent = t('admin.save_product');
+  }
+
+  /** คำใบ้สด ๆ ใต้ช่องชื่อ/SKU ระหว่างพิมพ์ */
+  function paintLiveHints() {
+    const name = document.getElementById('product-name')?.value || '';
+    const sku = document.getElementById('product-sku')?.value || '';
+    const nameKey = normalizeName(name);
+    const skuKey = normalizeSku(sku);
+    const others = dupIndex.filter((item) => item.id !== editingId);
+
+    const sameName = nameKey ? others.find((item) => item.nameKey === nameKey) : null;
+    if (sameName) {
+      setHint(nameHint, t('admin.dup_name_hint', { name: sameName.name, sku: sameName.sku || '-' }));
+    } else {
+      const close = name ? detectDuplicates(dupIndex, { name, excludeId: editingId || '' }).similar[0] : null;
+      setHint(
+        nameHint,
+        close
+          ? t('admin.dup_name_similar_hint', {
+              name: close.product.name,
+              score: Math.round(close.score * 100),
+            })
+          : '',
+      );
+    }
+
+    const sameSku = skuKey ? others.find((item) => item.skuKey === skuKey) : null;
+    setHint(skuHint, sameSku ? t('admin.dup_sku_hint', { name: sameSku.name }) : '');
+
+    const imageMatch = stagedHash ? bestMatchForHash(stagedHash) : null;
+    setHint(
+      imageHint,
+      imageMatch ? t('admin.dup_image_hint', { name: imageMatch.product.name, score: imageMatch.score }) : '',
+    );
+  }
+
+  const bestMatchForHash = (hash) => bestImageMatch(dupIndex, hash, editingId || '');
+
+  /** แสดงกล่อง "พบสินค้าที่อาจซ้ำ" พร้อมเหตุผลและสินค้าที่ชนกัน */
+  function showDupWarning(result) {
+    if (!dupWarning || !dupList) return;
+    const rows = [];
+    if (result.sku) {
+      rows.push({ badge: t('admin.dup_reason_sku'), tone: 'sku', product: result.sku, meta: '' });
+    }
+    result.names.forEach((match) => {
+      rows.push({
+        badge: match.exact ? t('admin.dup_reason_name') : t('admin.dup_reason_name_similar'),
+        tone: 'name',
+        product: match.product,
+        meta: match.exact ? '' : `${Math.round(match.score * 100)}%`,
+      });
+    });
+    result.images.forEach((match) => {
+      rows.push({
+        badge: t('admin.dup_reason_image'),
+        tone: 'image',
+        product: match.product,
+        meta: `${match.score}%`,
+      });
+    });
+
+    dupList.innerHTML = rows
+      .map(
+        (row) => `
+        <li class="dup-item">
+          <img class="dup-thumb" src="${escapeHTML(row.product.imageUrl || '/images/placeholder.svg')}" alt="" loading="lazy" />
+          <span class="dup-body">
+            <span class="dup-badge dup-badge-${row.tone}">${escapeHTML(row.badge)}${row.meta ? ` ${escapeHTML(row.meta)}` : ''}</span>
+            <span class="dup-name">${escapeHTML(row.product.name || '-')}</span>
+            <span class="dup-meta">SKU ${escapeHTML(row.product.sku || '-')} · ${
+              row.product.active ? t('admin.product_on_sale') : t('admin.hidden')
+            }</span>
+          </span>
+          <a class="dup-link" href="/shop/product?id=${encodeURIComponent(row.product.id)}" target="_blank" rel="noopener">${escapeHTML(
+            t('admin.dup_open'),
+          )}</a>
+        </li>`,
+      )
+      .join('');
+
+    dupWarning.hidden = false;
+    if (submitBtn) submitBtn.textContent = t('admin.dup_confirm_save');
+    dupWarning.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }
+
+  async function refreshDupIndex() {
+    try {
+      dupIndex = await loadProductIndex(supabase);
+    } catch (err) {
+      console.warn('[ZenMarket] duplicate index failed', err);
+      dupIndex = [];
+    }
+    paintLiveHints();
+    return dupIndex;
+  }
+
+  /**
+   * hash ของรูปที่กำลังจะบันทึก
+   * - อัปโหลดใหม่ → ใช้ hash ของไฟล์ที่ตัดแล้ว
+   * - แก้ไขสินค้าโดยไม่ได้แตะรูป → ใช้ค่าเดิมในฐานข้อมูล ไม่ต้องคำนวณซ้ำ
+   * - พิมพ์ URL เอง → ลองคำนวณจาก URL (ถ้าเซิร์ฟเวอร์ไม่ให้อ่านพิกเซลจะได้ '')
+   */
+  async function resolveCurrentHashes() {
+    const url = (document.getElementById('product-image')?.value || '').trim();
+    if (stagedHash && (!url || url === stagedUrl)) return currentHashes();
+    if (editingId && url && url === originalImage.url && !stagedFile) return originalImage.hashes;
+    if (!url) return [];
+    if (url === hintedUrl) return currentHashes();
+    hintedUrl = url;
+    const hash = await hashImageUrl(url);
+    stagedHash = hash;
+    hashesDirty = Boolean(hash);
+    paintLiveHints();
+    return currentHashes();
+  }
+
   /**
    * เติม dropdown หมวดหมู่จากรายการที่สร้างไว้ในหน้า "หมวดหมู่"
    * ไม่ให้พิมพ์ชื่อเองในฟอร์มสินค้า เพื่อกันพิมพ์ผิดแล้วกลายเป็นหมวดใหม่
@@ -390,6 +587,10 @@ async function initProducts() {
         `<button class="btn btn-danger btn-sm" data-del="${p.id}">${t('common.delete')}</button></td>`;
       tbody.appendChild(tr);
     });
+
+    // ข้อมูลสำหรับตรวจสินค้าซ้ำ (โหลดครั้งเดียวหลังตารางเสร็จ)
+    await refreshDupIndex();
+    backfillImageHashes(dupIndex);
   }
 
   /** กะพริบแถวที่เพิ่งบันทึก เพื่อให้เห็นว่าการแก้ไขไปลงที่แถวไหน */
@@ -424,6 +625,18 @@ async function initProducts() {
       if (!p) return;
       editingId = p.id;
       clearFormError();
+      clearDupWarning();
+      stagedFile = null;
+      stagedHash = '';
+      stagedUrl = '';
+      hintedUrl = '';
+      hashesDirty = false;
+      originalImage = {
+        url: p.image_url || '',
+        hashes: Array.isArray(p.image_hashes) ? p.image_hashes.filter(Boolean) : [],
+      };
+      if (imageEditBtn) imageEditBtn.hidden = !p.image_url;
+      if (imageStatus) imageStatus.textContent = '';
       document.getElementById('product-name').value = p.name || '';
       document.getElementById('product-sku').value = p.sku || '';
       await loadCategorySelect(p.category || '');
@@ -439,6 +652,7 @@ async function initProducts() {
         titleKey: 'admin.edit_product',
         sub: [p.name, p.sku].filter(Boolean).join(' · '),
       });
+      paintLiveHints();
       return;
     }
 
@@ -474,35 +688,120 @@ async function initProducts() {
       const newDaysInput = document.getElementById('product-new-days');
       if (newDaysInput) newDaysInput.value = '7';
       clearFormError();
+      stagedFile = null;
+      stagedHash = '';
+      stagedUrl = '';
+      hintedUrl = '';
+      hashesDirty = false;
+      originalImage = { url: '', hashes: [] };
+      clearDupWarning();
+      if (imageEditBtn) imageEditBtn.hidden = true;
+      if (imageStatus) imageStatus.textContent = '';
       await loadCategorySelect();
       sheet?.open({ titleKey: 'admin.new_product' });
+      paintLiveHints();
     });
   }
 
   const imageUploadBtn = document.getElementById('product-image-upload-btn');
+  const imageEditBtn = document.getElementById('product-image-edit-btn');
   const imageFileInput = document.getElementById('product-image-file');
   const imageStatus = document.getElementById('product-image-status');
   const imageUrlInput = document.getElementById('product-image');
 
+  /** ดึงรูปเดิมกลับมาเป็นไฟล์ เพื่อเปิดตัวแก้ไขรูปซ้ำได้ (แก้รูปที่เคยอัปโหลดไปแล้ว) */
+  async function fileFromUrl(url) {
+    const res = await fetch(url, { mode: 'cors', credentials: 'omit' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const blob = await res.blob();
+    if (!/^image\//.test(blob.type || '')) throw new Error('not an image');
+    const ext = (blob.type.split('/')[1] || 'jpg').replace('jpeg', 'jpg');
+    return new File([blob], `product-${Date.now()}.${ext}`, { type: blob.type });
+  }
+
+  /** อัปโหลดไฟล์ (ผ่านตัวแก้ไขก่อนถ้าหน้านี้มี) แล้วจำ hash ไว้ตรวจรูปซ้ำ */
+  async function uploadPickedImage(file) {
+    if (!file) return;
+    let payloadFile = file;
+    let hash = '';
+
+    if (hasImageEditor()) {
+      const edited = await openImageEditor(file);
+      // ผู้ใช้กดยกเลิกในตัวแก้ไข → ไม่ต้องทำอะไรต่อ
+      if (!edited) {
+        if (imageFileInput) imageFileInput.value = '';
+        return;
+      }
+      const ext = edited.type === 'image/png' ? 'png' : 'jpg';
+      payloadFile = new File([edited.blob], `${edited.name || 'product'}.${ext}`, { type: edited.type });
+      hash = edited.hash;
+      if (imageStatus) {
+        imageStatus.textContent =
+          edited.width && edited.height
+            ? t('admin.image_uploading', { w: edited.width, h: edited.height })
+            : t('admin.image_uploading_plain');
+      }
+    }
+
+    imageUploadBtn.disabled = true;
+    if (imageEditBtn) imageEditBtn.disabled = true;
+    if (imageStatus && !hash) imageStatus.textContent = t('admin.image_uploading_plain');
+    try {
+      const { url } = await uploadProductImage(supabase, payloadFile);
+      if (imageUrlInput) imageUrlInput.value = url;
+      if (!hash) hash = await hashImageUrl(url);
+      stagedFile = file;
+      stagedUrl = url;
+      stagedHash = hash;
+      hashesDirty = true;
+      if (imageStatus) imageStatus.textContent = t('admin.product_upload_done');
+      if (imageEditBtn) {
+        imageEditBtn.hidden = false;
+        imageEditBtn.disabled = false;
+      }
+      clearDupWarning();
+      paintLiveHints();
+    } catch (err) {
+      console.error(err);
+      if (imageStatus) imageStatus.textContent = t('toast.error_generic');
+      notify(err.message || t('toast.error_generic'), 'error');
+    } finally {
+      imageUploadBtn.disabled = false;
+      if (imageFileInput) imageFileInput.value = '';
+    }
+  }
+
   if (imageUploadBtn && imageFileInput) {
     bindOnce(imageUploadBtn, 'click', () => imageFileInput.click());
-    bindOnce(imageFileInput, 'change', async () => {
-      const file = imageFileInput.files?.[0];
-      if (!file) return;
-      imageUploadBtn.disabled = true;
-      if (imageStatus) imageStatus.textContent = t('common.loading');
+    bindOnce(imageFileInput, 'change', () => uploadPickedImage(imageFileInput.files?.[0]));
+    bindOnce(imageEditBtn, 'click', async () => {
+      const url = (imageUrlInput?.value || '').trim();
+      if (stagedFile) {
+        uploadPickedImage(stagedFile);
+        return;
+      }
+      if (!url) return;
+      imageEditBtn.disabled = true;
+      if (imageStatus) imageStatus.textContent = t('admin.image_loading');
       try {
-        const { url } = await uploadProductImage(supabase, file);
-        if (imageUrlInput) imageUrlInput.value = url;
-        if (imageStatus) imageStatus.textContent = t('admin.product_upload_done');
+        await uploadPickedImage(await fileFromUrl(url));
       } catch (err) {
         console.error(err);
-        if (imageStatus) imageStatus.textContent = t('toast.error_generic');
-        notify(err.message || t('toast.error_generic'), 'error');
+        if (imageStatus) imageStatus.textContent = '';
+        notify(t('admin.image_editor_load_failed'), 'error');
       } finally {
-        imageUploadBtn.disabled = false;
-        imageFileInput.value = '';
+        imageEditBtn.disabled = false;
       }
+    });
+    // พิมพ์ URL เอง = เปลี่ยนรูป → hash เดิมใช้ไม่ได้แล้ว
+    bindOnce(imageUrlInput, 'input', () => {
+      const url = (imageUrlInput.value || '').trim();
+      if (url === stagedUrl) return;
+      stagedFile = null;
+      stagedHash = '';
+      if (imageEditBtn) imageEditBtn.hidden = !url;
+      clearDupWarning();
+      paintLiveHints();
     });
   }
 
@@ -551,6 +850,39 @@ async function initProducts() {
       }
       payload.new_days = newDays;
 
+      /* ---------- ตรวจสินค้าซ้ำ (รูป / ชื่อ / รหัสสินค้า) ---------- */
+      await resolveCurrentHashes();
+      const hashes = currentHashes();
+      const dupSignature = JSON.stringify({
+        name: normalizeName(payload.name),
+        sku: normalizeSku(payload.sku),
+        hashes: [...hashes].sort(),
+      });
+      if (dupSignature !== dupAcknowledged) {
+        const found = detectDuplicates(dupIndex, {
+          name: payload.name,
+          sku: payload.sku,
+          hashes,
+          excludeId: editingId || '',
+        });
+        if (found.sku) {
+          const message = t('admin.dup_sku_blocked', { sku: found.sku.sku, name: found.sku.name });
+          showFormError(message);
+          notify(message, 'error');
+          setHint(skuHint, t('admin.dup_sku_hint', { name: found.sku.name }));
+          focusField('sku');
+          return;
+        }
+        if (found.hasIssue) {
+          // เตือนก่อน ไม่บล็อก: ชื่อหรือรูปซ้ำอาจเป็นสินค้าคนละชิ้นที่หน้าตาคล้ายกัน
+          dupAcknowledged = dupSignature;
+          showDupWarning(found);
+          return;
+        }
+      }
+
+      if (hashes.length || hashesDirty || !editingId) payload.image_hashes = hashes;
+
       let error;
       if (editingId) {
         ({ error } = await supabase.from('products').update(payload).eq('id', editingId));
@@ -568,6 +900,13 @@ async function initProducts() {
       const savedId = editingId;
       const savedName = payload.name || '';
       clearFormError();
+      clearDupWarning();
+      stagedFile = null;
+      stagedHash = '';
+      stagedUrl = '';
+      hashesDirty = false;
+      if (imageEditBtn) imageEditBtn.hidden = true;
+      if (imageStatus) imageStatus.textContent = '';
       notify(editingId ? t('admin.product_saved') : t('admin.product_added'), 'success');
       editingId = null;
       sheet?.closeNow();
@@ -583,6 +922,16 @@ async function initProducts() {
       });
     }
   }
+
+  // ตรวจชื่อ/SKU ซ้ำแบบสด ๆ ระหว่างพิมพ์ (หน่วงนิดเดียว ไม่กระพริบ)
+  let hintTimer = 0;
+  const onFieldInput = () => {
+    clearDupWarning();
+    clearTimeout(hintTimer);
+    hintTimer = setTimeout(paintLiveHints, 220);
+  };
+  bindOnce(document.getElementById('product-name'), 'input', onFieldInput);
+  bindOnce(document.getElementById('product-sku'), 'input', onFieldInput);
 
   if (searchInput) {
     bindOnce(searchInput, 'input', () => {
