@@ -455,7 +455,9 @@ function setCouponStatus(message, variant) {
 async function applyCouponCode(rawCode) {
   const code = (rawCode || '').trim();
   if (!code) {
-    setCouponStatus('', null);
+    // ยังไม่ได้กรอกโค้ด — บอกตรง ๆ ไม่ใช่ปล่อยว่างหรือด่าโค้ดที่ไม่รู้จัก
+    setCouponStatus(t('coupon.enter_code'), 'error');
+    document.getElementById('coupon-input')?.focus();
     return;
   }
   const { subtotal } = cartTotals();
@@ -489,7 +491,8 @@ async function applyCouponCode(rawCode) {
     console.error(err);
     appliedCoupon = null;
     renderCheckoutTotals();
-    setCouponStatus(t('coupon.invalid'), 'error');
+    // ตรวจไม่ได้เพราะเน็ต/เซิร์ฟเวอร์ ไม่ใช่เพราะโค้ดผิด
+    setCouponStatus(t('coupon.check_failed'), 'error');
   }
 }
 

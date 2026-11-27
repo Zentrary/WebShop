@@ -1092,6 +1092,7 @@ async function initCoupons() {
       editingId = null;
       form.reset();
       document.getElementById('coupon-active').checked = true;
+      clearCouponError();
       sheet?.open({ titleKey: 'admin.coupon_new' });
     });
   }
@@ -1114,7 +1115,19 @@ async function initCoupons() {
     if (!couponError) return;
     couponError.textContent = '';
     couponError.hidden = true;
+    form.querySelectorAll('.is-invalid').forEach((el) => {
+      el.classList.remove('is-invalid');
+      el.removeAttribute('aria-invalid');
+    });
   };
+
+  // พอผู้ใช้เริ่มแก้ช่องนั้น ขอบแดง/ข้อความเดิมก็ไม่จำเป็นแล้ว
+  form.addEventListener('input', (e) => {
+    if (!e.target.classList?.contains('is-invalid')) return;
+    e.target.classList.remove('is-invalid');
+    e.target.removeAttribute('aria-invalid');
+    if (!form.querySelector('.is-invalid')) clearCouponError();
+  });
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -1126,13 +1139,33 @@ async function initCoupons() {
     const maxUsesRaw = document.getElementById('coupon-max-uses').value;
     const endsRaw = document.getElementById('coupon-ends').value;
 
-    const invalid = () => {
-      showCouponError(t('coupon.invalid'));
-      notify(t('coupon.invalid'), 'error');
+    // บอกให้ตรงจุดว่าลืมอะไร — เดิมทุกกรณีขึ้น "โค้ดไม่ถูกต้องหรือหมดอายุ" ซึ่งคนละเรื่อง
+    const fail = (key, fieldId) => {
+      const message = t(key);
+      showCouponError(message);
+      const field = document.getElementById(fieldId);
+      if (field) {
+        field.classList.add('is-invalid');
+        field.setAttribute('aria-invalid', 'true');
+        field.focus({ preventScroll: false });
+      }
+      // แผงเปิดอยู่และกล่องแดงในแผงเห็นได้อยู่แล้ว → ไม่ต้องเด้ง toast ซ้ำข้อความเดียวกัน
+      if (!couponError) notify(message, 'error');
     };
-    if (!code || code.length < 2) return invalid();
-    if (!Number.isFinite(value) || value <= 0) return invalid();
-    if (kind === 'percent' && value > 100) return invalid();
+
+    const rawCode = document.getElementById('coupon-code').value.trim();
+    const rawValue = document.getElementById('coupon-value').value.trim();
+    const rawMin = document.getElementById('coupon-min').value.trim();
+
+    if (!rawCode) return fail('admin.coupon_err_code_required', 'coupon-code');
+    if (rawCode.length < 2) return fail('admin.coupon_err_code_short', 'coupon-code');
+    if (!/^[A-Za-z0-9_-]+$/.test(rawCode)) return fail('admin.coupon_err_code_chars', 'coupon-code');
+    if (!rawValue) return fail('admin.coupon_err_value_required', 'coupon-value');
+    if (!Number.isFinite(value) || value <= 0) return fail('admin.coupon_err_value_invalid', 'coupon-value');
+    if (kind === 'percent' && value > 100) return fail('admin.coupon_err_percent', 'coupon-value');
+    if (rawMin && (!Number.isFinite(minSubtotal) || minSubtotal < 0)) return fail('admin.coupon_err_min', 'coupon-min');
+    if (maxUsesRaw && (!Number.isInteger(Number(maxUsesRaw)) || Number(maxUsesRaw) < 1))
+      return fail('admin.coupon_err_max_uses', 'coupon-max-uses');
 
     const payload = {
       code,
@@ -1149,9 +1182,17 @@ async function initCoupons() {
       : await supabase.from('coupons').insert(payload);
 
     if (error) {
-      const message = error.message || t('toast.error_generic');
+      // แปลง error ของฐานข้อมูลเป็นข้อความที่ร้านเข้าใจ (เช่น ราคาส่วนลดต้องมากกว่า 0)
+      const code2 = String(error.code || '');
+      const message =
+        code2 === '23514' || /check constraint/i.test(error.message || '')
+          ? t('admin.coupon_err_db_check')
+          : code2 === '42501' || /row-level security|permission denied/i.test(error.message || '')
+            ? t('admin.coupon_err_permission')
+            : error.message || t('toast.error_generic');
       showCouponError(message);
-      notify(message, 'error');
+      // ไม่เด้ง toast ซ้ำเมื่อกล่องแดงในแผงโชว์ข้อความเดียวกันอยู่แล้ว
+      if (!couponError) notify(message, 'error');
       return;
     }
     const savedId = editingId;
@@ -1190,6 +1231,7 @@ async function initCoupons() {
       document.getElementById('coupon-max-uses').value = c.max_uses ?? '';
       document.getElementById('coupon-ends').value = c.ends_at ? new Date(c.ends_at).toISOString().slice(0, 10) : '';
       document.getElementById('coupon-active').checked = !!c.active;
+      clearCouponError();
       sheet?.open({ titleKey: 'admin.coupon_edit', sub: c.code || '' });
     }
 

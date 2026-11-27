@@ -1982,82 +1982,283 @@ table.data .num {
    click narrows the grid down, clicking the same chip again brings
    every product back.
    ------------------------------------------------------------------ */
-.shop-categories {
-  margin-bottom: var(--space-xl);
-  padding: var(--card-pad);
-  border: var(--card-border);
-  border-radius: var(--card-radius);
-  background: var(--card-bg);
+.shop-filters {
+  /* แผงตัวกรองลอยทับ grid สินค้าได้ (การ์ดสินค้ามี z-index ของตัวเอง) */
+  position: relative;
+  z-index: 5;
+  margin-bottom: var(--space-lg);
 }
-.shop-category-bar {
+.shop-filter-bar {
   display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: var(--space-md);
-  flex-wrap: wrap;
-}
-.shop-category-bar h2 {
-  font-size: var(--font-size-xl);
-  font-weight: 600;
-  letter-spacing: -0.01em;
-}
-.shop-category-bar p {
-  margin-top: var(--space-xs);
-  color: var(--color-text-muted);
-  font-size: var(--font-size-sm);
-}
-.category-chips {
-  display: flex;
-  flex-wrap: wrap;
+  align-items: center;
   gap: var(--space-sm);
-  margin-top: var(--space-lg);
+  flex-wrap: wrap;
 }
-.category-chip {
-  font-family: inherit;
+.shop-filter-bar .shop-search {
+  flex: 1 1 260px;
+  min-width: 200px;
+}
+.shop-filter-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+/* ปุ่มตัวกรอง (หมวดหมู่/เรียงตาม) — หน้าตาเหมือนกันทั้งคู่ */
+.filter-btn {
   display: inline-flex;
   align-items: center;
-  min-height: 40px;
-  font-size: var(--font-size-sm);
-  line-height: 1.2;
-  padding: 0.45rem 0.95rem;
+  gap: var(--space-sm);
+  min-height: 44px;
+  padding: 0.4rem 0.75rem;
   border: 1px solid var(--color-border);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
+  background: var(--color-surface-2);
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition:
+    border-color var(--transition-fast),
+    background var(--transition-fast);
+}
+.filter-btn:hover {
+  border-color: var(--color-accent);
+}
+.filter-btn.is-active,
+.filter-btn.is-open {
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+}
+.filter-btn:focus-visible {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 2px;
+}
+.filter-icon {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  color: var(--color-text-muted);
+}
+.filter-btn-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.15;
+}
+.filter-caption {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+.filter-value {
+  font-weight: 600;
+  max-width: 190px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.filter-value.is-filtered {
+  color: var(--color-accent);
+}
+.filter-chev {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  color: var(--color-text-muted);
+  transition: transform var(--transition-fast);
+}
+.filter-btn.is-open .filter-chev {
+  transform: rotate(180deg);
+}
+/* select ใช้หน้าตาเดียวกับปุ่ม filter */
+.filter-btn-select {
+  position: relative;
+  gap: 0.35rem;
+  cursor: pointer;
+}
+/* select จริงโปร่งใสคลุมทั้งปุ่ม — แตะได้เต็มพื้นที่ และไม่ทำให้ iOS ซูม */
+.filter-select {
+  position: absolute;
+  /* ครอบทั้งกรอบรวมเส้นขอบ เพื่อให้พื้นที่แตะเท่าปุ่มจริง */
+  inset: -1px;
+  width: calc(100% + 2px);
+  height: calc(100% + 2px);
+  appearance: none;
+  -webkit-appearance: none;
+  border: 0;
+  background: transparent;
+  color: transparent;
+  /* 16px ขึ้นไปเพื่อกัน Safari ซูมตอนโฟกัส (มองไม่เห็นอยู่แล้ว) */
+  font-size: 16px;
+  padding: 0;
+  cursor: pointer;
+  opacity: 0;
+}
+.filter-btn-select:focus-within {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 2px;
+}
+.filter-btn-select .filter-value {
+  max-width: 190px;
+}
+.filter-select option {
+  background: var(--color-surface-2);
+  color: var(--color-text);
+}
+/* ชิปสลับ (เฉพาะลดราคา) */
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  min-height: 44px;
+  padding: 0.4rem 0.85rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
   background: transparent;
   color: var(--color-text-secondary);
+  font-family: inherit;
+  font-size: var(--font-size-sm);
   cursor: pointer;
   transition:
     border-color var(--transition-fast),
     background var(--transition-fast),
     color var(--transition-fast);
 }
-.category-chip:hover {
+.filter-chip svg {
+  width: 16px;
+  height: 16px;
+}
+.filter-chip:hover {
   border-color: var(--color-accent);
   color: var(--color-text);
 }
-.category-chip.active {
-  background: var(--color-accent);
+.filter-chip.active {
   border-color: var(--color-accent);
-  color: var(--color-text-inverse);
-  font-weight: 500;
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+  font-weight: 600;
 }
-.category-chip:focus-visible {
+.filter-chip:focus-visible {
   outline: 2px solid var(--color-border-focus);
   outline-offset: 2px;
 }
-.shop-toolbar {
+.filter-reset {
+  border: 0;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-family: inherit;
+  font-size: var(--font-size-sm);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  padding: 0.4rem 0.2rem;
+  min-height: 44px;
+}
+.filter-reset:hover {
+  color: var(--color-text);
+}
+.filter-reset[hidden] {
+  display: none;
+}
+/* แผงตัวกรองหมวดหมู่ (ถูกซ่อนไว้จนกว่าจะกด) */
+.filter-dropdown {
+  position: relative;
+}
+.filter-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 60;
   display: flex;
-  gap: var(--space-md);
-  flex-wrap: wrap;
+  flex-direction: column;
+  width: min(320px, calc(100vw - 2rem));
+  max-height: min(70vh, 460px);
+  padding: var(--space-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-2);
+  box-shadow: var(--shadow-lg);
+}
+.filter-panel[hidden] {
+  display: none;
+}
+.filter-panel-search {
+  padding: 0 0 var(--space-sm);
+}
+.filter-panel-search .form-input {
+  min-height: 38px;
+  font-size: var(--font-size-sm);
+}
+.category-chips {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 280px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.category-chip {
+  font-family: inherit;
+  display: flex;
   align-items: center;
-  margin-bottom: var(--space-xl);
+  justify-content: space-between;
+  gap: var(--space-sm);
+  width: 100%;
+  min-height: 38px;
+  font-size: var(--font-size-sm);
+  line-height: 1.25;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-secondary);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
 }
-.shop-toolbar .search-wrap {
-  flex: 1;
-  min-width: 220px;
+.category-chip .chip-check {
+  display: none;
+  color: var(--color-accent);
 }
-.shop-toolbar .form-select {
-  width: auto;
-  min-width: 180px;
+.category-chip .chip-check svg {
+  width: 15px;
+  height: 15px;
+}
+.category-chip:hover {
+  background: var(--color-bg-hover);
+  color: var(--color-text);
+}
+.category-chip.active {
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+  font-weight: 600;
+}
+.category-chip.active .chip-check {
+  display: inline-flex;
+}
+.category-chip:focus-visible {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: -2px;
+}
+.category-chip[hidden] {
+  display: none;
+}
+.filter-panel-empty {
+  margin: 0;
+  padding: 0.5rem 0.6rem;
+}
+.filter-panel-empty[hidden] {
+  display: none;
+}
+.filter-panel-foot {
+  margin: var(--space-xs) 0 0;
+  padding-top: var(--space-xs);
+  border-top: 1px solid var(--color-border-soft);
 }
 .product-grid {
   display: grid;
@@ -4191,6 +4392,16 @@ td .badge-error {
 }
 .sheet-error[hidden] {
   display: none;
+}
+/* ช่องที่กรอกไม่ถูกต้อง: ขอบแดงให้เห็นว่าข้อความด้านล่างหมายถึงช่องไหน */
+.form-input.is-invalid,
+.form-select.is-invalid {
+  border-color: var(--color-error);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-error) 55%, transparent);
+}
+.form-input.is-invalid:focus,
+.form-select.is-invalid:focus {
+  outline-color: var(--color-error);
 }
 .edit-sheet-foot .form-checkbox {
   margin: 0;

@@ -22,6 +22,13 @@ import { applyPageMeta } from '/src/core/brand.js';
 let currentProduct = null;
 let currentPage = 1;
 let activeCategory = '';
+/** ตัวเรียงลำดับที่เลือกอยู่: newest | price_asc | price_desc */
+let activeSort = 'newest';
+/** กรองเฉพาะสินค้าที่มีราคาโปรโมชั่น */
+let onlyPromo = false;
+const SORT_OPTIONS = ['newest', 'price_asc', 'price_desc'];
+/** listener ระดับ document ของแผงหมวดหมู่ ผูกครั้งเดียวพอ (สลับภาษาจะ init หน้าใหม่) */
+let shopPanelDocBound = false;
 const PRODUCTS_PER_PAGE = 12;
 const productCache = new Map();
 /** หมวด "สินค้าใหม่" เป็นของระบบ ไม่ได้อยู่ในตาราง categories */
@@ -265,14 +272,200 @@ async function initStorePage() {
     categories = [];
   }
 
+  // อ่านค่าจาก URL (?category= / ?sort= / ?promo=1) เพื่อให้ลิงก์แชร์กันได้
   const params = new URLSearchParams(window.location.search);
   const presetCat = params.get('category');
   if (presetCat) activeCategory = presetCat;
+  const presetSort = params.get('sort');
+  activeSort = SORT_OPTIONS.includes(presetSort) ? presetSort : 'newest';
+  onlyPromo = params.get('promo') === '1';
+  if (presetCat || params.get('q')) currentPage = 1;
+  if (params.get('q') && searchInput) searchInput.value = params.get('q');
 
-  renderCategoryChips(chipsEl, categories, grid, countEl, searchInput);
+  const refresh = () => {
+    syncShopUrl(searchInput?.value || '');
+    paintFilterState();
+    loadProducts(grid, countEl, searchInput.value, activeCategory || null);
+  };
 
-  if (categoryCountEl) categoryCountEl.textContent = t('shop.categories_count', { n: categories.length });
+  // ---------- แถบตัวกรอง ----------
+  const categoryToggle = document.getElementById('category-toggle');
+  const categoryPanel = document.getElementById('category-panel');
+  const categorySearch = document.getElementById('category-search');
+  const sortSelect = document.getElementById('sort-select');
+  const promoBtn = document.getElementById('promo-toggle');
+  const resetBtn = document.getElementById('filter-reset');
 
+  /** ปุ่ม "เรียงตาม" โชว์ค่าที่เลือก (select ตัวจริงโปร่งใสอยู่ข้างหลัง) */
+  function paintSortLabel() {
+    const el = document.getElementById('sort-current');
+    if (!el) return;
+    const option = sortSelect?.selectedOptions?.[0];
+    el.textContent = (option?.textContent || t('shop.sort_newest')).trim();
+    el.classList.toggle('is-filtered', activeSort !== 'newest');
+  }
+
+  if (sortSelect) sortSelect.value = activeSort;
+  if (promoBtn) promoBtn.setAttribute('aria-pressed', onlyPromo ? 'true' : 'false');
+
+  /** อัปเดตข้อความบนปุ่ม/ป้ายให้ตรงกับตัวกรองที่ใช้อยู่ และโชว์ปุ่ม "ล้างตัวกรอง" เมื่อจำเป็น */
+  function paintFilterState() {
+    const currentEl = document.getElementById('category-current');
+    const label = activeCategory === NEW_CATEGORY ? t('shop.new_chip') : activeCategory || t('shop.filter_all');
+    if (currentEl) {
+      currentEl.textContent = label;
+      currentEl.classList.toggle('is-filtered', !!activeCategory);
+    }
+    if (categoryToggle) categoryToggle.classList.toggle('is-active', !!activeCategory);
+    paintSortLabel();
+    if (promoBtn) {
+      promoBtn.classList.toggle('active', onlyPromo);
+      promoBtn.setAttribute('aria-pressed', onlyPromo ? 'true' : 'false');
+    }
+    if (resetBtn) {
+      const dirty = !!activeCategory || onlyPromo || activeSort !== 'newest' || !!searchInput?.value.trim();
+      resetBtn.hidden = !dirty;
+    }
+  }
+
+  const categoryEmpty = document.getElementById('category-empty');
+
+  function resetCategorySearch() {
+    if (!categorySearch || !categorySearch.value) return;
+    categorySearch.value = '';
+    chipsEl?.querySelectorAll('.category-chip').forEach((chip) => {
+      chip.hidden = false;
+    });
+    if (categoryEmpty) categoryEmpty.hidden = true;
+  }
+
+  function setPanel(open) {
+    if (!categoryPanel || !categoryToggle) return;
+    categoryPanel.hidden = !open;
+    categoryToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    categoryToggle.classList.toggle('is-open', open);
+    if (!open) resetCategorySearch();
+    if (open && categorySearch && categories.length > 6) {
+      requestAnimationFrame(() => categorySearch.focus({ preventScroll: true }));
+    }
+  }
+
+  renderCategoryChips(chipsEl, categories, {
+    onSelect: () => {
+      setPanel(false);
+      categoryToggle?.focus({ preventScroll: true });
+      currentPage = 1;
+      refresh();
+    },
+  });
+
+  if (categoryCountEl) {
+    categoryCountEl.textContent = categories.length
+      ? t('shop.categories_count', { n: categories.length })
+      : t('shop.no_categories');
+  }
+
+  if (categoryToggle) {
+    bindOnce(categoryToggle, 'click', (e) => {
+      e.stopPropagation();
+      setPanel(categoryPanel?.hidden !== false);
+    });
+  }
+  if (categorySearch) {
+    bindOnce(categorySearch, 'input', () => {
+      const term = categorySearch.value.trim().toLowerCase();
+      let shown = 0;
+      chipsEl?.querySelectorAll('.category-chip').forEach((chip) => {
+        chip.hidden = !!term && !chip.textContent.toLowerCase().includes(term);
+        if (!chip.hidden) shown += 1;
+      });
+      // ค้นหาในแผงแล้วไม่เจอ ต้องบอก ไม่ใช่ปล่อยว่างเปล่า
+      if (categoryEmpty) categoryEmpty.hidden = !term || shown > 0;
+    });
+    bindOnce(categorySearch, 'keydown', (e) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        setPanel(false);
+        categoryToggle?.focus({ preventScroll: true });
+      }
+    });
+  }
+  // ปิดแผงเมื่อคลิกข้างนอก หรือกด Escape (ผูกครั้งเดียวต่อการโหลดหน้า
+  // — สลับภาษาจะเรียก initStorePage ซ้ำ ไม่ควรผูก listener ซ้ำ)
+  if (!shopPanelDocBound) {
+    shopPanelDocBound = true;
+    document.addEventListener('click', (e) => {
+      const panel = document.getElementById('category-panel');
+      const toggle = document.getElementById('category-toggle');
+      if (!panel || panel.hidden) return;
+      if (panel.contains(e.target) || toggle?.contains(e.target)) return;
+      panel.hidden = true;
+      toggle?.setAttribute('aria-expanded', 'false');
+      toggle?.classList.remove('is-open');
+    });
+    document.addEventListener('keydown', (e) => {
+      const panel = document.getElementById('category-panel');
+      if (e.key !== 'Escape' || !panel || panel.hidden) return;
+      panel.hidden = true;
+      const toggle = document.getElementById('category-toggle');
+      toggle?.setAttribute('aria-expanded', 'false');
+      toggle?.classList.remove('is-open');
+      toggle?.focus({ preventScroll: true });
+    });
+  }
+
+  if (sortSelect) {
+    bindOnce(sortSelect, 'change', () => {
+      activeSort = SORT_OPTIONS.includes(sortSelect.value) ? sortSelect.value : 'newest';
+      currentPage = 1;
+      paintSortLabel();
+      refresh();
+    });
+    // แตะที่คำว่า "เรียงตาม" หรือไอคอนลูกศรก็ควรเปิดรายการ ไม่ใช่ต้องเล็งที่ตัวอักษร select
+    const sortWrap = sortSelect.closest('.filter-btn-select');
+    if (sortWrap) {
+      bindOnce(sortWrap, 'click', (e) => {
+        if (e.target === sortSelect) return;
+        sortSelect.focus({ preventScroll: true });
+        if (typeof sortSelect.showPicker === 'function') {
+          try {
+            sortSelect.showPicker();
+          } catch {
+            /* เบราว์เซอร์บางตัวไม่อนุญาตให้เรียกนอกเหตุการณ์ผู้ใช้ */
+          }
+        }
+      });
+    }
+  }
+
+  if (promoBtn) {
+    bindOnce(promoBtn, 'click', () => {
+      onlyPromo = !onlyPromo;
+      currentPage = 1;
+      refresh();
+    });
+  }
+
+  if (resetBtn) {
+    bindOnce(resetBtn, 'click', () => {
+      activeCategory = '';
+      activeSort = 'newest';
+      onlyPromo = false;
+      currentPage = 1;
+      if (sortSelect) sortSelect.value = 'newest';
+      if (searchInput) searchInput.value = '';
+      if (categorySearch) categorySearch.value = '';
+      chipsEl?.querySelectorAll('.category-chip').forEach((chip) => {
+        chip.hidden = false;
+      });
+      if (categoryEmpty) categoryEmpty.hidden = true;
+      paintFilterState();
+      syncShopUrl('');
+      loadProducts(grid, countEl, '', null);
+    });
+  }
+
+  paintFilterState();
   await loadProducts(grid, countEl, searchInput.value, activeCategory || null);
 
   let debounce;
@@ -280,16 +473,38 @@ async function initStorePage() {
     clearTimeout(debounce);
     debounce = setTimeout(() => {
       currentPage = 1;
+      paintFilterState();
+      syncShopUrl(searchInput.value);
       loadProducts(grid, countEl, searchInput.value, activeCategory || null);
     }, 300);
   });
 }
 
+/** เขียนตัวกรองลง URL เพื่อแชร์/กดย้อนกลับได้ (ไม่โหลดหน้าใหม่) */
+function syncShopUrl(search = '') {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const setOrDelete = (key, value) => {
+      if (value) params.set(key, value);
+      else params.delete(key);
+    };
+    setOrDelete('category', activeCategory || '');
+    setOrDelete('sort', activeSort === 'newest' ? '' : activeSort);
+    setOrDelete('promo', onlyPromo ? '1' : '');
+    setOrDelete('q', search.trim());
+    const qs = params.toString();
+    const next = `${window.location.pathname}${qs ? `?${qs}` : ''}`;
+    window.history.replaceState({}, '', next);
+  } catch {
+    /* ไม่เป็นไรถ้าเขียน URL ไม่ได้ */
+  }
+}
+
 /**
- * The category chips double as the filter: one click narrows the grid down,
- * clicking the same chip again brings every product back.
+ * รายการหมวดหมู่ในแผง dropdown — แสดงทีละบรรทัด มีเครื่องหมายถูกที่ตัวที่เลือกอยู่
+ * (เดิมวางเป็นชิปเรียงกันเต็มหน้า พอมี 30-40 หมวดก็รกและยาวไม่เท่ากัน)
  */
-function renderCategoryChips(container, categories, grid, countEl, searchInput) {
+function renderCategoryChips(container, categories, { onSelect } = {}) {
   if (!container) return;
 
   container.innerHTML = '';
@@ -298,16 +513,31 @@ function renderCategoryChips(container, categories, grid, countEl, searchInput) 
     const chip = document.createElement('button');
     chip.type = 'button';
     chip.className = 'category-chip';
-    if (activeCategory === value) chip.classList.add('active');
-    chip.textContent = label;
+    chip.setAttribute('role', 'option');
+    const selected = activeCategory === value;
+    chip.classList.toggle('active', selected);
+    chip.setAttribute('aria-selected', selected ? 'true' : 'false');
     if (hint) chip.title = hint;
+
+    const check = document.createElement('span');
+    check.className = 'chip-check';
+    check.setAttribute('aria-hidden', 'true');
+    check.innerHTML =
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+    const text = document.createElement('span');
+    text.className = 'chip-label';
+    text.textContent = label;
+
+    chip.append(text, check);
     chip.addEventListener('click', () => {
-      const next = activeCategory === value ? '' : value;
-      activeCategory = next;
+      activeCategory = value;
       currentPage = 1;
-      container.querySelectorAll('.category-chip').forEach((el) => el.classList.remove('active'));
-      if (next) chip.classList.add('active');
-      loadProducts(grid, countEl, searchInput.value, activeCategory || null);
+      container.querySelectorAll('.category-chip').forEach((el) => {
+        const isActive = el === chip;
+        el.classList.toggle('active', isActive);
+        el.setAttribute('aria-selected', isActive ? 'true' : 'false');
+      });
+      onSelect?.(value);
     });
     container.appendChild(chip);
   };
@@ -324,10 +554,15 @@ async function loadProducts(grid, countEl, search = '', category = null) {
   if (category === NEW_CATEGORY) query = query.gt('new_until', nowIso);
   else if (category) query = query.eq('category', category);
   if (search) query = query.ilike('name', `%${search}%`);
+  // คอลัมน์ generated ในฐานข้อมูล: effective_price = ราคาที่ลูกค้าเห็นจริง, on_sale = มีโปร
+  if (onlyPromo) query = query.eq('on_sale', true);
 
   const from = (currentPage - 1) * PRODUCTS_PER_PAGE;
   const to = from + PRODUCTS_PER_PAGE - 1;
-  query = query.range(from, to).order('created_at', { ascending: false });
+  query = query.range(from, to);
+  if (activeSort === 'price_asc') query = query.order('effective_price', { ascending: true }).order('name');
+  else if (activeSort === 'price_desc') query = query.order('effective_price', { ascending: false }).order('name');
+  else query = query.order('created_at', { ascending: false });
 
   const { data: products, error, count } = await query;
 
@@ -341,8 +576,19 @@ async function loadProducts(grid, countEl, search = '', category = null) {
   grid.innerHTML = '';
 
   if (!products || products.length === 0) {
-    const emptyTitle = category === NEW_CATEGORY ? t('shop.empty_new') : t('shop.empty');
-    const emptyHint = category === NEW_CATEGORY ? t('shop.empty_new_hint') : t('shop.empty_hint');
+    // บอกให้ตรงสาเหตุ: กรองเฉพาะลดราคาอยู่ / หมวด "สินค้าใหม่" / ค้นหาไม่เจอ
+    let emptyTitle = t('shop.empty');
+    let emptyHint = t('shop.empty_hint');
+    if (onlyPromo) {
+      emptyTitle = t('shop.empty_promo');
+      emptyHint = t('shop.empty_promo_hint');
+    } else if (category === NEW_CATEGORY) {
+      emptyTitle = t('shop.empty_new');
+      emptyHint = t('shop.empty_new_hint');
+    } else if (search) {
+      emptyTitle = t('shop.empty_search');
+      emptyHint = t('shop.empty_search_hint');
+    }
     grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
       <p>${emptyTitle}</p>
