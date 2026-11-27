@@ -12,6 +12,8 @@ import {
   getPrivateImageUrl,
   buildSlipObjectPath,
   bindOnce,
+  formatDate,
+  formatDateTime,
 } from '/src/core/lib.js';
 import { promptPayCardHTML } from '/src/core/payment.js';
 import { validateDelivery } from '/src/core/validation.js';
@@ -568,7 +570,7 @@ async function initCustomerOrdersPage() {
       const tr = document.createElement('tr');
       tr.innerHTML =
         `<td data-label="${t('order.no')}" class="font-semibold">#${order.id.slice(0, 8)}</td>` +
-        `<td data-label="${t('common.date')}">${order.created_at ? new Date(order.created_at).toLocaleDateString('th-TH') : '-'}</td>` +
+        `<td data-label="${t('common.date')}">${formatDate(order.created_at) || '-'}</td>` +
         `<td data-label="${t('common.status')}"><span class="badge badge-${badge.variant}">${badge.label}</span></td>` +
         `<td data-label="${t('common.total')}" class="num">${formatTHB(order.total)}</td>` +
         `<td class="cell-actions"><a href="/account/order?id=${order.id}" class="btn btn-outline btn-sm" aria-label="${t('common.view')} #${order.id.slice(0, 8)}" title="${t('common.view')} #${order.id.slice(0, 8)}">${t('common.view')}</a></td>`;
@@ -602,7 +604,7 @@ async function loadCustomerShippingUpdates(orderId) {
       wrap.style.cssText = 'padding:0.75rem 0;border-bottom:1px solid var(--color-border-soft)';
       wrap.innerHTML = `
         <div class="text-sm">${escapeHTML(update.message || '')}</div>
-        <div class="text-muted text-xs">${update.created_at ? new Date(update.created_at).toLocaleString('th-TH') : ''}</div>
+        <div class="text-muted text-xs">${update.created_at ? formatDateTime(update.created_at) : ''}</div>
       `;
 
       const paths = Array.isArray(update.image_paths) ? update.image_paths : [];
@@ -694,9 +696,7 @@ async function initCustomerOrderDetailPage() {
 
     document.getElementById('order-detail').classList.remove('hidden');
     document.getElementById('order-number').textContent = '#' + order.id.slice(0, 8);
-    document.getElementById('order-date').textContent = order.created_at
-      ? new Date(order.created_at).toLocaleDateString('th-TH')
-      : '-';
+    document.getElementById('order-date').textContent = order.created_at ? formatDate(order.created_at) : '-';
     const badge = getOrderStatusBadge(order.status);
     const statusEl = document.getElementById('order-status');
     statusEl.textContent = badge.label;

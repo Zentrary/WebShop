@@ -32,6 +32,32 @@ export function formatTHB(amount, lang = getLanguage()) {
   }).format(Number.isFinite(value) ? value : 0);
 }
 
+/**
+ * วันที่แบบ dd/mm/yyyy ตามที่ร้านกำหนด — ภาษาไทยใช้ พ.ศ. ภาษาอังกฤษใช้ ค.ศ.
+ * เดิมแต่ละหน้าเรียก toLocaleDateString('th-TH') เอง ทำให้เดือน/วันหลักเดียวไม่เติมศูนย์
+ * (26/1/2570) และหน้า EN ก็ยังโชว์ปี พ.ศ. อยู่
+ */
+export function formatDate(value, lang = getLanguage()) {
+  if (!value) return '';
+  const d = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(d.getTime())) return '';
+  const pad = (n) => String(n).padStart(2, '0');
+  const year = lang === 'en' ? d.getFullYear() : d.getFullYear() + 543;
+  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${year}`;
+}
+
+/**
+ * วันและเวลารูปแบบเดียวกัน (dd/mm/yyyy HH:MM) — ใช้กับไทม์ไลน์/บันทึกกิจกรรม
+ * เดิมเรียก toLocaleString('th-TH') ทำให้หน้า EN ได้วันที่แบบ พ.ศ. และรูปวันที่ไม่ตรงกับ formatDate
+ */
+export function formatDateTime(value, lang = getLanguage()) {
+  if (!value) return '';
+  const d = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(d.getTime())) return '';
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${formatDate(d, lang)} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 export function bindOnce(el, event, handler) {
   if (!el || typeof handler !== 'function') return;
   if (!el.__zenHandlers) el.__zenHandlers = {};

@@ -1,6 +1,6 @@
 import { isOwner, setAudience } from '/src/core/audience.js';
 import { notify } from '/src/core/ui.js';
-import { escapeHTML, bindOnce } from '/src/core/lib.js';
+import { escapeHTML, bindOnce, formatDateTime } from '/src/core/lib.js';
 import { initReveal } from '/src/core/reveal.js';
 import { initAdminLayout } from '/src/pages/admin/layout.js';
 import { initI18n, t, translatePage, onLanguageChange } from '/src/core/i18n.js';
@@ -155,7 +155,7 @@ async function initBackup() {
               .map(([k, v]) => `${escapeHTML(k)}: ${Array.isArray(v) ? v.length : 0}`)
               .join('<br>')}
           </div>
-          <div class="text-muted text-sm mt-sm">${escapeHTML(backup?.format || '-')} · ${escapeHTML(backup?.created_at ? new Date(backup.created_at).toLocaleString('th-TH') : '-')}</div>
+          <div class="text-muted text-sm mt-sm">${escapeHTML(backup?.format || '-')} · ${escapeHTML(backup?.created_at ? formatDateTime(backup.created_at) : '-')}</div>
           <p class="text-sm mt-md" style="color:var(--color-warning, #b45309)">${t('admin.backup_restore_warning')}</p>
           <div class="flex gap-sm mt-md">
             <button id="backup-restore-confirm-btn" class="btn btn-primary btn-sm">${t('admin.backup_restore_confirm_btn')}</button>
@@ -229,12 +229,7 @@ function logRow({ dot = 'info', title = '', sub = '', meta = '' }) {
 }
 
 function timeText(value) {
-  if (!value) return '-';
-  try {
-    return new Date(value).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' });
-  } catch {
-    return '-';
-  }
+  return value ? formatDateTime(value) || '-' : '-';
 }
 
 function setText(id, value) {

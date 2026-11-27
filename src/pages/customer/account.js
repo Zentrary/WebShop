@@ -3,7 +3,15 @@ import { setAudience, isSignedIn } from '/src/core/audience.js';
 import { translatePage, t, onLanguageChange } from '/src/core/i18n.js';
 import { confirmAction, notify } from '/src/core/ui.js';
 import { initCaptcha, hasCaptcha, renderTurnstile } from '/src/core/captcha.js';
-import { formatTHB, escapeHTML, safeImage, safeReturnPath, effectivePrice, hasSalePrice } from '/src/core/lib.js';
+import {
+  formatTHB,
+  escapeHTML,
+  safeImage,
+  safeReturnPath,
+  effectivePrice,
+  hasSalePrice,
+  formatDate,
+} from '/src/core/lib.js';
 import {
   validateAddress,
   validateProfile,
@@ -562,7 +570,7 @@ async function loadRecentOrders(user) {
         .map(
           (o) => `
         <a href="/account/order?id=${o.id}" class="flex justify-between items-center" style="padding:0.75rem 0;border-bottom:1px solid var(--color-border-soft)">
-          <span class="font-semibold">#${o.id.slice(0, 8)} <span class="text-muted" style="font-weight:400">${o.created_at ? new Date(o.created_at).toLocaleDateString('th-TH') : ''}</span></span>
+          <span class="font-semibold">#${o.id.slice(0, 8)} <span class="text-muted" style="font-weight:400">${formatDate(o.created_at)}</span></span>
           <span class="text-accent font-semibold">${formatTHB(o.total)}</span>
         </a>
       `,
