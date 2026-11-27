@@ -289,8 +289,9 @@ async function initProducts() {
   }
 
   function renderStatusCell(p) {
+    // สถานะของ "สินค้า" ใช้คำของร้าน (วางขาย/ซ่อน) ไม่ใช่คำกลาง ๆ ว่า "ใช้งาน"
     return `<span class="badge badge-${p.active ? 'success' : 'error'}">${
-      p.active ? t('admin.active') : t('admin.hidden')
+      p.active ? t('admin.product_on_sale') : t('admin.hidden')
     }</span>`;
   }
 
