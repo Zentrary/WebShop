@@ -34,35 +34,49 @@ export function passwordStrength(password) {
 export function validateProduct(product = {}) {
   const name = String(product.name || '').trim();
   if (name.length < 1 || name.length > 150) {
-    return { ok: false, errorKey: 'validation.product_name_length' };
+    return { ok: false, errorKey: 'validation.product_name_length', fieldKey: 'name' };
   }
 
+  // คอลัมน์ sku เป็น NOT NULL + UNIQUE ในฐานข้อมูล จึงต้องกรอกก่อนส่ง (เดิมปล่อยว่างได้
+  // แล้ว insert ล้มด้วย error ของ Postgres ที่ผู้ใช้อ่านไม่รู้เรื่อง)
   const sku = String(product.sku || '').trim();
-  if (sku && (sku.length < 1 || sku.length > 50)) {
-    return { ok: false, errorKey: 'validation.product_sku_length' };
+  if (!sku) {
+    return { ok: false, errorKey: 'validation.product_sku_required', fieldKey: 'sku' };
+  }
+  if (sku.length > 50) {
+    return { ok: false, errorKey: 'validation.product_sku_length', fieldKey: 'sku' };
+  }
+
+  // คอลัมน์ category เป็น NOT NULL + FK ไปยังตาราง categories
+  const category = String(product.category || '').trim();
+  if (!category) {
+    return { ok: false, errorKey: 'validation.product_category_required', fieldKey: 'category' };
+  }
+  if (category.length > 80) {
+    return { ok: false, errorKey: 'validation.category_name_length', fieldKey: 'category' };
   }
 
   const price = Number(product.price);
   if (!Number.isFinite(price) || price <= 0 || price > 1000000) {
-    return { ok: false, errorKey: 'validation.product_price_invalid' };
+    return { ok: false, errorKey: 'validation.product_price_invalid', fieldKey: 'price' };
   }
 
   const stock = Number(product.stock);
   if (!Number.isInteger(stock) || stock < 0 || stock > 100000) {
-    return { ok: false, errorKey: 'validation.product_stock_invalid' };
+    return { ok: false, errorKey: 'validation.product_stock_invalid', fieldKey: 'stock' };
   }
 
   const description = String(product.description || '');
   if (description.length > 2000) {
-    return { ok: false, errorKey: 'validation.product_description_too_long' };
+    return { ok: false, errorKey: 'validation.product_description_too_long', fieldKey: 'description' };
   }
 
   const imageUrl = String(product.image_url || '');
   if (imageUrl.length > 1000) {
-    return { ok: false, errorKey: 'validation.product_image_too_long' };
+    return { ok: false, errorKey: 'validation.product_image_too_long', fieldKey: 'image' };
   }
   if (imageUrl && !/^(https?:\/\/|\/)/i.test(imageUrl)) {
-    return { ok: false, errorKey: 'validation.product_image_invalid' };
+    return { ok: false, errorKey: 'validation.product_image_invalid', fieldKey: 'image' };
   }
 
   const imageUrls = Array.isArray(product.image_urls) ? product.image_urls : [];
@@ -76,7 +90,7 @@ export function validateProduct(product = {}) {
   if (rawSale !== undefined && rawSale !== null && String(rawSale).trim() !== '') {
     salePrice = Number(rawSale);
     if (!Number.isFinite(salePrice) || salePrice <= 0 || salePrice >= price) {
-      return { ok: false, errorKey: 'validation.product_sale_price_invalid' };
+      return { ok: false, errorKey: 'validation.product_sale_price_invalid', fieldKey: 'sale-price' };
     }
   }
 
@@ -85,11 +99,13 @@ export function validateProduct(product = {}) {
     value: {
       ...product,
       name,
-      sku: sku || null,
+      sku,
+      category,
       price,
       stock,
-      description: description || null,
-      image_url: imageUrl || null,
+      description: description || '',
+      // image_url เป็น NOT NULL: ส่งสตริงว่างแทน null ไม่งั้น insert ล้มทั้งที่ผู้ใช้กรอกครบ
+      image_url: imageUrl,
       sale_price: salePrice,
     },
   };

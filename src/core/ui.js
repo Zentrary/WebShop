@@ -10,13 +10,28 @@ const ICONS = {
   info: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a1a1aa" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>',
 };
 
+/**
+ * กล่องแจ้งเตือนอยู่ใน top layer (popover) เพื่อให้เห็นทับ modal <dialog>
+ * เดิมเป็น div ธรรมดา → ข้อความ error ตอนกด "บันทึกสินค้า" ในแผงแก้ไขถูกแผงบังมิด
+ * ผู้ใช้จึงเห็นเหมือนกดแล้วไม่มีอะไรเกิดขึ้น
+ */
 function getStack() {
   let stack = document.querySelector('.toast-stack');
   if (!stack) {
     stack = document.createElement('div');
     stack.className = 'toast-stack';
+    stack.setAttribute('popover', 'manual');
     document.body.appendChild(stack);
   }
+  if (typeof stack.showPopover === 'function' && !stack.matches(':popover-open')) {
+    try {
+      stack.showPopover();
+    } catch {
+      /* เบราว์เซอร์เก่า: ใช้การวางแบบปกติ */
+    }
+  }
+  // มีแผงเปิดอยู่ → ย้ายไปมุมบน ไม่ให้ทับปุ่มบันทึก/ยกเลิกของแผง
+  stack.classList.toggle('over-modal', !!document.querySelector('dialog[open]'));
   return stack;
 }
 
@@ -27,6 +42,8 @@ export function notify(message, type = 'info', duration = 4000) {
   toast.setAttribute('role', 'status');
   toast.innerHTML = `${ICONS[type] || ICONS.info}<span></span>`;
   toast.querySelector('span').textContent = message;
+  // บันทึกสำเร็จแล้วไม่ควรมี toast error เก่าค้างอยู่ข้าง ๆ ให้สับสน
+  if (type === 'success') stack.querySelectorAll('.toast.error, .toast.warning').forEach((el) => el.remove());
   stack.appendChild(toast);
   while (stack.children.length > 2) stack.firstElementChild.remove();
 

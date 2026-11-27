@@ -1522,15 +1522,36 @@ table.data .num {
 }
 .toast-stack {
   position: fixed;
-  right: var(--space-lg);
-  bottom: calc(var(--space-lg) + env(safe-area-inset-bottom, 0px));
+  inset: auto var(--space-lg) calc(var(--space-lg) + env(safe-area-inset-bottom, 0px)) auto;
+  /* popover อยู่ใน top layer → เห็นทับ modal <dialog> ได้ (ค่าพวกนี้คือการรีเซ็ตสไตล์ของ UA) */
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  overflow: visible;
+  width: auto;
+  height: auto;
+  pointer-events: none;
   z-index: 1000;
   display: flex;
   flex-direction: column;
   gap: var(--space-sm);
   max-width: min(360px, calc(100vw - 2rem));
 }
+/* แผงแก้ไขเปิดอยู่: ขึ้นกลางจอด้านบน ไม่ทับแถบปุ่มบันทึกของแผง และไม่ทับปุ่มมุมขวาบนของหน้า */
+.toast-stack.over-modal {
+  top: calc(var(--space-lg) + env(safe-area-inset-top, 0px));
+  bottom: auto;
+  right: auto;
+  left: 50%;
+  transform: translateX(-50%);
+}
+/* ระหว่างมีแผงเปิด ข้อความเป็นแค่การแจ้งเตือน: ต้องไม่ดักการแตะของผู้ใช้ */
+.toast-stack.over-modal .toast {
+  pointer-events: none;
+}
 .toast {
+  pointer-events: auto;
   display: flex;
   align-items: flex-start;
   gap: var(--space-sm);
@@ -4149,6 +4170,23 @@ td .badge-error {
   padding-bottom: max(var(--space-md), env(safe-area-inset-bottom));
   border-top: 1px solid var(--color-border);
   background: var(--color-surface);
+}
+/* ข้อความผิดพลาดในแผง: ต้องเห็นในแผงเสมอ (toast อย่างเดียวไม่พอ เพราะแผงบังอยู่) */
+.sheet-error {
+  /* ต้องเต็มบรรทัดของแถบปุ่มทั้งแนวตั้ง (มือถือ) และแนวนอน (เดสก์ท็อป) */
+  flex: 0 0 auto;
+  width: 100%;
+  margin: 0;
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  border: 1px solid color-mix(in srgb, var(--color-error) 45%, transparent);
+  background: color-mix(in srgb, var(--color-error) 12%, transparent);
+  color: var(--color-error);
+  font-size: var(--font-size-sm);
+  line-height: 1.45;
+}
+.sheet-error[hidden] {
+  display: none;
 }
 .edit-sheet-foot .form-checkbox {
   margin: 0;
