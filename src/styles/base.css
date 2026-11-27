@@ -861,7 +861,8 @@ table.data td.cell-thumb-cell {
   padding: 0.2rem 0.6rem;
   font-size: var(--font-size-xs);
   font-weight: 600;
-  border-radius: var(--radius-full);
+  /* ป้ายสถานะเป็นสี่เหลี่ยมมุมมน (เดิมเป็นวงรี) */
+  border-radius: var(--radius-md);
   border: 1px solid var(--color-border);
   color: var(--color-text-secondary);
   white-space: nowrap;
@@ -1522,6 +1523,8 @@ table.data .num {
 }
 .toast-stack {
   position: fixed;
+  /* popover ถูก UA ตั้ง color: CanvasText (ดำ) ซึ่งจะทำให้ตัวหนังสือกลืนกับพื้นหลังมืด */
+  color: var(--color-text);
   inset: auto var(--space-lg) calc(var(--space-lg) + env(safe-area-inset-bottom, 0px)) auto;
   /* popover อยู่ใน top layer → เห็นทับ modal <dialog> ได้ (ค่าพวกนี้คือการรีเซ็ตสไตล์ของ UA) */
   margin: 0;
@@ -1552,6 +1555,7 @@ table.data .num {
 }
 .toast {
   pointer-events: auto;
+  color: var(--color-text);
   display: flex;
   align-items: flex-start;
   gap: var(--space-sm);
