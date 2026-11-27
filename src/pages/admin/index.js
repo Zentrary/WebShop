@@ -8,6 +8,8 @@ import {
   getPrivateImageUrl,
   bindOnce,
   ratingStars,
+  formatDate,
+  formatDateTime,
 } from '/src/core/lib.js';
 import { validateSocialUrl, getOrderStatusBadge } from '/src/core/experience.js';
 import { normalizePath } from '/src/core/routes.js';
@@ -297,8 +299,7 @@ async function initProducts() {
     if (!p.new_until) return '';
     const d = new Date(p.new_until);
     if (Number.isNaN(d.getTime()) || d.getTime() <= Date.now()) return '';
-    const pad = (n) => String(n).padStart(2, '0');
-    const date = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
+    const date = formatDate(d);
     return `<span class="cell-sub">${escapeHTML(t('admin.new_until_label', { date }))}</span>`;
   }
 
@@ -747,7 +748,7 @@ async function initReviews() {
       `<td data-label="${t('admin.product')}">${escapeHTML(r.product_name || '-')}</td>` +
       `<td data-label="${t('admin.rating')}" class="review-rating">${ratingStars(rating, 12)}</td>` +
       `<td data-label="${t('admin.comment')}">${escapeHTML(r.comment || '-')}</td>` +
-      `<td data-label="${t('common.date')}">${r.created_at ? new Date(r.created_at).toLocaleDateString('th-TH') : '-'}</td>` +
+      `<td data-label="${t('common.date')}">${formatDate(r.created_at) || '-'}</td>` +
       `<td class="cell-actions">${
         r.id
           ? `<button class="btn btn-danger btn-sm" data-del="${escapeHTML(r.id)}">${t('common.delete')}</button>`
@@ -1012,10 +1013,10 @@ async function initCoupons() {
         const uses = c.max_uses
           ? `${Number(c.used_count) || 0}/${c.max_uses}`
           : `${Number(c.used_count) || 0} · ${t('admin.coupon_unlimited')}`;
-        const ends = c.ends_at ? new Date(c.ends_at).toLocaleDateString('th-TH') : '-';
+        const ends = formatDate(c.ends_at) || '-';
         return `<tr data-row-id="${escapeHTML(c.id)}">
           <td data-label="${t('admin.coupon_code')}" class="font-semibold">${escapeHTML(c.code)}</td>
-          <td data-label="${t('admin.coupon_value')}">${escapeHTML(value)}</td>
+          <td data-label="${t('admin.coupon_value')}" class="num">${escapeHTML(value)}</td>
           <td data-label="${t('admin.coupon_min')}" class="num">${c.min_subtotal ? formatTHB(c.min_subtotal) : '-'}</td>
           <td data-label="${t('admin.coupon_uses')}" class="num">${escapeHTML(uses)}</td>
           <td data-label="${t('admin.coupon_ends')}">${escapeHTML(ends)}</td>
@@ -1411,7 +1412,7 @@ async function loadShopForPrint() {
 
 function printSheetHtml(order, shop, mode) {
   const isSlip = mode === 'slip';
-  const date = order.created_at ? new Date(order.created_at).toLocaleDateString('th-TH') : '-';
+  const date = formatDate(order.created_at) || '-';
   const items = order.items || [];
   const pieces = items.reduce((sum, item) => sum + Number(item.quantity || 1), 0);
   const rows = items
@@ -1547,9 +1548,7 @@ async function initAdminOrderDetail() {
     document.getElementById('admin-order-number').textContent = '#' + order.id.slice(0, 8);
     document.getElementById('admin-order-customer').textContent =
       order.recipient || order.customer_name || order.email || '-';
-    document.getElementById('admin-order-date').textContent = order.created_at
-      ? new Date(order.created_at).toLocaleDateString('th-TH')
-      : '-';
+    document.getElementById('admin-order-date').textContent = order.created_at ? formatDate(order.created_at) : '-';
     document.getElementById('admin-order-status').value = order.status || 'pending';
     document.getElementById('admin-order-payment').textContent = t('checkout.promptpay');
     document.getElementById('admin-order-address').textContent =
@@ -1790,7 +1789,7 @@ async function loadShippingHistory(orderId) {
         (u) => `
       <div style="padding:0.75rem 0;border-bottom:1px solid var(--color-border-soft)">
         <div class="text-sm">${escapeHTML(u.message || '')}</div>
-        <div class="text-muted text-xs">${u.created_at ? new Date(u.created_at).toLocaleString('th-TH') : ''}</div>
+        <div class="text-muted text-xs">${u.created_at ? formatDateTime(u.created_at) : ''}</div>
       </div>
     `,
       )
@@ -1832,7 +1831,7 @@ async function initAdminOrders() {
       tr.innerHTML =
         `<td data-label="${t('order.no')}" class="font-semibold" style="color:var(--color-text)">#${order.id.slice(0, 8)}</td>` +
         `<td data-label="${t('admin.order_customer')}">${escapeHTML(order.recipient || '-')}</td>` +
-        `<td data-label="${t('common.date')}">${order.created_at ? new Date(order.created_at).toLocaleDateString('th-TH') : '-'}</td>` +
+        `<td data-label="${t('common.date')}">${formatDate(order.created_at) || '-'}</td>` +
         `<td data-label="${t('common.total')}" class="num">${formatTHB(order.total)}</td>` +
         `<td data-label="${t('common.status')}"><span class="badge badge-${badge.variant}">${badge.label}</span></td>` +
         `<td class="cell-actions"><a href="/admin/order?id=${order.id}" class="btn btn-outline btn-sm" aria-label="${t('common.view')} #${order.id.slice(0, 8)}" title="${t('common.view')} #${order.id.slice(0, 8)}">${t('common.view')}</a></td>`;

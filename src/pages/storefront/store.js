@@ -10,6 +10,7 @@ import {
   ratingStars,
   effectivePrice,
   hasSalePrice,
+  formatDate,
 } from '/src/core/lib.js';
 import { getStockStatusText, getStockStatusClass } from '/src/core/customer.js';
 import { observeReveals } from '/src/core/reveal.js';
@@ -152,14 +153,9 @@ function isNewArrival(product) {
   return new Date(stamp).getTime() + days * 24 * 60 * 60 * 1000 > Date.now();
 }
 
-/** วันที่โพสต์แบบสั้นตามที่ร้านขอ: 24/11/2026 (ไม่ต้องมีเวลา) */
+/** วันที่โพสต์แบบสั้นตามที่ร้านขอ: 24/11/2569 (ไม่ต้องมีเวลา) */
 function formatPostDate(product) {
-  const stamp = product.created_at;
-  if (!stamp) return '';
-  const d = new Date(stamp);
-  if (Number.isNaN(d.getTime())) return '';
-  const pad = (n) => String(n).padStart(2, '0');
-  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
+  return formatDate(product.created_at);
 }
 
 function createProductCard(product) {
